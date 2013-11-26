@@ -4,13 +4,9 @@ GaTACDroneControl
 Notes
 -----
 
-On the machine running the Drone Control server, this requires
+The machine running the Drone Server requires:
 * https://github.com/dmillard/ardrone_thinc
 * https://github.com/dmillard/thinc_simulator
-
-To write your own drone control program using this API, simply type 
-* #include "GaTACDroneControl.hpp"
-at the top of your source file(s) and make sure to follow the required sequence of commands as noted below.
 
 Usage
 -----
@@ -23,20 +19,17 @@ It currently runs only in the Gazebo simulator, but there are plans for extendin
 Writing & Running a Drone Server
 -----
 
-For a sample server program with comments, see 'src/sampleServer.cpp'.  To write your own drone server program, make sure the following actions are performed in order (with possible steps in between):
+For a sample server program with comments, see `src/sampleServer.cpp`.  To write your own drone server program, make sure the following actions are performed in order (with possible steps in between):
 
-```
 1. #include "GaTACDroneControl.hpp".
 2. Instantiate a GaTACDroneControl object.
 3. Call the 'runDroneServer("IP", "Port")' method with the IP and Port of the machine that will be running the client.  This method should be the last call in your program, as it will run the drone server until the program terminates.
-```
 
 Writing & Running a Drone Client
 -----
 
-For a sample client program with comments, see 'src/sampleClient.cpp'.  To write your own client program, make sure the following actions are performed in order (with possible steps in between):
+For a sample client program with comments, see `src/sampleClient.cpp`.  To write your own client program, make sure the following actions are performed in order (with possible steps in between):
 
-```
 1. #include "GaTACDroneControl.hpp".
 2. Instantiate a GaTACDroneControl object. 
 3. Call the 'launchClient("IP", "Port")' method with the IP and Port of the machine that will be running the server.  
@@ -45,11 +38,12 @@ For a sample client program with comments, see 'src/sampleClient.cpp'.  To write
 ... (call methods in accordance with guidelines below)
 ...
 ...
-...
 4. Call the 'closeClient()' method to end the connection.
-```
 
-When writing your own client program, please abide by the following guidelines which outline the required sequence of method calls.  If you call any of these methods out of the logical order presented here, it is likely the program will terminate with an error message.  
+
+When writing your own client program, please abide by the following guidelines which outline the required sequence of method calls.  If you call any of these methods out of the logical order presented here, it is likely the program will terminate (with an error message).
+
+Client Command Sequence:  
 * 1. Launch the client with the 'launchClient("IP", "Port")' method. This sets up the socket connection. No other methods will work until this connection is set up.
 * 2. Set the grid size with the 'setGridSize(int, int)' method.  
 * 3. Set up each drone you want to control with the 'setUpDrone(int, int)' method. Drones are given ID #'s in increasing order, starting from 0.  The grid size must be set (as in step 2) before this method will work. 
