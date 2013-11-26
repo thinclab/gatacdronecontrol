@@ -43,8 +43,4 @@ Client Command Sequence:
 5. Set up each drone you want to control with the 'setUpDrone(int, int)' method. Drones are given ID #'s in increasing order, starting from 0.  The grid size must be set (as in step 2) before this method will work. 
 6. Start the Gazebo Simulator with the 'startGrid()' method.  
 7. Assuming all previous calls worked properly, you are now free to command the drones however you wish (e.g. using move(), land(), takeoff(), etc.).
-.
-.
-.
-.
 8. Call the 'closeClient()' method to end the connection.
