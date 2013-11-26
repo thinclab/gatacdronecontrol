@@ -17,7 +17,7 @@ The machine running the Drone Server requires:
 * https://github.com/dmillard/thinc_simulator
 
 
-Writing & Running a Drone Server
+Writing Your Own Drone Server
 -----
 
 For a sample server program with comments, see `src/sampleServer.cpp`.  To write your own drone server program, make sure the following actions are performed in order (with possible steps in between):
@@ -29,7 +29,7 @@ Server Command Sequence:
 2. Instantiate a GaTACDroneControl object.
 3. Call the `runDroneServer("IP", "Port")` method with the IP and Port of the machine that will be running the client.  This method should be the last call in your program, as it will run the drone server until the program terminates.
 
-Writing & Running a Drone Client
+Writing Your Own Drone Client
 -----
 
 For a sample client program with comments, see `src/sampleClient.cpp`.  To write your own client program, please abide by the following guidelines which outline the required sequence of method calls.  If you call any of these methods out of the logical order presented here, it is likely the program will terminate (with an error message).
