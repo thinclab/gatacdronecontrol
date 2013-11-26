@@ -7,7 +7,7 @@
 int main(){
   // IP and port of client machine
   char *ip = "000.000.00.000";
-  char *port = "4549";
+  char *port = "0000";
   
   // Instantiate GaTACDroneControl object
   GaTACDroneControl gatac;

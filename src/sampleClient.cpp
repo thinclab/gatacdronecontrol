@@ -9,7 +9,7 @@
 int main(){
   // Specifying the IP and port of server machine
   char *ip = "000.000.00.000";
-  char *port = "4999";
+  char *port = "0000";
   
   // Instantiate GaTACDroneControl object
   GaTACDroneControl gatac;
