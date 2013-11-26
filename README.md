@@ -24,6 +24,7 @@ For a sample server program with comments, see `src/sampleServer.cpp`.  To write
 
 
 Server Command Sequence:
+
 1. #include "GaTACDroneControl.hpp".
 2. Instantiate a GaTACDroneControl object.
 3. Call the 'runDroneServer("IP", "Port")' method with the IP and Port of the machine that will be running the client.  This method should be the last call in your program, as it will run the drone server until the program terminates.
@@ -34,6 +35,7 @@ Writing & Running a Drone Client
 For a sample client program with comments, see `src/sampleClient.cpp`.  To write your own client program, please abide by the following guidelines which outline the required sequence of method calls.  If you call any of these methods out of the logical order presented here, it is likely the program will terminate (with an error message).
 
 Client Command Sequence:
+
 1. #include "GaTACDroneControl.hpp".
 2. Instantiate a GaTACDroneControl object. 
 3. Launch the client with the 'launchClient("IP", "Port")' method. This sets up the socket connection. No other methods will work until this connection is set up.
