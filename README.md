@@ -5,7 +5,7 @@ Usage
 -----
 
 This API is designed to provide high level control of (up to 3) Parrot AR.Drone 
-Quadcopters over a UDP socket.  The purpose of the API is to allow for programmatic control of drones from a client machine totally independent of ROS.  However, note that the machine running the server does indeed require ROS and all packages mentioned above.
+Quadcopters over a UDP socket.  The purpose of the API is to allow for programmatic control of drones from a client machine totally independent of ROS.  However, note that the machine running the server does indeed require ROS and all packages mentioned below.
 
 It currently runs only in the Gazebo simulator, but there are plans for extending its use to real world quadcopters in the future.  
 
