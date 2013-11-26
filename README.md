@@ -1,7 +1,7 @@
 GaTACDroneControl
 =================
 
-Usage
+Overview
 -----
 
 This API is designed to provide high level control of (up to 3) Parrot AR.Drone 
