@@ -13,8 +13,8 @@ Notes
 -----
 
 The machine running the Drone Server requires:
-* https://github.com/dmillard/ardrone_thinc
-* https://github.com/dmillard/thinc_simulator
+* https://github.com/capparell/ardrone_thinc
+* https://github.com/capparell/thinc_simulator
 
 
 Writing Your Own Drone Server
