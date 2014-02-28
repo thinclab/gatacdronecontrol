@@ -1,8 +1,8 @@
 #include <iostream>
 #include <errno.h> // For printing error #'s/debugging
 #include <stdlib.h>
+#include <sstream> // For converting chars to ints to update positions vector
 #include <fstream> // For editing files
-#include <math.h>
 
 // For tokenizing command input
 #include <sstream>
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define BUFLEN 64
+#define BUFLEN 128
 #define DEFAULTCLIENTPORT 4999
 
 GaTACDroneControl::GaTACDroneControl() {
@@ -24,7 +24,6 @@ GaTACDroneControl::GaTACDroneControl() {
 
 void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty";
-	const char *moveCommand = "rosservice call /drone%s/waypoint %s %s 0 %s"; // x y z id
 	char localport[4];
 	int errorCheck, sock;
 
@@ -74,9 +73,15 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 	int bytesReceived = 0;
 	while (1) {
 		const char *droneNumber, *x, *y;
+		string temp;
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
+		int xInt, yInt, droneNumberInt = 0;
+		std::stringstream strX;
+		std::stringstream strY;
+		std::stringstream strID;
+		
 
 		cout << "Waiting for a command..." << endl;
 		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
@@ -137,9 +142,17 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			cout << "Move." << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			x = (tokens.at(2)).c_str();
-			y = (tokens.at(3)).c_str();
-			sprintf(publishMessage, moveCommand, droneNumber, x, y, droneNumber);
-			system(publishMessage);
+			y = (tokens.at(3)).c_str();	
+		//Desired coordinates & drone ID sent to moveAndCheck, where movement messages are sent one move at a time and positions are checked after each move using the
+		//sharedSpace method	
+			strX << x;
+			strX >> xInt;
+			strY << y;
+			strY >> yInt;
+			strID << droneNumber;
+			strID >> droneNumberInt;
+			moveAndCheck(xInt,yInt,droneNumberInt);		
+		//end moveAndCheck
 			break;
 
 		case 'g':
@@ -151,6 +164,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		case 'i':
 			cout << "Start gazebo." << endl;
 			launchGazebo();
+			varyHeights();
 			break;
 
 		default:
@@ -274,7 +288,7 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
 	string errorMessage;
 	string invalidDroneId = "No drone with ID has been spawned. Please specify a valid drone ID.";
-
+        string invalidLocation = "Location entered is beyond the grid parameters."; 
 	// If grid hasn't been started
 	if (!gridStarted) {
 		errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
@@ -285,7 +299,7 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 	}
 	// If destination isn't valid
 	else if (x < 0 || y < 0 || x >= numberOfColumns || y >= numberOfRows) {
-		errorMessage = invalidDroneId;
+		errorMessage = invalidLocation;
 	}
 	// Send command to server
 	else {
@@ -428,7 +442,7 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 }
 
 void GaTACDroneControl::launchGazebo() {
-	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo test_grid_flight.launch&";
+	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d&";
 	char thincSmartMessage[100];
 
@@ -475,13 +489,13 @@ void GaTACDroneControl::configureLaunchFile() {
 				"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
 					"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
 					"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
-					"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.75\"/>\n\t\t"
+					"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
 				"</include>\n\t"
 			"</group>\n\n";
 	char *endingText = "</launch>";
 
 	// Open launch file. Check what ROS distribution is currently being used
-	char *distro = getenv("ROS_DISTRO");
+	char *distro = getenv("ROS_DISTRO"); 
 	if(distro == NULL){
 		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
 		exit(1);
@@ -489,15 +503,15 @@ void GaTACDroneControl::configureLaunchFile() {
 
 	// Assume launch file is located in default stacks directory for current ROS distribution
 	char launchFilePath[100];
-	sprintf(launchFilePath, "/opt/ros/%s/stacks/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
-
+       //  sprintf(launchFilePath, "/opt/ros/%s/stacks/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);  
+        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
 	// Open file stream
 	ofstream fileStream(launchFilePath, ios::trunc);
 
 	// Open file stream
-	//ofstream fileStream(
-		//	"/home/vincecapparell/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/test_grid_flight.launch",
-			//ios::trunc);
+//	ofstream fileStream(
+//			"/home/vincecapparell/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/test_grid_flight.launch",
+//			ios::trunc);
 
 	// Write gen_texture and gen_dae text to file
 	char textureBuffer[strlen(genTextureText) + 1];
@@ -537,3 +551,90 @@ void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
 	x = (-1) * (numberOfRows - 1);
 	y = numberOfColumns - 1;
 }
+void GaTACDroneControl::varyHeights()
+{
+	string temp;
+	std::stringstream strID;
+	char publishMessage[BUFLEN];
+	const char *variableHeightTakeoff1 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,%.2f]' '[0,0,0]'"; //%.2f = speed of altitude increase
+	const char *variableHeightTakeoff2 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,0]' '[0,0,0]'"; //stops lifting
+	for(int k = 0; k < numberOfDrones; k++)
+		{ 
+		double kDub = (double) k;
+		float vHt = (float) (kDub+1.0)/10;
+		strID << k;
+		temp = strID.str();		
+		sprintf(publishMessage, variableHeightTakeoff1, temp.c_str(), vHt);
+		system(publishMessage);
+		sprintf(publishMessage, variableHeightTakeoff2, temp.c_str());
+		system(publishMessage);
+		strID.str("");
+		dronesSharingSpace.push_back(false);
+		}
+	cout<< "Varied heights successfully"<<endl;
+}
+void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
+{	
+	char publishMessage[BUFLEN];
+	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; // x y z id
+	int droneId = Id;
+	int dx = dronePositions.at(droneId).first - x;
+	int dy = dronePositions.at(droneId).second - y;
+	do
+	{
+	if(dx > 0){
+	dronePositions.at(droneId).first -= 1;
+	dx--;
+	}
+	else if(dx < 0){
+	dronePositions.at(droneId).first += 1;
+	dx++;
+	}	
+	else if(dy < 0){
+	dronePositions.at(droneId).second += 1;
+	dy++;
+	}
+	else if(dy > 0){
+	dronePositions.at(droneId).second -= 1;
+	dy--;	
+	}
+	int xSend = dronePositions.at(droneId).first;
+	int ySend = dronePositions.at(droneId).second;
+	cout<<"-drone"<<droneId<<" moving-"<<endl;
+	sprintf(publishMessage, moveCommand, droneId, xSend, ySend, droneId);
+	system(publishMessage);	
+	if(sharedSpace() == true){
+		cout<<"Drones sharing a cell: " << endl; 		
+		for(int i = 0; i < dronesSharingSpace.size(); i++)
+		{		
+		if(dronesSharingSpace.at(i) == true)
+		cout<<"  drone"<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
+		}
+	}	
+	}while ((dx != 0) || (dy != 0));
+}
+bool GaTACDroneControl::sharedSpace()
+{	
+	bool sharing = false;
+	for(int r = 0; r < dronesSharingSpace.size(); r++)
+		dronesSharingSpace.at(r) = false;
+	//cycles through current positions, if two/three drones have a matching position their dronesSharingSpace index is set to true
+	for(int i = 0; i < dronePositions.size(); i++)	
+	{
+		for(int k = 0; k <dronePositions.size(); k++)
+		{	
+			if(i != k)
+			{
+			if((dronePositions.at(i).first == dronePositions.at(k).first) 
+			   && (dronePositions.at(i).second == dronePositions.at(k).second))	
+			{
+				sharing = true;
+				dronesSharingSpace.at(i) = true;
+				dronesSharingSpace.at(k) = true;	
+			}
+			}
+		}
+	}
+	return sharing;
+}
+
