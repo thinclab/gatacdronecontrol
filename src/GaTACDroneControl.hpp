@@ -78,8 +78,9 @@ public:
 
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
-	vector<pair<int, int> > dronePositions;
+	vector<pair<int, int> > dronePositions;//updates at every movement with current position for each drone
 	struct addrinfo *srv;
+	vector<int> dronesSharingSpace; //for keeping track of shared cells
 	bool gridSizeSet, gridStarted, simulatorMode;
 
 	/*
@@ -111,6 +112,23 @@ private:
 	 * It specifies the grid size and number/starting position of all drones.
 	 */
 	void configureLaunchFile();
+	/*
+	 * This method varies the altitude of each drone as a fucntion of their ID
+	 * (Larger ID = higher flight)
+	 */
+	void varyHeights();
+	/*
+	 * This method takes movement parameters and sends waypoint messages one cell at a time.
+	 * As movements are made, it updates the position of moving drone and checks for shared cells
+	 * using sharedSpace() method.
+	 */
+	void moveAndCheck(int, int, int);
+	/*
+	 * This method compares current locations of drones and returns true if a cell is being shared.
+	 * Additionally, it updates a vector of which drones are sharing a cell.
+	 */
+	bool sharedSpace();
+
 };
 
 #endif
