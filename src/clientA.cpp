@@ -19,21 +19,19 @@ int main() {
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
-
-
-	// Set up 3 drones
+	
+	//set up drone
 	gatac.setupDrone(2, 2); // Spawn drone at (2, 2)
 
 	// Launch Gazebo Simulator
 	gatac.startGrid();
 
 	//Drones will move, intersecting at various points, reported on console
-	gatac.move(2, 2, 4);
-	gatac.move(2, 4, 0);
-	gatac.move(2, 0, 5);
+	gatac.move(0, 2, 4);
+	gatac.move(0, 0, 4);
+	gatac.move(0, 0, 7);
 
 	//Drones land
-	gatac.land(2);
 
 	
 	//Uncomment to check errors: invalid drone ID and invalid location
