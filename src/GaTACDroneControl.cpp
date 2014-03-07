@@ -348,7 +348,7 @@ void GaTACDroneControl::reset(int droneId) {
 	}
 }
 
-void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
+void GaTACDroneControl::setupDrone(int droneid,int droneCol, int droneRow) {
 	bool worked = false;
 	string errorMessage;
 
@@ -369,7 +369,7 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	}
 	// Send command to server
 	else {
-		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", numberOfDrones, droneCol, droneRow);
+		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", droneid, droneCol, droneRow);
 		char msg[10];
 		sprintf(msg, "s %d %d", droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
