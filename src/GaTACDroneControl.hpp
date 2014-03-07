@@ -83,8 +83,8 @@ private:
 	struct addrinfo *srv;
 	vector<int> dronesSharingSpace; //for keeping track of shared cells
 	bool simulatorMode;
-	bool g_gridSizeSet;//global variables due to multi-client use
-	bool g_gridStarted;
+	static bool g_gridSizeSet;//global variables due to multi-client use
+	static bool g_gridStarted;
 	/*
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
 	 */
