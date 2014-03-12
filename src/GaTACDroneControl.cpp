@@ -370,19 +370,10 @@ void GaTACDroneControl::reset(int droneId) {
 	}
 }
 
-<<<<<<< HEAD
 void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
-=======
-void GaTACDroneControl::setupDrone(,int droneCol, int droneRow) {
->>>>>>> 89a595f40a77294f9802cd4bae30365c49713ed5
 	bool worked = false;
 	// Send command to server
-<<<<<<< HEAD
 		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", droneSetupId, droneCol, droneRow);
-=======
-	else {
-		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", numberofDrones, droneCol, droneRow);
->>>>>>> 89a595f40a77294f9802cd4bae30365c49713ed5
 		char msg[10];
 		sprintf(msg, "s %d %d", droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
@@ -644,4 +635,5 @@ bool GaTACDroneControl::sharedSpace()
 	}
 	return sharing;
 }
+
 
