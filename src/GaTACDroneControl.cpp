@@ -227,13 +227,13 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			numberOfColumns = atoi(tokens.at(1).c_str());
 			numberOfRows = atoi(tokens.at(2).c_str());
 			// If size has already been set
-			if (g_gridSizeSet) {
-				cout << "Error: The grid size has already been set.  				Specify grid size only once." << endl;
-			exit(1);
-			}
+		//	if (g_gridSizeSet) {
+		//		cout << "Error: The grid size has already been set. Specify grid size only once." << endl;
+		//	exit(1);
+		//	}
 			// If size isn't valid
-			else if (numberOfColumns > 10 || numberOfRows > 10) {
-			cout << "Error: The grid size specified was too large. The 				maximum grid size is 10x10." << endl;
+			 if (numberOfColumns > 10 || numberOfRows > 10) {
+			cout << "Error: The grid size specified was too large. Themaximum grid size is 10x10." << endl;
 			exit(1);
 			}
 			else{
@@ -245,8 +245,17 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 
 		case 'i':
 			cout << "Start gazebo." << endl;
+			// If grid size has been set
+			if (g_gridSizeSet) {
 			launchGazebo();
 			varyHeights();
+			g_gridStarted = true;
+			}
+			// If grid size hasn't been set yet
+			else {
+			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
+			exit(1);
+			}	
 			break;
 
 		default:
@@ -316,22 +325,9 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort) {
 
 void GaTACDroneControl::startGrid() {
 	bool worked = false;
-
-	// If grid size hasn't been set yet
-	if (g_gridSizeSet) {
 		cout << "Sending command to start grid." << endl;
 		char message[2] = "i";
-
 		worked = sendMessage(message, serverSocket, srv);
-		if (worked) {
-			g_gridStarted = true;
-		}
-	}
-	// If grid size hasn't been set yet
-	else {
-		cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
-		exit(1);
-	}
 }
 
 void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
