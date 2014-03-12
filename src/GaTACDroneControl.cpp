@@ -81,6 +81,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
+		int droneInt;
 		int xInt, yInt, droneNumberInt = 0;
 		std::stringstream strX;
 		std::stringstream strY;
@@ -141,25 +142,47 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		case 't':
 			cout << "Take off." << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			// If droneID isn't valid
+			if (droneInt < 0 || droneInt > (numberOfDrones - 1)) {
+			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
+			exit(1);
+			}
+			else{
 			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
+			}
 			break;
 
 		case 'l':
 			cout << "Land." << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			if (droneInt < 0 || droneInt > (numberOfDrones - 1)) {
+			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
+			exit(1);
+			}
+			else{
 			sprintf(publishMessage, publishCommand, droneNumber, "land");
 			system(publishMessage);
 			sleep(3); // Wait for drone to land completely
+			}
 			break;
 
 		case 'r':
 			cout << "Reset." << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			if (droneInt < 0 || droneInt > (numberOfDrones - 1)) {
+			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
+			exit(1);
+			}
+			else{
 			sprintf(publishMessage, publishCommand, droneNumber, "reset");
 			system(publishMessage);
 			sleep(3); // Wait for drone to reset
+			}
 			break;
 
 		case 'm':
@@ -203,6 +226,21 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			cout << "Set grid size." << endl;
 			numberOfColumns = atoi(tokens.at(1).c_str());
 			numberOfRows = atoi(tokens.at(2).c_str());
+			// If size has already been set
+			if (g_gridSizeSet) {
+				cout << "Error: The grid size has already been set.  				Specify grid size only once." << endl;
+			exit(1);
+			}
+			// If size isn't valid
+			else if (numberOfColumns > 10 || numberOfRows > 10) {
+			cout << "Error: The grid size specified was too large. The 				maximum grid size is 10x10." << endl;
+			exit(1);
+			}
+			else{
+			g_gridSizeSet = true;
+			this->numberOfColumns = numberOfColumns;
+			this->numberOfRows = numberOfRows;
+			}
 			break;
 
 		case 'i':
@@ -298,19 +336,7 @@ void GaTACDroneControl::startGrid() {
 
 void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 	bool worked = false;
-
-	// If size has already been set
-	if (g_gridSizeSet) {
-		cout << "Error: The grid size has already been set.  Specify grid size only once." << endl;
-		exit(1);
-	}
-	// If size isn't valid
-	else if (numberOfColumns > 10 || numberOfRows > 10) {
-		cout << "Error: The grid size specified was too large. The maximum grid size is 10x10." << endl;
-		exit(1);
-	}
 	// Send command to server
-	else {
 		printf("Sending command to set grid size to %dx%d.\n", numberOfColumns, numberOfRows);
 
 		char message[10];
@@ -321,11 +347,6 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 			cout << "Couldn't set the grid size. Please try again." << endl;
 			exit(1);
 		}
-
-		g_gridSizeSet = true;
-		this->numberOfColumns = numberOfColumns;
-		this->numberOfRows = numberOfRows;
-	}
 }
 
 void GaTACDroneControl::move(int droneId, int x, int y) {
@@ -422,18 +443,10 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 
 bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	bool success = false;
-
-	// If droneID isn't valid
-	if (droneId < 0 || droneId > (numberOfDrones - 1)) {
-		printf("Error: No drone with ID %d has been spawned.  Please specify a valid drone ID.\n", droneId);
-		exit(1);
-	}
 	// Send command to server
-	else {
 		char message[3];
 		sprintf(message, "%c %d", command, droneId);
 		success = sendMessage(message, serverSocket, srv);
-	}
 
 	return success;
 }
