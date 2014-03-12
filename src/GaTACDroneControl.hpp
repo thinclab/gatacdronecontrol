@@ -85,6 +85,7 @@ private:
 	bool simulatorMode;
 	bool g_gridSizeSet;//global variables due to multi-client use
 	bool g_gridStarted;
+	int droneSetupId;
 	/*
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
 	 */

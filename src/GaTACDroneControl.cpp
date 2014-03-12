@@ -27,6 +27,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 	char localport[4];
 	int errorCheck, sock;
 
+
 	struct addrinfo hints, *srv, *info;
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof client_addr;
@@ -74,6 +75,9 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 	while (1) {
 		const char *droneNumber, *x, *y;
 		string temp;
+		string errorMessage = "none";
+		string invalidDroneId = "No drone with ID has been spawned. Please specify a valid drone ID.";
+       		string invalidLocation = "Location entered is beyond the grid parameters."; 
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
@@ -109,9 +113,29 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			cout << "Spawn drone." << endl;
 			initialColumn = atoi((tokens.at(1)).c_str());
 			initialRow = atoi((tokens.at(2)).c_str());
+			// If grid size hasn't been set
+			if (!g_gridSizeSet) {
+			errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
+			}
+			// If 3 drones already exist
+			else if (numberOfDrones == 3) {
+			errorMessage = "You have already spawned the maximum number of drones (3).";
+			}
+			// If start position isn't valid
+			else if (initialColumn > (numberOfColumns - 1) || initialRow > (numberOfRows - 1)) {
+			errorMessage = "The starting location you specified does not lie within the grid. Please choose a valid starting location.";
+			}
+
+			if (errorMessage != "none") {
+				printf("Error: couldn't spawn drone. %s\n", errorMessage.c_str());
+				exit(1);
+			}
+			else{
 			dronePositions.push_back(make_pair(initialColumn, initialRow));
 			printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
+			droneSetupId = numberOfDrones;
 			numberOfDrones++;
+			}
 			break;
 
 		case 't':
@@ -151,7 +175,27 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			strY >> yInt;
 			strID << droneNumber;
 			strID >> droneNumberInt;
+			/* Now the server checks if the drone ID and location entered are valid */
+			// If grid hasn't been started
+			if (!g_gridStarted) {
+			errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
+			}	
+			// If drone ID isn't valid
+			else if (droneNumberInt < 0 || droneNumberInt > (numberOfDrones - 1)) {
+			errorMessage = invalidDroneId;
+			}
+			// If destination isn't valid
+			else if (xInt < 0 || yInt < 0 || xInt >= numberOfColumns || yInt >= numberOfRows) {
+				errorMessage = invalidLocation;
+			}
+
+			if (errorMessage != "none") {
+			printf("Error: couldn't move drone. %s\n", errorMessage.c_str());
+			exit(1);
+			}
+			else{
 			moveAndCheck(xInt,yInt,droneNumberInt);		
+			}
 		//end moveAndCheck
 			break;
 
@@ -286,33 +330,11 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 
 void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
-	string errorMessage;
-	string invalidDroneId = "No drone with ID has been spawned. Please specify a valid drone ID.";
-        string invalidLocation = "Location entered is beyond the grid parameters."; 
-	// If grid hasn't been started
-	if (!g_gridStarted) {
-		errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
-	}
-	// If drone ID isn't valid
-	else if (droneId < 0 || droneId > (numberOfDrones - 1)) {
-		errorMessage = invalidDroneId;
-	}
-	// If destination isn't valid
-	else if (x < 0 || y < 0 || x >= numberOfColumns || y >= numberOfRows) {
-		errorMessage = invalidLocation;
-	}
-	// Send command to server
-	else {
+	// Send command to server, checks for valid ID and location done server-side	
 		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
 		char message[10];
 		sprintf(message, "m %d %d %d", droneId, x, y);
 		worked = sendMessage(message, serverSocket, srv);
-	}
-
-	if (!worked) {
-		printf("Error: couldn't move drone. %s\n", errorMessage.c_str());
-		exit(1);
-	}
 }
 
 void GaTACDroneControl::land(int droneId) {
@@ -348,38 +370,13 @@ void GaTACDroneControl::reset(int droneId) {
 	}
 }
 
-void GaTACDroneControl::setupDrone(int droneid,int droneCol, int droneRow) {
+void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	bool worked = false;
-	string errorMessage;
-
-	// If grid size hasn't been set
-	if (!g_gridSizeSet) {
-		errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
-		exit(1);
-	}
-	// If 3 drones already exist
-	else if (numberOfDrones == 3) {
-		errorMessage = "You have already spawned the maximum number of drones (3).";
-		exit(1);
-	}
-	// If start position isn't valid
-	else if (droneCol > (numberOfColumns - 1) || droneRow > (numberOfRows - 1)) {
-		errorMessage = "The starting location you specified does not lie within the grid. Please choose a valid starting location.";
-		exit(1);
-	}
 	// Send command to server
-	else {
-		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", droneid, droneCol, droneRow);
+		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", droneSetupId, droneCol, droneRow);
 		char msg[10];
 		sprintf(msg, "s %d %d", droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
-
-		if (!worked) {
-			printf("Error: couldn't spawn drone. %s\n", errorMessage.c_str());
-			exit(1);
-		}
-		numberOfDrones++;
-	}
 }
 
 void GaTACDroneControl::closeClient() {
