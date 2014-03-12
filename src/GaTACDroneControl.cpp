@@ -227,12 +227,12 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			numberOfColumns = atoi(tokens.at(1).c_str());
 			numberOfRows = atoi(tokens.at(2).c_str());
 			// If size has already been set
-		//	if (g_gridSizeSet) {
-		//		cout << "Error: The grid size has already been set. Specify grid size only once." << endl;
-		//	exit(1);
-		//	}
+			if (g_gridSizeSet) {
+				cout << "Error: The grid size has already been set. Specify grid size only once." << endl;
+			exit(1);
+			}
 			// If size isn't valid
-			 if (numberOfColumns > 10 || numberOfRows > 10) {
+			else if (numberOfColumns > 10 || numberOfRows > 10) {
 			cout << "Error: The grid size specified was too large. Themaximum grid size is 10x10." << endl;
 			exit(1);
 			}
