@@ -489,6 +489,7 @@ void GaTACDroneControl::launchGazebo() {
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %d&";
 	char thincSmartMessage[100];
+	char ardroneDriverMessage[100];
 
 	// Configure launch file and start core
 	configureLaunchFile();
@@ -497,21 +498,18 @@ void GaTACDroneControl::launchGazebo() {
 	// Wait for gazebo to finish loading. This takes a while.
 	sleep(5);
 
-	// Starting a thinc_smart ROS node for each drone
+	// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
 	int droneID;
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, droneID, dronePositions.at(droneID).first, dronePositions.at(droneID).second);
 		cout << "publishing message: " << thincSmartMessage << endl;
-		system(thincSmartCommand);
+		system(thincSmartMessage);
 		sleep(3);
-	}
-	// Starting an ardrone_autonomy ROS node for each drone
-	for (int i = 0; i < numberOfDrones; i++) {
-		droneID = i;
-		sprintf(thincSmartMessage, ardroneDriverCommand, droneID);
-		cout << "publishing message: " << ardroneDriverCommand << endl;
-		system(ardroneDriverCommand);
+	
+		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID);
+		cout << "publishing message: " << ardroneDriverMessage << endl;
+		system(ardroneDriverMessage);
 		sleep(3);
 	}
 	}
