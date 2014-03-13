@@ -25,7 +25,7 @@ public:
 	/*
 	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
 	 */
-	GaTACDroneControl(char c);
+	GaTACDroneControl(const char* c);
 
 	/*
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input

@@ -22,7 +22,7 @@ GaTACDroneControl::GaTACDroneControl() {
 	srv = NULL;
 }
 
-GaTACDroneControl::GaTACDroneControl(char c) {
+GaTACDroneControl::GaTACDroneControl(const char* c) {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = false;
@@ -503,7 +503,7 @@ void GaTACDroneControl::launchGazebo() {
 		droneID = i;
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, droneID, dronePositions.at(droneID).first, dronePositions.at(droneID).second);
 		cout << "publishing message: " << thincSmartMessage << endl;
-		system(thincSmartMessage);
+		system(thincSmartCommand);
 		sleep(3);
 	}
 	// Starting an ardrone_autonomy ROS node for each drone
@@ -511,7 +511,7 @@ void GaTACDroneControl::launchGazebo() {
 		droneID = i;
 		sprintf(thincSmartMessage, ardroneDriverCommand, droneID);
 		cout << "publishing message: " << ardroneDriverCommand << endl;
-		system(thincSmartMessage);
+		system(ardroneDriverCommand);
 		sleep(3);
 	}
 	}
@@ -605,7 +605,7 @@ void GaTACDroneControl::configureLaunchFile() {
 	// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
 	char *startingText =
 			"<?xml version=\"1.0\"?>\n\n"
-			"<launch>\n\t";
+			"<launch>\n";
 	char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
