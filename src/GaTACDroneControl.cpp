@@ -122,11 +122,11 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			initialColumn = atoi((tokens.at(1)).c_str());
 			initialRow = atoi((tokens.at(2)).c_str());
 			// If grid size hasn't been set
-			if (!gridSizeSet) {
-			errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
-			}
+	//		if (!gridSizeSet) {
+	//		errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
+	//		}
 			// If 3 drones already exist
-			else if (numberOfDrones == 3) {
+			 if (numberOfDrones == 3) {
 			errorMessage = "You have already spawned the maximum number of drones (3).";
 			}
 			// If start position isn't valid
@@ -485,7 +485,8 @@ void GaTACDroneControl::launchGazebo() {
 	}
 	/* simulatorMode == false */	
 	if(simulatorMode == false){
-	const char *coreMessage = "xterm -e roscore";
+	const char *coreMessage = "xterm -e roscore&";
+	const char *launchMessage = "xterm -e roslaunch gatacdronecontrol two_real_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %d&";
 	char thincSmartMessage[100];
@@ -494,8 +495,8 @@ void GaTACDroneControl::launchGazebo() {
 	// Configure launch file and start core
 	configureLaunchFile();
 	system(coreMessage);
+	system(launchMessage);
 
-	// Wait for gazebo to finish loading. This takes a while.
 	sleep(5);
 
 	// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
@@ -655,9 +656,9 @@ void GaTACDroneControl::configureLaunchFile() {
 			fileStream << droneBuffer;
 		}
 		fileStream << endingText;
-	}
 
-	// Close file stream
+	}
+		// Close file stream
 	fileStream.close();
 	}
 }
