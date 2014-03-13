@@ -17,8 +17,15 @@ using namespace std;
 
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
-	g_gridSizeSet, g_gridStarted = false;
+	gridSizeSet, gridStarted = false;
 	simulatorMode = true;
+	srv = NULL;
+}
+
+GaTACDroneControl::GaTACDroneControl(char c) {
+	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
+	gridSizeSet, gridStarted = false;
+	simulatorMode = false;
 	srv = NULL;
 }
 
@@ -115,7 +122,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			initialColumn = atoi((tokens.at(1)).c_str());
 			initialRow = atoi((tokens.at(2)).c_str());
 			// If grid size hasn't been set
-			if (!g_gridSizeSet) {
+			if (!gridSizeSet) {
 			errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
 			}
 			// If 3 drones already exist
@@ -132,9 +139,9 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 				exit(1);
 			}
 			else{
+			/* If server passes all checks, client message processed */
 			dronePositions.push_back(make_pair(initialColumn, initialRow));
 			printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
-			droneSetupId = numberOfDrones;
 			numberOfDrones++;
 			}
 			break;
@@ -149,6 +156,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			exit(1);
 			}
 			else{
+			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
@@ -164,6 +172,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			exit(1);
 			}
 			else{
+			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, publishCommand, droneNumber, "land");
 			system(publishMessage);
 			sleep(3); // Wait for drone to land completely
@@ -179,6 +188,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			exit(1);
 			}
 			else{
+			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, publishCommand, droneNumber, "reset");
 			system(publishMessage);
 			sleep(3); // Wait for drone to reset
@@ -200,7 +210,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			strID >> droneNumberInt;
 			/* Now the server checks if the drone ID and location entered are valid */
 			// If grid hasn't been started
-			if (!g_gridStarted) {
+			if (!gridStarted) {
 			errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
 			}	
 			// If drone ID isn't valid
@@ -216,6 +226,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			printf("Error: couldn't move drone. %s\n", errorMessage.c_str());
 			exit(1);
 			}
+			/* If server passes all checks, client message processed */
 			else{
 			moveAndCheck(xInt,yInt,droneNumberInt);		
 			}
@@ -227,17 +238,18 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			numberOfColumns = atoi(tokens.at(1).c_str());
 			numberOfRows = atoi(tokens.at(2).c_str());
 			// If size has already been set
-			if (g_gridSizeSet) {
-				cout << "Error: The grid size has already been set. Specify grid size only once." << endl;
-			exit(1);
-			}
+		//	if (gridSizeSet == true) {
+		//		cout << "Error: The grid size has already been set. Specify grid size only once." << endl;
+		//	exit(1);
+		//	}
 			// If size isn't valid
-			else if (numberOfColumns > 10 || numberOfRows > 10) {
+			 if (numberOfColumns > 10 || numberOfRows > 10) {
 			cout << "Error: The grid size specified was too large. Themaximum grid size is 10x10." << endl;
 			exit(1);
 			}
+			/* If server passes all checks, client message processed */
 			else{
-			g_gridSizeSet = true;
+			gridSizeSet = true;
 			this->numberOfColumns = numberOfColumns;
 			this->numberOfRows = numberOfRows;
 			}
@@ -246,10 +258,10 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		case 'i':
 			cout << "Start gazebo." << endl;
 			// If grid size has been set
-			if (g_gridSizeSet) {
+			if (gridSizeSet) {
 			launchGazebo();
 			varyHeights();
-			g_gridStarted = true;
+			gridStarted = true;
 			}
 			// If grid size hasn't been set yet
 			else {
@@ -390,7 +402,7 @@ void GaTACDroneControl::reset(int droneId) {
 void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	bool worked = false;
 	// Send command to server
-		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", droneSetupId, droneCol, droneRow);
+		printf("Sending command to spawn drone with ID #%d at (%d, %d).\n", numberOfDrones, droneCol, droneRow);
 		char msg[10];
 		sprintf(msg, "s %d %d", droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
@@ -448,6 +460,8 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 }
 
 void GaTACDroneControl::launchGazebo() {
+	/* simulatorMode == true */	
+	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d&";
 	char thincSmartMessage[100];
@@ -468,11 +482,45 @@ void GaTACDroneControl::launchGazebo() {
 		system(thincSmartMessage);
 		sleep(3);
 	}
+	}
+	/* simulatorMode == false */	
+	if(simulatorMode == false){
+	const char *coreMessage = "xterm -e roscore";
+	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d&";
+	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %d&";
+	char thincSmartMessage[100];
+
+	// Configure launch file and start core
+	configureLaunchFile();
+	system(coreMessage);
+
+	// Wait for gazebo to finish loading. This takes a while.
+	sleep(5);
+
+	// Starting a thinc_smart ROS node for each drone
+	int droneID;
+	for (int i = 0; i < numberOfDrones; i++) {
+		droneID = i;
+		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, droneID, dronePositions.at(droneID).first, dronePositions.at(droneID).second);
+		cout << "publishing message: " << thincSmartMessage << endl;
+		system(thincSmartMessage);
+		sleep(3);
+	}
+	// Starting an ardrone_autonomy ROS node for each drone
+	for (int i = 0; i < numberOfDrones; i++) {
+		droneID = i;
+		sprintf(thincSmartMessage, ardroneDriverCommand, droneID);
+		cout << "publishing message: " << ardroneDriverCommand << endl;
+		system(thincSmartMessage);
+		sleep(3);
+	}
+	}
 }
 
 void GaTACDroneControl::configureLaunchFile() {
 	cout << "Configuring launch file." << endl;
-
+	/* simulatorMode == true */
+	if(simulatorMode == true){
 	// The following strings match the formatting of the grid_flight.launch file found in the thinc_sim_gazebo ros package (in the launch folder).
 	char *genTextureText =
 			"<?xml version=\"1.0\"?>\n\n"
@@ -551,6 +599,69 @@ void GaTACDroneControl::configureLaunchFile() {
 
 	// Close file stream
 	fileStream.close();
+	}
+	/* simulatorMode == false */
+	if(simulatorMode == false){
+	// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
+	char *startingText =
+			"<?xml version=\"1.0\"?>\n\n"
+			"<launch>\n\t";
+	char *droneText =
+			"\t<group ns=\"drone%d\">\n\t\t"
+				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+				"<include file=\"$(find ardrone_autonomy)/launch/ardrone.launch\" >\n\t\t\t"
+				"</include>\n\t"
+			"</group>\n\n";
+	char *endingText = "</launch>";
+
+	// Open launch file. Check what ROS distribution is currently being used
+	char *distro = getenv("ROS_DISTRO"); 
+	if(distro == NULL){
+		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
+		exit(1);
+	}
+
+	// Assume launch file is located in default stacks directory for current ROS distribution
+	char launchFilePath[100];
+       //  sprintf(launchFilePath, "/opt/ros/%s/stacks/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);  
+        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/two_real_flight.launch", distro);
+	// Open file stream
+	ofstream fileStream(launchFilePath, ios::trunc);
+
+	// Open file stream
+//	ofstream fileStream(
+//			"/home/vincecapparell/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/test_grid_flight.launch",
+//			ios::trunc);
+
+	// Write gen_texture and gen_dae text to file
+	char startingBuffer[strlen(startingText) + 1];
+	sprintf(startingBuffer, startingText);
+	if (fileStream.is_open()) {
+		fileStream << startingBuffer;
+	}
+
+	// Find coordinates of (0,0) in Gazebo terms
+	int originX, originY;
+	getGazeboOrigin(originX, originY);
+
+	// Write all drone sub-launch text to file
+	int droneID;
+	float droneX, droneY;
+	char droneBuffer[strlen(droneText)];
+	if (fileStream.is_open()) {
+		for (int i = 0; i < numberOfDrones; i++) {
+			droneID = i;
+			droneX = originX + (2 * dronePositions.at(droneID).second);
+			droneY = originY - (2 * dronePositions.at(droneID).first);
+			sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+			fileStream << droneBuffer;
+		}
+		fileStream << endingText;
+	}
+
+	// Close file stream
+	fileStream.close();
+	}
 }
 
 void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
@@ -559,6 +670,7 @@ void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
 }
 void GaTACDroneControl::varyHeights()
 {
+	/* simulatorMode == true and false */
 	string temp;
 	std::stringstream strID;
 	char publishMessage[BUFLEN];
@@ -582,11 +694,14 @@ void GaTACDroneControl::varyHeights()
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
-	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; // x y z id
+	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
-	//Using same logic as Waypoint service file, send messages for movement one cell at a time
+	//Using same logic as ardrone_thinc.cpp file, send messages for movement one cell at a time
+	/* simulatorMode == true and false */
+	if(simulatorMode == true)
+	{
 	do
 	{
 	if(dx > 0){
@@ -610,6 +725,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	cout<<"-drone"<<droneId<<" moving-"<<endl;
 	sprintf(publishMessage, moveCommand, droneId, xSend, ySend, droneId);
 	system(publishMessage);	
+	}while ((dx != 0) || (dy != 0));
 	if(sharedSpace() == true){
 		cout<<"Drones sharing a cell: " << endl; 		
 		for(int i = 0; i < dronesSharingSpace.size(); i++)
@@ -618,10 +734,11 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 		cout<<"  drone"<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
 		}
 	}	
-	}while ((dx != 0) || (dy != 0));
+}
 }
 bool GaTACDroneControl::sharedSpace()
 {	
+	/* simulatorMode == true and false */
 	bool sharing = false;
 	for(int r = 0; r < dronesSharingSpace.size(); r++)
 		dronesSharingSpace.at(r) = false;
@@ -644,5 +761,6 @@ bool GaTACDroneControl::sharedSpace()
 	}
 	return sharing;
 }
+
 
 

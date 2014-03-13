@@ -23,6 +23,11 @@ public:
 	GaTACDroneControl();
 
 	/*
+	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
+	 */
+	GaTACDroneControl(char c);
+
+	/*
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
@@ -83,9 +88,8 @@ private:
 	struct addrinfo *srv;
 	vector<int> dronesSharingSpace; //for keeping track of shared cells
 	bool simulatorMode;
-	bool g_gridSizeSet;//global variables due to multi-client use
-	bool g_gridStarted;
-	int droneSetupId;
+	bool gridSizeSet;//global variables due to multi-client use
+	bool gridStarted;
 
 
 	/*
