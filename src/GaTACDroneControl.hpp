@@ -121,22 +121,56 @@ private:
 	 * It specifies the grid size and number/starting position of all drones.
 	 */
 	void configureLaunchFile();
+	
 	/*
 	 * This method varies the altitude of each drone as a fucntion of their ID
 	 * (Larger ID = higher flight)
 	 */
 	void varyHeights();
+	
 	/*
 	 * This method takes movement parameters and sends waypoint messages one cell at a time.
 	 * As movements are made, it updates the position of moving drone and checks for shared cells
 	 * using sharedSpace() method.
 	 */
 	void moveAndCheck(int, int, int);
+	
 	/*
 	 * This method compares current locations of drones and returns true if a cell is being shared.
 	 * Additionally, it updates a vector of which drones are sharing a cell.
 	 */
 	bool sharedSpace();
+	
+	/*
+	 * This method returns the value of boolean gridSizeSet, which lets the server check if the grid size has been set.
+         */	
+	bool gridSizeCheck();
+
+	/*
+	 * This method returns the value of boolean gridStarted, which lets the server check if the grid size has been set.
+         */	
+	bool gridStartCheck();
+
+	/*
+	 * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
+         */	
+	bool validDroneId(int);
+
+	/*
+	 * This method returns true if a location sent by the client is within the bounds of the grid.
+         */	
+	bool validLocation(int, int);
+	
+	/*
+	 * This method returns true if a client-set grid is between 0x0 and 10x10.
+         */	
+	bool validGridSize(int, int);
+
+	/*
+	 * This method returns true if the maximum number of drones has already been spawned.
+         */	
+	bool maxDrones();
+
 
 };
 
