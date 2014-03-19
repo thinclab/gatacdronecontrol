@@ -160,6 +160,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
+			varyHeights(droneNumber);
 			}
 			break;
 
@@ -260,7 +261,6 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			// If grid size has been set
 			if (gridSizeCheck() == true) {
 			launchGazebo();
-			varyHeights();
 			gridStarted = true;
 			}
 			// If grid size hasn't been set yet
@@ -659,7 +659,7 @@ void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
 	x = (-1) * (numberOfRows - 1);
 	y = numberOfColumns - 1;
 }
-void GaTACDroneControl::varyHeights()
+void GaTACDroneControl::varyHeights(int droneNumber)
 {
 	/* simulatorMode == true and false */
 	string temp;
@@ -667,11 +667,10 @@ void GaTACDroneControl::varyHeights()
 	char publishMessage[BUFLEN];
 	const char *variableHeightTakeoff1 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,%.2f]' '[0,0,0]'"; //%.2f = speed of altitude increase
 	const char *variableHeightTakeoff2 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,0]' '[0,0,0]'"; //stops lifting
-	for(int k = 0; k < numberOfDrones; k++)
-		{ 
-		double kDub = (double) k;
+
+		double kDub = (double) droneNumber;
 		float vHt = (float) (kDub+1.0)/10;
-		strID << k;
+		strID << droneNumber;
 		temp = strID.str();		
 		sprintf(publishMessage, variableHeightTakeoff1, temp.c_str(), vHt);
 		system(publishMessage);
@@ -680,7 +679,7 @@ void GaTACDroneControl::varyHeights()
 		strID.str("");
 		dronesSharingSpace.push_back(false);
 		}
-	cout<< "Varied heights successfully"<<endl;
+	cout<< "drone increased altitude successfully successfully"<<endl;
 }
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
@@ -781,7 +780,7 @@ bool GaTACDroneControl::validLocation(int x, int y)
 }
 bool GaTACDroneControl::validGridSize(int x, int y)
 {	
-	if(x > 10 || y > 10)
+	if(x < 1 || y < 1 || x > 10 || y > 10)
 	return false;
 	else
 	return true;

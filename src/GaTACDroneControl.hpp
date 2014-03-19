@@ -126,7 +126,7 @@ private:
 	 * This method varies the altitude of each drone as a fucntion of their ID
 	 * (Larger ID = higher flight)
 	 */
-	void varyHeights();
+	void varyHeights(int droneNumber);
 	
 	/*
 	 * This method takes movement parameters and sends waypoint messages one cell at a time.
