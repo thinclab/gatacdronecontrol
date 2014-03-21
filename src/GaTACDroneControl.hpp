@@ -16,7 +16,6 @@ using std::pair;
 
 class GaTACDroneControl {
 public:
-
 	/*
 	 * Default constructor. Initializes all member variables.
 	 */
@@ -63,6 +62,11 @@ public:
 	void startGrid();
 
 	/*
+	 * This method is called by a client to send a ready message in multi-client environments.
+	 * When a server has received one from each client, it makes the decision to start the grid.
+	 */
+	void readyUp();
+	/*
 	 * This method will move the specified drone to the desired (x, y) position.
 	 */
 	void move(int, int, int);
@@ -81,16 +85,28 @@ public:
 	 * This method will trigger the reset mode for the specified drone.
 	 */
 	void reset(int);
+    
+	/*
+	 * Used to set a client's unique drone ID
+	 */
+	void setClientUniqueId(int);
 
+	/*
+	 * Used to get a client's unique drone ID
+	 */
+	int getClientUniqueId();
+	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
 	vector<pair<int, int> > dronePositions;//updates at every movement with current position for each drone
 	struct addrinfo *srv;
 	vector<int> dronesSharingSpace; //for keeping track of shared cells
+	vector<bool> clientsReady; //for keeping track of shared cells
 	bool simulatorMode;
 	bool gridSizeSet;//global variables due to multi-client use
 	bool gridStarted;
-
+	int lastDroneMoved;
+	int clientUniqueId; //used to assign a unique drone ID to a client
 
 	/*
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
@@ -126,7 +142,7 @@ private:
 	 * This method varies the altitude of each drone as a fucntion of their ID
 	 * (Larger ID = higher flight)
 	 */
-	void varyHeights(int droneNumber);
+	void varyHeights(int);
 	
 	/*
 	 * This method takes movement parameters and sends waypoint messages one cell at a time.
@@ -170,7 +186,7 @@ private:
 	 * This method returns true if the maximum number of drones has already been spawned.
          */	
 	bool maxDrones();
-
+	
 
 };
 
