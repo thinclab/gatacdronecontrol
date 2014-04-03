@@ -6,7 +6,7 @@
  */
 int main() {
 	// IP and port of client machine
-	char *ip = "128.192.76.248";
+	char *ip = "128.192.76.247";
 	char *port = "4999";
        
         //cout message
@@ -17,8 +17,9 @@ int main() {
 	GaTACDroneControl gatac;
 
 	// Run drone server
-	gatac.runServer(ip, port);
+	gatac.startServer(ip, port, 3);
         
+	sleep(300);
        
 	return 0;
 }
