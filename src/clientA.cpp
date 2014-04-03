@@ -23,16 +23,30 @@ int main() {
 	//set up drone
 	gatac.setupDrone(2, 2); // Spawn drone at (2, 2)
 
-	// Launch Gazebo Simulator
-	gatac.startGrid();
+	// Sending ready message
+	gatac.readyUp();
+	
+	//Setting id of drone to client's unique id
+	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
-	gatac.move(0, 2, 4);
-	gatac.move(0, 0, 4);
-	gatac.move(0, 0, 7);
+	while(gatac.getClientReadyToCommand() == true){
+	gatac.move(id, 2, 4);
+	gatac.move(id, 3, 4);
+	gatac.move(id, 3, 2);
+	gatac.move(id, 2, 2);
+	gatac.move(id, 2, 4);
+	gatac.move(id, 3, 4);
+	gatac.move(id, 3, 2);
+	gatac.move(id, 2, 2);
+	gatac.move(id, 2, 4);
+	gatac.move(id, 3, 4);
+	gatac.move(id, 3, 2);
+	gatac.move(id, 2, 2);
+
 
 	//Drones land
-
+	gatac.land(id);
 	
 	//Uncomment to check errors: invalid drone ID and invalid location
 /*
@@ -50,6 +64,6 @@ int main() {
 
 	// Close client socket connection.
 	gatac.closeClient();
-
+	}
 	return 0;
 }

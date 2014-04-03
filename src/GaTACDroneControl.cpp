@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <sstream> // For converting chars to ints to update positions vector
 #include <fstream> // For editing files
+#include <boost/thread.hpp> // For concurrent flight
+#include <boost/date_time.hpp>
 
 // For tokenizing command input
 #include <sstream>
@@ -13,36 +15,67 @@
 using namespace std;
 
 #define BUFLEN 128
-#define DEFAULTCLIENTPORT 4999
+#define DEFAULTCLIENTPORT1 4999
+#define DEFAULTCLIENTPORT2 5999
+#define DEFAULTCLIENTPORT3 6999
 
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = true;
-	lastDroneMoved = 7;
 	srv = NULL;
+	serverThreads = 0;	
 }
 
 GaTACDroneControl::GaTACDroneControl(const char* c) {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = false;
-	lastDroneMoved = 7;
 	srv = NULL;
+	serverThreads = 0;
 }
+void GaTACDroneControl::startServer(char *remoteIP, char *remotePort, int expectedDrones){
+	cout << "Main server running." << endl;	
+	for(int i = 0; i < expectedDrones; i++)
+	{
+	serverThreads++;
+	boost::thread* moveThread;
+	if(i == 0){
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting thread 1"<<endl;
+	}
+	else if(i == 1){
+	char* remotePort2 = "5999";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort2, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting thread 2"<<endl;
+	}
+	else if(i == 2){
+	char* remotePort3 = "6999";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting thread 3"<<endl;
+	}   
+	}
 
-void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
+}
+void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	char localport[4];
 	int errorCheck, sock;
-
-
 	struct addrinfo hints, *srv, *info;
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof client_addr;
-
-	sprintf(localport, "%d", DEFAULTCLIENTPORT);
-
+	if(threadNo == 1){
+	sprintf(localport, "%d", DEFAULTCLIENTPORT1);
+	}	
+	if(threadNo == 2){
+	sprintf(localport, "%d", DEFAULTCLIENTPORT2);
+	}
+	if(threadNo == 3){
+	sprintf(localport, "%d", DEFAULTCLIENTPORT3);
+	}
 	// Specifying socket parameters
 	bzero(&hints, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -77,7 +110,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		exit(1);
 	}
 
-	cout << "Main server running." << endl;
+	
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
@@ -91,6 +124,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
 		int droneInt;
+		int sleepCtr; // to ensure drones don't send commadns before server can process, and drones begin in sync
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
 		std::stringstream strX;
@@ -162,7 +196,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 			else{
 			/* If server passes all checks, client message processed */
-			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
+			sprintf(publishMessage, publishCommand, droneNumber, "takeoff&");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
 			if(simulatorMode == false)
@@ -234,7 +268,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 		/* If server passes all checks, client message processed */
 			else{
-			moveAndCheck(xInt,yInt,droneNumberInt);		
+			moveAndCheck(xInt, yInt, droneNumberInt);
 			}
 		//end moveAndCheck
 			break;
@@ -260,18 +294,21 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 			break;
 
-			//When running multi cleints, have each use readyUp() to start the grid
+			//When running multi clients, have each use readyUp() to start the grid
 		case 'y': 
 			for(int i=0; i < clientsReady.size(); i++)
 			{
 			if(clientsReady.at(i) == false){
 			cout << "Client ready: Drone" << i << endl;
+			if(i < clientsReady.size())
+			sleepCtr = 35;
+			if(i == clientsReady.size()-1)
+			sleepCtr = 7;
 			clientsReady.at(i) = true;
 			break;
 			}
 			}
 			allReady = true;
-			cout << clientsReady.size() << endl;
 			for(int i=0; i < clientsReady.size(); i++)
 			{
 			if(clientsReady.at(i) == false){
@@ -279,9 +316,10 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 			}
 			if(allReady == true){
-			cout << "All clients ready. Starting grid!" << endl;
 			// If grid size has been set
-			if (gridSizeCheck() == true && gridStartCheck() == false) {
+			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
+			cout << "All clients ready. Starting grid!" << endl;
+			cout<<"Waiting a few seconds before server will receive commands..." <<endl;
 			launchGazebo();
 			gridStarted = true;
 			if(simulatorMode == true){
@@ -290,11 +328,11 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 			}
 			// If grid has already been started
-			else if(gridStartCheck() == true) {
+			else if(this->gridStartCheck() == true) {
 			cout << "Error: Grid already started." << endl;
 			}	
 			//If grid size has not been set
-			else if(gridSizeCheck() == false) {
+			else if(this->gridSizeCheck() == false) {
 			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
 			exit(1);
 			}	
@@ -305,7 +343,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		case 'i':
 			cout << "Start gazebo." << endl;
 			// If grid size has been set
-			if (gridSizeCheck() == true && gridStartCheck() == false) {
+			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			launchGazebo();
 			gridStarted = true;
 			if(simulatorMode == true){
@@ -314,11 +352,11 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 			}
 			}
 			// If grid has already been started
-			else if(gridStartCheck() == true) {
+			else if(this->gridStartCheck() == true) {
 			cout << "Error: Grid already started." << endl;
 			}	
 			//If grid size has not been set
-			else if(gridSizeCheck() == false) {
+			else if(this->gridSizeCheck() == false) {
 			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
 			exit(1);
 			}	
@@ -338,15 +376,30 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort) {
 		cout<<"setting send Buffer to drone ID" <<endl;
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
 		sendBuffer[0] = idChar;
+		int numSent = 0;
+		sleep(10);
+		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
 		}
-
+		}
+		else if(rawCommand == 'y'){
+		cout<<"Waiting for other drones..." <<endl;
+		sleep(sleepCtr);
 		int numSent = 0;
 		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
 			exit(1);
 		}
+		}
+		else{
+		int numSent = 0;
+		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
+		}
+		}
 	}
-
 	// Cleaning up socket information
 	freeaddrinfo(info);
 	freeaddrinfo(srv);
@@ -477,6 +530,7 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 
 void GaTACDroneControl::closeClient() {
 	close(serverSocket);
+	this->setClientReadyToCommand(false);
 	freeaddrinfo(srv);
 }
 
@@ -507,7 +561,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 			char* idCheck = &receiveBuffer[0];
 			int idInt = atoi(idCheck);
 		// If message we sent and message returned from server are the same, success
-		if (strcmp(sendBuffer, receiveBuffer) == 0) {
+		if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck != 'y') {
 			success = true;
 			cout << "Server received the command!" << endl;	
 		//Special case: if message was a spawn command, server sends back the ID to the client
@@ -516,7 +570,10 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 			this->setClientUniqueId(idInt);
  			cout << "Server received the spawn command!" << endl;
 			cout << "This client is controlling drone #" << this->getClientUniqueId()<< "" <<endl;	
-	
+		} else if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck =='y'){
+			success = true;
+			this->setClientReadyToCommand(true);
+			cout << "Server received the command!" << endl;
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;
@@ -762,7 +819,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
-	const char *moveCommand1 = "rosservice call /drone%d/waypoint %d %d 0 %d&"; //id...  x y z id
+	const char *moveCommand1 = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
 	const char *moveCommand2 = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
@@ -790,13 +847,8 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	int xSend = dronePositions.at(droneId).first;
 	int ySend = dronePositions.at(droneId).second;
 	cout<<"-drone "<<droneId<<" moving-"<<endl;
-	if(lastDroneMoved != droneId)
-	sprintf(publishMessage, moveCommand1, droneId, xSend, ySend, droneId);
-	else if(lastDroneMoved == droneId && (dx == 0 && dy == 0))
-	sprintf(publishMessage, moveCommand1, droneId, xSend, ySend, droneId);
-	else
 	sprintf(publishMessage, moveCommand2, droneId, xSend, ySend, droneId);
-	system(publishMessage);
+	system(publishMessage);                                     
 	if(sharedSpace() == true){
 		cout<<"Drones sharing a cell: " << endl; 		
 		for(int i = 0; i < dronesSharingSpace.size(); i++)
@@ -804,9 +856,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 		if(dronesSharingSpace.at(i) == true)
 		cout<<"==> drone "<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
 		}
-	}	
-	lastDroneMoved = droneId;	
-	cout << lastDroneMoved << endl;	
+	}		
 	}while ((dx != 0) || (dy != 0));
 
 
@@ -882,4 +932,14 @@ void GaTACDroneControl::setClientUniqueId(int toSet)
 int GaTACDroneControl::getClientUniqueId()
 {
  return this->clientUniqueId;
+}
+
+void GaTACDroneControl::setClientReadyToCommand(bool toSet)
+{
+ this->readyToCommand = toSet;
+}
+
+bool GaTACDroneControl::getClientReadyToCommand()
+{
+ return this->readyToCommand;
 }

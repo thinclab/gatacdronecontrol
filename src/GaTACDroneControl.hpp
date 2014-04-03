@@ -10,6 +10,8 @@
 #include <pthread.h>
 #include <vector>
 #include <utility>
+#include <boost/thread.hpp> // For concurrent flight
+#include <boost/date_time.hpp>
 
 using std::vector;
 using std::pair;
@@ -27,11 +29,15 @@ public:
 	GaTACDroneControl(const char* c);
 
 	/*
+	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
+	 */
+	void startServer(char *, char *, int);
+	/*
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
 	 */
-	void runServer(char *, char *);
+	void runServer(char *, char *, int);
 
 	/*
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
@@ -96,6 +102,16 @@ public:
 	 */
 	int getClientUniqueId();
 	
+	/*
+	 * Used to get a client's "readyForCommands" boolean value
+	 */
+	bool getClientReadyToCommand();
+
+	/*
+	 * Used to set a client's "readyForCommands" boolean value
+	 */
+	void setClientReadyToCommand(bool);
+	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
 	vector<pair<int, int> > dronePositions;//updates at every movement with current position for each drone
@@ -105,8 +121,10 @@ private:
 	bool simulatorMode;
 	bool gridSizeSet;//global variables due to multi-client use
 	bool gridStarted;
-	int lastDroneMoved;
+	int serverThreads;
 	int clientUniqueId; //used to assign a unique drone ID to a client
+	bool readyToCommand; //so the server can ensure everything is ready before receiving commands
+	boost::thread* threads[2]; // used for multi threaded server
 
 	/*
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.

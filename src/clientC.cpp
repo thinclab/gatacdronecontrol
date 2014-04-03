@@ -9,7 +9,7 @@
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
-	char *port = "5999";
+	char *port = "6999";
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
@@ -21,7 +21,7 @@ int main() {
 	gatac.setGridSize(5, 8);
 	
 	//set up drone
-	gatac.setupDrone(1, 1); // Spawn drone at (2, 2)
+	gatac.setupDrone(0, 1); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
@@ -31,14 +31,14 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-	gatac.move(id, 1, 5);
-	gatac.move(id, 4, 5);
-	gatac.move(id, 4, 1);
-	gatac.move(id, 1, 1);
-	gatac.move(id, 1, 5);
-	gatac.move(id, 4, 5);
-	gatac.move(id, 4, 1);
-	gatac.move(id, 1, 1);
+	gatac.move(id, 2, 5);
+	gatac.move(id, 3, 5);
+	gatac.move(id, 3, 1);
+	gatac.move(id, 0, 1);
+	gatac.move(id, 2, 5);
+	gatac.move(id, 3, 5);
+	gatac.move(id, 3, 1);
+	gatac.move(id, 0, 1);
 
 	//Drones land
 	gatac.land(id);
@@ -61,4 +61,5 @@ int main() {
 	gatac.closeClient();
 	}
 	return 0;
+	
 }
