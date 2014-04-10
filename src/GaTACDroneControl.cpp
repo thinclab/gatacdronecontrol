@@ -34,7 +34,7 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	srv = NULL;
 	serverThreads = 0;
 }
-void GaTACDroneControl::startServer(char *remoteIP, char *remotePort, int expectedDrones){
+void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
 	cout << "Main server running." << endl;	
 	for(int i = 0; i < expectedDrones; i++)
 	{
@@ -46,13 +46,13 @@ void GaTACDroneControl::startServer(char *remoteIP, char *remotePort, int expect
 	cout<<"starting thread 1"<<endl;
 	}
 	else if(i == 1){
-	char* remotePort2 = "5999";
+	const char* remotePort2 = "5999";
 	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort2, serverThreads));	
 	threads[i] = moveThread;
 	cout<<"starting thread 2"<<endl;
 	}
 	else if(i == 2){
-	char* remotePort3 = "6999";
+	const char* remotePort3 = "6999";
 	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
 	threads[i] = moveThread;
 	cout<<"starting thread 3"<<endl;
@@ -60,7 +60,7 @@ void GaTACDroneControl::startServer(char *remoteIP, char *remotePort, int expect
 	}
 
 }
-void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo) {
+void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	char localport[4];
 	int errorCheck, sock;
@@ -124,7 +124,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
 		int droneInt;
-		int sleepCtr; // to ensure drones don't send commadns before server can process, and drones begin in sync
+		int sleepCtr; // to ensure drones don't send commands before server can process, and drones begin in sync
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
 		std::stringstream strX;
@@ -196,7 +196,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 			}
 			else{
 			/* If server passes all checks, client message processed */
-			sprintf(publishMessage, publishCommand, droneNumber, "takeoff&");
+			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
 			if(simulatorMode == false)
@@ -220,7 +220,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 			}
 			break;
 
-		case 'r':
+		case 'r':http://www.youtube.com/watch?v=Z6ih1aKeETk
 			cout << "Reset." << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
@@ -241,7 +241,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 			droneNumber = (tokens.at(1)).c_str();
 			x = (tokens.at(2)).c_str();
 			y = (tokens.at(3)).c_str();	
-		//Desired coordinates & drone ID sent to moveAndCheck, where movement messages are sent one move at a time and positions 			are checked after each move using the
+		//Desired coordinates & drone ID sent to moveAndCheck, where movement messages are sent one move at a time and positions are checked after each move using the
 		//sharedSpace method	
 			strX << x;
 			strX >> xInt;
@@ -279,7 +279,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 			numberOfRows = atoi(tokens.at(2).c_str());
 			// If size has already been set
 			if (gridSizeCheck() == true) {
-			cout << "Error: The grid size has already been set to ["<<numberOfColumns<<"x "<<numberOfRows<<"]. Specify grid size only once." << endl;
+			cout << "Error: The grid size has already been set to ["<<numberOfColumns<<" x "<<numberOfRows<<"]. Specify grid size only once." << endl;
 			} 
 			// If size isn't valid
 			 if (validGridSize(numberOfRows, numberOfColumns) == false) {
@@ -319,7 +319,7 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 			// If grid size has been set
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			cout << "All clients ready. Starting grid!" << endl;
-			cout<<"Waiting a few seconds before server will receive commands..." <<endl;
+			cout << "Waiting a few seconds before server will receive commands..." << endl;
 			launchGazebo();
 			gridStarted = true;
 			if(simulatorMode == true){
@@ -373,11 +373,10 @@ void GaTACDroneControl::runServer(char *remoteIp, char *remotePort, int threadNo
 		strcpy(sendBuffer, receiveBuffer);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
-		cout<<"setting send Buffer to drone ID" <<endl;
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
 		sendBuffer[0] = idChar;
 		int numSent = 0;
-		sleep(10);
+		sleep(5);
 		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
 			exit(1);
@@ -534,6 +533,26 @@ void GaTACDroneControl::closeClient() {
 	freeaddrinfo(srv);
 }
 
+void GaTACDroneControl::setClientUniqueId(int toSet)
+{
+ this->clientUniqueId = toSet;
+}
+
+int GaTACDroneControl::getClientUniqueId()
+{
+ return this->clientUniqueId;
+}
+
+void GaTACDroneControl::setClientReadyToCommand(bool toSet)
+{
+ this->readyToCommand = toSet;
+}
+
+bool GaTACDroneControl::getClientReadyToCommand()
+{
+ return this->readyToCommand;
+}
+
 /*
  * Private Methods
  */
@@ -657,14 +676,14 @@ void GaTACDroneControl::configureLaunchFile() {
 	/* simulatorMode == true */
 	if(simulatorMode == true){
 	// The following strings match the formatting of the grid_flight.launch file found in the thinc_sim_gazebo ros package (in the launch folder).
-	char *genTextureText =
+	const char *genTextureText =
 			"<?xml version=\"1.0\"?>\n\n"
 			"<launch>\n\t"
 				"<node\n\t\t"
 					"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
 					"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
 				"/>\n\t";
-	char *genDaeText =
+	const char *genDaeText =
 			"<node\n\t\t"
 				"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
 				"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
@@ -672,7 +691,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
 			"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
 			"<!-- Spawn simulated quadrotor uav -->\n";
-	char *droneText =
+	const char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
 				"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
@@ -681,7 +700,7 @@ void GaTACDroneControl::configureLaunchFile() {
 					"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
 				"</include>\n\t"
 			"</group>\n\n";
-	char *endingText = "</launch>";
+	const char *endingText = "</launch>";
 
 	// Open launch file. Check what ROS distribution is currently being used
 	char *distro = getenv("ROS_DISTRO"); 
@@ -734,16 +753,16 @@ void GaTACDroneControl::configureLaunchFile() {
 	/* simulatorMode == false */
 	if(simulatorMode == false){
 	// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
-	char *startingText =
+	const char *startingText =
 			"<?xml version=\"1.0\"?>\n\n"
 			"<launch>\n";
-	char *droneText =
+	const char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
 				"<include file=\"$(find ardrone_autonomy)/launch/ardrone.launch\" >\n\t\t\t"
 				"</include>\n\t"
 			"</group>\n\n";
-	char *endingText = "</launch>";
+	const char *endingText = "</launch>";
 
 	// Open launch file. Check what ROS distribution is currently being used
 	char *distro = getenv("ROS_DISTRO"); 
@@ -761,7 +780,7 @@ void GaTACDroneControl::configureLaunchFile() {
 
 	// Write gen_texture and gen_dae text to file
 	char startingBuffer[strlen(startingText) + 1];
-	sprintf(startingBuffer, startingText);
+	strcpy(startingBuffer, startingText);
 	if (fileStream.is_open()) {
 		fileStream << startingBuffer;
 	}
@@ -819,8 +838,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
-	const char *moveCommand1 = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
-	const char *moveCommand2 = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
+	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
@@ -847,7 +865,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	int xSend = dronePositions.at(droneId).first;
 	int ySend = dronePositions.at(droneId).second;
 	cout<<"-drone "<<droneId<<" moving-"<<endl;
-	sprintf(publishMessage, moveCommand2, droneId, xSend, ySend, droneId);
+	sprintf(publishMessage, moveCommand, droneId, xSend, ySend, droneId);
 	system(publishMessage);                                     
 	if(sharedSpace() == true){
 		cout<<"Drones sharing a cell: " << endl; 		
@@ -922,24 +940,4 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 	return false;
 	else
 	return true;
-}
-
-void GaTACDroneControl::setClientUniqueId(int toSet)
-{
- this->clientUniqueId = toSet;
-}
-
-int GaTACDroneControl::getClientUniqueId()
-{
- return this->clientUniqueId;
-}
-
-void GaTACDroneControl::setClientReadyToCommand(bool toSet)
-{
- this->readyToCommand = toSet;
-}
-
-bool GaTACDroneControl::getClientReadyToCommand()
-{
- return this->readyToCommand;
 }
