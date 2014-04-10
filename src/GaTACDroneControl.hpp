@@ -31,13 +31,13 @@ public:
 	/*
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
 	 */
-	void startServer(char *, char *, int);
+	void startServer(const char *, const char *, int);
 	/*
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
 	 */
-	void runServer(char *, char *, int);
+	void runServer(const char *, const char *, int);
 
 	/*
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
