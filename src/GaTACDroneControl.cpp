@@ -220,7 +220,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			break;
 
-		case 'r':http://www.youtube.com/watch?v=Z6ih1aKeETk
+		case 'r':
 			cout << "Reset." << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
