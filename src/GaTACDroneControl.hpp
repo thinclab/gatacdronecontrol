@@ -141,8 +141,10 @@ private:
 	/*
 	 * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,
 	 * and with any drones that have been set up via the setUpDrone method.
+	 * 
+	 * ***When using real drones, this method instead prepares the ROS nodes for each drone.***
 	 */
-	void launchGazebo();
+	void launchGrid();
 
 	/*
 	 * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.

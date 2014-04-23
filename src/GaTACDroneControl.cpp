@@ -320,7 +320,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			cout << "All clients ready. Starting grid!" << endl;
 			cout << "Waiting a few seconds before server will receive commands..." << endl;
-			launchGazebo();
+			launchGrid();
 			gridStarted = true;
 			if(simulatorMode == true){
 			for(int i = 0; i < numberOfDrones; i++)
@@ -344,7 +344,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			cout << "Start gazebo." << endl;
 			// If grid size has been set
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
-			launchGazebo();
+			launchGrid();
 			gridStarted = true;
 			if(simulatorMode == true){
 			for(int i = 0; i < numberOfDrones; i++)
@@ -612,7 +612,7 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	return success;
 }
 
-void GaTACDroneControl::launchGazebo() {
+void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == true */	
 	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
@@ -642,8 +642,10 @@ void GaTACDroneControl::launchGazebo() {
 	const char *launchMessage = "xterm -e roslaunch gatacdronecontrol two_real_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %s&";
+	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	char thincSmartMessage[100];
 	char ardroneDriverMessage[100];
+	char flatTrimMessage[100];
 
 	// Configure launch file and start core
 	configureLaunchFile();
@@ -666,7 +668,10 @@ void GaTACDroneControl::launchGazebo() {
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
 		cout << "publishing message: " << ardroneDriverMessage << endl;
 		system(ardroneDriverMessage);
-		sleep(3);
+		sleep(5);
+		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
+		system(flatTrimMessage);
+		cout << "Flattened trim for drone " << droneID << endl;
 	}
 	}
 }
