@@ -361,6 +361,21 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			exit(1);
 			}	
 			break;
+			
+			//Client requests battery percent
+		case 'b':
+			cout << "Client battery request" << endl;
+			//Client requests forward velocity
+		case 'f':
+			cout << "Client forward velocity request" << endl;
+			//Client requests sideways velocity
+		case 'w':
+			cout << "Client sideways velocity request" << endl;
+			//Client requests vertical velocity
+		case 'v':
+			cout << "Client vertical velocity request" << endl;
+			//Client requests sonar reading
+		case 'n':
 
 		default:
 			cout << "Error parsing raw command - invalid command character received." << endl;
@@ -643,9 +658,11 @@ void GaTACDroneControl::launchGrid() {
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
+	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
 	char thincSmartMessage[100];
 	char ardroneDriverMessage[100];
 	char flatTrimMessage[100];
+	char toggleCamMessage[100];
 
 	// Configure launch file and start core
 	configureLaunchFile();
@@ -663,15 +680,19 @@ void GaTACDroneControl::launchGrid() {
 		system(thincSmartMessage);
 		sleep(3);
 		if(droneID == 0)
-		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
-		if(droneID == 1)
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
+		if(droneID == 1)
+		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
 		cout << "publishing message: " << ardroneDriverMessage << endl;
 		system(ardroneDriverMessage);
 		sleep(5);
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
+		cout << "Toggled cam for drone " << droneID << endl;
+		sleep(5);
+		sprintf(toggleCamMessage, toggleCam, droneID, droneID);
+		system(toggleCamMessage);
 	}
 	}
 }
