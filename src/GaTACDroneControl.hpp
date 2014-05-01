@@ -111,6 +111,36 @@ public:
 	 * Used to set a client's "readyForCommands" boolean value
 	 */
 	void setClientReadyToCommand(bool);
+
+	/*
+	 * This method will return and print the current battery percentage to the client's display.
+         */
+	void getBattery(int);
+
+	/*
+	 * This method will return and print the current battery percentage to the client's display.
+         */
+	void getForwardVelocity(int);
+
+	/*
+	 * This method will return and print the current battery percentage to the client's display.
+         */
+	void getSidewaysVelocity(int);
+
+	/*
+	 * This method will return and print the current battery percentage to the client's display.
+         */
+	void getVerticalVelocity(int);
+
+	/*
+	 * This method will return and print the current battery percentage to the client's display.
+         */
+	void getSonar(int);
+
+	/*
+	 * This method will call the PrintNavdata service to return the requested data to the client.
+         */
+	string getData(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -206,8 +236,5 @@ private:
 	 * This method returns true if the maximum number of drones has already been spawned.
          */	
 	bool maxDrones();
-	
-
-};
 
 #endif

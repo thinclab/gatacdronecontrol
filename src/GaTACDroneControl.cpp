@@ -960,10 +960,48 @@ bool GaTACDroneControl::validLocation(int x, int y)
 	else
 	return true;
 }
+
 bool GaTACDroneControl::validGridSize(int x, int y)
 {	
 	if(x < 1 || y < 1 || x > 10 || y > 10)
 	return false;
 	else
 	return true;
+}
+void GaTACDroneControl::getBattery(int droneId)
+{
+	this->getData(droneId, 0);
+}
+void GaTACDroneControl::getForwardVelocity(int droneId)
+{
+	this->getData(droneId, 1);
+}
+void GaTACDroneControl::getSidewaysVelocity(int droneId)
+{
+	this->getData(droneId, 2);
+}
+void GaTACDroneControl::getVerticalVelocity(int droneId)
+{
+	this->getData(droneId, 3);
+}
+void GaTACDroneControl::getSonar(int droneId)
+{
+	this->getData(droneId, 4);
+}
+//Publishes request for relevant data to drone's PrintNavdata service, prints result in nice human readable string
+	
+string GaTACDroneControl::getData(int droneId, int option)
+{
+
+	//battery
+	if(option == 0)
+	//forward velocity
+	else if(option == 1)
+	//sideways velocity
+	else if(option == 2)
+	//vertical velocity
+	else if(option == 3)
+	//sonar
+	else if(option == 4)
+
 }
