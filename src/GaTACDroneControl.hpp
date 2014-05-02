@@ -140,7 +140,7 @@ public:
 	/*
 	 * This method will call the PrintNavdata service to return the requested data to the client.
          */
-	string getData(int, int);
+	std::string getData(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -236,5 +236,5 @@ private:
 	 * This method returns true if the maximum number of drones has already been spawned.
          */	
 	bool maxDrones();
-
+};
 #endif

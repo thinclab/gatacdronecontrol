@@ -992,16 +992,31 @@ void GaTACDroneControl::getSonar(int droneId)
 	
 string GaTACDroneControl::getData(int droneId, int option)
 {
-
+	char printNavMessage[BUFLEN];
+	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata %d %d"; //id...option id
+	int id = droneId;
 	//battery
-	if(option == 0)
-	//forward velocity
-	else if(option == 1)
-	//sideways velocity
-	else if(option == 2)
-	//vertical velocity
-	else if(option == 3)
-	//sonar
-	else if(option == 4)
+	if(option == 0){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 0);
+	system(printNavMessage);
+	}
+	else if(option == 1){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 1);
+	system(printNavMessage);
+	}
+	else if(option == 2){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 2);
+	system(printNavMessage);
+	}
+	else if(option == 3){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 3);
+	system(printNavMessage);
+	}
+	else if(option == 4){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 4);
+	system(printNavMessage);
+	}
 
+	return "getData";
 }
+
