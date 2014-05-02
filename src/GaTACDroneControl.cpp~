@@ -997,23 +997,23 @@ string GaTACDroneControl::getData(int droneId, int option)
 	int id = droneId;
 	//battery
 	if(option == 0){
-	sprintf(printNavMessage, printNavdataCommand, id, 0, id);
+	sprintf(printNavMessage, printNavdataCommand, id, id, 0);
 	system(printNavMessage);
 	}
 	else if(option == 1){
-	sprintf(printNavMessage, printNavdataCommand, id, 1, id);
+	sprintf(printNavMessage, printNavdataCommand, id, id, 1);
 	system(printNavMessage);
 	}
 	else if(option == 2){
-	sprintf(printNavMessage, printNavdataCommand, id, 2, id);
+	sprintf(printNavMessage, printNavdataCommand, id, id, 2);
 	system(printNavMessage);
 	}
 	else if(option == 3){
-	sprintf(printNavMessage, printNavdataCommand, id, 3, id);
+	sprintf(printNavMessage, printNavdataCommand, id, id, 3);
 	system(printNavMessage);
 	}
 	else if(option == 4){
-	sprintf(printNavMessage, printNavdataCommand, id, 4, id);
+	sprintf(printNavMessage, printNavdataCommand, id, id, 4);
 	system(printNavMessage);
 	}
 

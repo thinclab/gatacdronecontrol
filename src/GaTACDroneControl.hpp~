@@ -236,5 +236,5 @@ private:
 	 * This method returns true if the maximum number of drones has already been spawned.
          */	
 	bool maxDrones();
-
+};
 #endif

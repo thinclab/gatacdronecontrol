@@ -140,7 +140,7 @@ public:
 	/*
 	 * This method will call the PrintNavdata service to return the requested data to the client.
          */
-	std::string getData(int, int);
+	string getData(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
