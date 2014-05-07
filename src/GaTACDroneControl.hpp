@@ -118,24 +118,29 @@ public:
 	void getBattery(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current forward velocity to the client's display.
          */
 	void getForwardVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current sideways velocity to the client's display.
          */
 	void getSidewaysVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current vertical velocity to the client's display.
          */
 	void getVerticalVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current sonar reading to the client's display.
          */
 	void getSonar(int);
+
+	/*
+	 * This method will return and print data related to tag spotting.
+         */
+	void getTagSpotted(int);
 
 	/*
 	 * This method will call the PrintNavdata service to return the requested data to the client.
