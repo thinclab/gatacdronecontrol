@@ -988,6 +988,10 @@ void GaTACDroneControl::getSonar(int droneId)
 {
 	this->getData(droneId, 4);
 }
+void GaTACDroneControl::getTagSpotted(int droneId)
+{
+	this->getData(droneId, 5);
+}
 //Publishes request for relevant data to drone's PrintNavdata service, prints result in nice human readable string
 	
 string GaTACDroneControl::getData(int droneId, int option)
@@ -995,28 +999,68 @@ string GaTACDroneControl::getData(int droneId, int option)
 	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata %d %d"; //id...option id
 	int id = droneId;
+	string line;
+	cout<< "Printing requested Navdata: " << endl;
 	//battery
 	if(option == 0){
 	sprintf(printNavMessage, printNavdataCommand, id, id, 0);
 	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	getline(stream, line);
 	}
+	//forward velocity
 	else if(option == 1){
 	sprintf(printNavMessage, printNavdataCommand, id, id, 1);
 	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 1; ++i)
+  		getline(stream, line);
+	getline(stream, line);
 	}
+	//sideways velocity
 	else if(option == 2){
 	sprintf(printNavMessage, printNavdataCommand, id, id, 2);
 	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 2; ++i)
+  		getline(stream, line);
+	getline(stream, line);
 	}
+	//vertical velocity
 	else if(option == 3){
 	sprintf(printNavMessage, printNavdataCommand, id, id, 3);
 	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 3; ++i)
+  		getline(stream, line);
+	getline(stream, line);
 	}
+	//sonar 
 	else if(option == 4){
 	sprintf(printNavMessage, printNavdataCommand, id, id, 4);
 	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 4; ++i)
+  		getline(stream, line);
+	getline(stream, line);
 	}
-
+	//tags spotted data
+	else if(option == 5){
+	sprintf(printNavMessage, printNavdataCommand, id, id, 5);
+	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 4; ++i)
+  		getline(stream, line);
+	getline(stream, line);
+//	getline(stream, line);
+	}
+	cout<< line << endl;
 	return "getData";
 }
 
