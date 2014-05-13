@@ -33,15 +33,18 @@ int main() {
 	while(gatac.getClientReadyToCommand() == true){
 	gatac.move(id, 2, 4);
 	gatac.move(id, 3, 4);
+	gatac.getBattery(id);
 	gatac.move(id, 3, 2);
+	gatac.getBattery(id);
+	gatac.getForwardVelocity(id);
 	gatac.move(id, 2, 2);
+	gatac.getSidewaysVelocity(id);
 	gatac.move(id, 2, 4);
+	gatac.getVerticalVelocity(id);
 	gatac.move(id, 3, 4);
+	gatac.getSonar(id);	
 	gatac.move(id, 3, 2);
-	gatac.move(id, 2, 2);
-	gatac.move(id, 2, 4);
-	gatac.move(id, 3, 4);
-	gatac.move(id, 3, 2);
+	gatac.getTagSpotted(id);	
 	gatac.move(id, 2, 2);
 
 
