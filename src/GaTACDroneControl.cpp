@@ -997,13 +997,15 @@ void GaTACDroneControl::getTagSpotted(int droneId)
 string GaTACDroneControl::getData(int droneId, int option)
 {
 	char printNavMessage[BUFLEN];
-	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata %d %d"; //id...option id
+	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
 	int id = droneId;
+	int n = 0;
 	string line;
 	cout<< "Printing requested Navdata: " << endl;
 	//battery
 	if(option == 0){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 0);
+	if(id == 1)
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
@@ -1011,7 +1013,7 @@ string GaTACDroneControl::getData(int droneId, int option)
 	}
 	//forward velocity
 	else if(option == 1){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 1);
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
@@ -1021,7 +1023,7 @@ string GaTACDroneControl::getData(int droneId, int option)
 	}
 	//sideways velocity
 	else if(option == 2){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 2);
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
@@ -1031,7 +1033,7 @@ string GaTACDroneControl::getData(int droneId, int option)
 	}
 	//vertical velocity
 	else if(option == 3){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 3);
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
@@ -1041,7 +1043,7 @@ string GaTACDroneControl::getData(int droneId, int option)
 	}
 	//sonar 
 	else if(option == 4){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 4);
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
@@ -1051,7 +1053,7 @@ string GaTACDroneControl::getData(int droneId, int option)
 	}
 	//tags spotted data
 	else if(option == 5){
-	sprintf(printNavMessage, printNavdataCommand, id, id, 5);
+	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
