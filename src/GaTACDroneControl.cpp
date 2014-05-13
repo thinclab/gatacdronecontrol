@@ -967,29 +967,41 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 	else
 	return true;
 }
-void GaTACDroneControl::getBattery(int droneId)
+
+string GaTACDroneControl::getBattery(int droneId)
 {
 	this->getData(droneId, 0);
+	return this->batteryCurrent;
 }
-void GaTACDroneControl::getForwardVelocity(int droneId)
+
+string GaTACDroneControl::getForwardVelocity(int droneId)
 {
 	this->getData(droneId, 1);
+	return this->forwardVelocityCurrent;
 }
-void GaTACDroneControl::getSidewaysVelocity(int droneId)
+
+string GaTACDroneControl::getSidewaysVelocity(int droneId)
 {
 	this->getData(droneId, 2);
+	return this->sidewaysVelocityCurrent;
 }
-void GaTACDroneControl::getVerticalVelocity(int droneId)
+
+string GaTACDroneControl::getVerticalVelocity(int droneId)
 {
 	this->getData(droneId, 3);
+	return this->verticalVelocityCurrent;
 }
-void GaTACDroneControl::getSonar(int droneId)
+
+string GaTACDroneControl::getSonar(int droneId)
 {
 	this->getData(droneId, 4);
+	return this->sonarCurrent;
 }
-void GaTACDroneControl::getTagSpotted(int droneId)
+
+string GaTACDroneControl::getTagSpotted(int droneId)
 {
 	this->getData(droneId, 5);
+	return this->tagsCountCurrent;
 }
 //Publishes request for relevant data to drone's PrintNavdata service, prints result in nice human readable string
 	
