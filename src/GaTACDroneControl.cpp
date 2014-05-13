@@ -361,21 +361,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			exit(1);
 			}	
 			break;
-			
-			//Client requests battery percent
-		case 'b':
-			cout << "Client battery request" << endl;
-			//Client requests forward velocity
-		case 'f':
-			cout << "Client forward velocity request" << endl;
-			//Client requests sideways velocity
-		case 'w':
-			cout << "Client sideways velocity request" << endl;
-			//Client requests vertical velocity
-		case 'v':
-			cout << "Client vertical velocity request" << endl;
-			//Client requests sonar reading
-		case 'n':
 
 		default:
 			cout << "Error parsing raw command - invalid command character received." << endl;
