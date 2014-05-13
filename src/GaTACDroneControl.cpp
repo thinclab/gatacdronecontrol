@@ -890,7 +890,6 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	}
 	int xSend = dronePositions.at(droneId).first;
 	int ySend = dronePositions.at(droneId).second;
-	cout<<"-drone "<<droneId<<" moving-"<<endl;
 	sprintf(publishMessage, moveCommand, droneId, xSend, ySend, droneId);
 	system(publishMessage);                                     
 	if(sharedSpace() == true){
@@ -902,7 +901,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 		}
 	}		
 	}while ((dx != 0) || (dy != 0));
-
+	cout<<"Drone "<<droneId<<" moved to ("<<x<<", "<<y<<")" <<endl;
 
 }
 bool GaTACDroneControl::sharedSpace()
@@ -1004,60 +1003,112 @@ string GaTACDroneControl::getData(int droneId, int option)
 	cout<< "Printing requested Navdata: " << endl;
 	//battery
 	if(option == 0){
-	if(id == 1)
+	if(id == 0){
+	n = 0;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
 	getline(stream, line);
 	}
-	//forward velocity
-	else if(option == 1){
+	if(id == 1){
+	n = 5;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < 1; ++i)
+	for(int i = 0; i < n+1; ++i)
+  		getline(stream, line);
+	getline(stream, line);
+	}
+	if(id == 2){
+	n = 10;
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < n+1; ++i)
+  		getline(stream, line);
+	getline(stream, line);
+	}
+	}
+	//forward velocity
+	else if(option == 1){
+	if (id == 0)
+	n = 0;
+	if (id == 1)
+ 	n = 5;
+	if (id == 2)
+	n = 10;
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	sleep(3);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < n + 1; ++i)
   		getline(stream, line);
 	getline(stream, line);
 	}
 	//sideways velocity
 	else if(option == 2){
+	if (id == 0)
+	n = 0;
+	if (id == 1)
+ 	n = 5;
+	if (id == 2)
+	n = 10;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < 2; ++i)
+	for(int i = 0; i < n+2; ++i)
   		getline(stream, line);
 	getline(stream, line);
 	}
 	//vertical velocity
 	else if(option == 3){
+	if (id == 0)
+	n = 0;
+	if (id == 1)
+ 	n = 5;
+	if (id == 2)
+	n = 10;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < 3; ++i)
+	for(int i = 0; i < n + 3; ++i)
   		getline(stream, line);
 	getline(stream, line);
 	}
 	//sonar 
 	else if(option == 4){
+	if (id == 0)
+	n = 0;
+	if (id == 1)
+ 	n = 5;
+	if (id == 2)
+	n = 10;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < 4; ++i)
+	for(int i = 0; i < n + 4; ++i)
   		getline(stream, line);
 	getline(stream, line);
 	}
 	//tags spotted data
 	else if(option == 5){
+	if (id == 0)
+	n = 0;
+	if (id == 1)
+ 	n = 5;
+	if (id == 2)
+	n = 10;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
 	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < 5; ++i)
+	for(int i = 0; i < n + 5; ++i)
   		getline(stream, line);
 	getline(stream, line);
 //	getline(stream, line);
