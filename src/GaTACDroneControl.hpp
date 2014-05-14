@@ -143,6 +143,11 @@ public:
 	std::string getSonar(int);
 
 	/*
+	 * This method will return and print the current position of a given drone on the grid.
+         */
+	std::string getGridPosition(int);
+
+	/*
 	 * This method will return and print data related to tag spotting.
          */
 	std::string getTagSpotted(int);

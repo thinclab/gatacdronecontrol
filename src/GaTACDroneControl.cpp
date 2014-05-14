@@ -220,6 +220,29 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			break;
 
+		case 'h':
+			cout << "Hover." << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			strID << droneNumber;
+			strID >> droneNumberInt;
+		/* Now the server checks if the drone ID and location entered are valid */
+			// If grid hasn't been started
+			if (gridStartCheck() == false) {
+			errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
+			}	
+			// If drone ID isn't valid
+			else if (validDroneId(droneNumberInt) == false) {
+			errorMessage = invalidDroneId;
+			}
+		/* If server passes checks, client message processed */
+			else{
+			int x = dronePositions.at(droneNumberInt).first;
+			int y = dronePositions.at(droneNumberInt).second;
+			moveAndCheck(x, y, droneNumberInt);
+			}
+		//end moveAndCheck
+			break;
+
 		case 'r':
 			cout << "Reset." << endl;
 			droneNumber = (tokens.at(1)).c_str();
@@ -482,6 +505,16 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
 		char message[10];
 		sprintf(message, "m %d %d %d", droneId, x, y);
+		worked = sendMessage(message, serverSocket, srv);
+}
+
+void GaTACDroneControl::hover(int droneId) {
+
+	// Send command to server
+	bool worked = commandDrone('h', droneId);
+	printf("Sending command to make drone hover.\n", droneId, x, y);
+		char message[3];
+		sprintf(message, "h %d", droneId);
 		worked = sendMessage(message, serverSocket, srv);
 }
 
@@ -959,6 +992,14 @@ string GaTACDroneControl::getBattery(int droneId)
 	return this->batteryCurrent;
 }
 
+string GaTACDroneControl::getGridPosition(int droneId)
+{
+	int xPos = dronePositions.at(droneId).first;
+	int yPos = dronePositions.at(droneId).second;
+ 	string toReturn = "Drone position: (" << xPos <<", " << yPos << ")" << endl;
+	return toReturn;
+}
+
 string GaTACDroneControl::getForwardVelocity(int droneId)
 {
 	this->getData(droneId, 1);
@@ -1000,117 +1041,37 @@ string GaTACDroneControl::getData(int droneId, int option)
 	cout<< "Printing requested Navdata: " << endl;
 	//battery
 	if(option == 0){
-	if(id == 0){
-	n = 0;
+
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
 	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	getline(stream, line);
-	}
-	if(id == 1){
-	n = 5;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n+1; ++i)
-  		getline(stream, line);
-	getline(stream, line);
-	}
-	if(id == 2){
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n+1; ++i)
-  		getline(stream, line);
-	getline(stream, line);
-	}
+	bool navWorked = false;
+	cout << "Sending nav request to smartmain." << endl;
+		char message[2] = "0";
+		worked = sendMessage(message, serverSocket, srv);
+	
 	}
 	//forward velocity
 	else if(option == 1){
-	if (id == 0)
-	n = 0;
-	if (id == 1)
- 	n = 5;
-	if (id == 2)
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n + 1; ++i)
-  		getline(stream, line);
-	getline(stream, line);
+
 	}
 	//sideways velocity
 	else if(option == 2){
-	if (id == 0)
-	n = 0;
-	if (id == 1)
- 	n = 5;
-	if (id == 2)
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n+2; ++i)
-  		getline(stream, line);
-	getline(stream, line);
+
 	}
 	//vertical velocity
 	else if(option == 3){
-	if (id == 0)
-	n = 0;
-	if (id == 1)
- 	n = 5;
-	if (id == 2)
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n + 3; ++i)
-  		getline(stream, line);
-	getline(stream, line);
+
 	}
 	//sonar 
 	else if(option == 4){
-	if (id == 0)
-	n = 0;
-	if (id == 1)
- 	n = 5;
-	if (id == 2)
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n + 4; ++i)
-  		getline(stream, line);
-	getline(stream, line);
+
 	}
 	//tags spotted data
 	else if(option == 5){
-	if (id == 0)
-	n = 0;
-	if (id == 1)
- 	n = 5;
-	if (id == 2)
-	n = 10;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
-	sleep(3);
-	ifstream stream("currentNavdata.txt");
-	for(int i = 0; i < n + 5; ++i)
-  		getline(stream, line);
-	getline(stream, line);
-//	getline(stream, line);
+
 	}
 	cout<< line << endl;
-	return "getData";
+	return line;
 }
 
