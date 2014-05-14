@@ -82,6 +82,11 @@ public:
 	 */
 	void land(int);
 
+	/* 
+	 * This method allows a drone to hover.
+	 */
+	void hover(int);
+
 	/*
 	 * This method will make the specified drone take off.
 	 */
