@@ -20,6 +20,29 @@ using namespace std;
 #define DEFAULTCLIENTPORT2 5999
 #define DEFAULTCLIENTPORT3 6999
 
+/**
+ * @file	GaTACDroneControl.cpp
+ * @author  	Vince Capparell, Casey Hetzler
+ * @version	1.0
+ *
+ * @section LICENSE
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License version 3 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details at
+ * http://www.gnu.org/licenses/quick-guide-gplv3.html
+ *
+ * @section DESCRIPTION
+ * GaTACDroneControl allows grid-based movement, facilitated with client-server communication, for up to three (3) "Parrot AR.Drone" drone clients and one (1) multi-threaded     
+ * server process.
+ * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
+ */
+
+
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
