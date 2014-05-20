@@ -1066,10 +1066,21 @@ string GaTACDroneControl::getData(int droneId, int option)
 	else if(option == 1){
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
-	ifstream stream("currentNavdata.txt");
+	if(id == 0){
 	for(int i = 0; i < 1; ++i)
-  		getline(stream, line);
-	getline(stream, line);
+  		getline(stream0, line);
+	getline(stream0, line);
+	}
+	else if(id == 1){
+	for(int i = 0; i < 1; ++i)
+  		getline(stream1, line);
+	getline(stream1, line);
+	}
+	else if(id == 2){
+	for(int i = 0; i < 1; ++i)
+  		getline(stream2, line);
+	getline(stream2, line);
+	}
 	}
 	//sideways velocity
 	else if(option == 2){
