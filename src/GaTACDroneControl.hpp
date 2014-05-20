@@ -42,33 +42,45 @@ class GaTACDroneControl {
 public:
 	/*
 	 * Default constructor. Initializes all member variables.
+         * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
 	 */
 	GaTACDroneControl();
 
 	/*
 	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
+	 * @param If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
 	 */
-	GaTACDroneControl(const char* c);
+	GaTACDroneControl(const char*);
 
 	/*
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
+	 * @param The IP supplied for a client socket
+	 * @param The port number supplied for a client socket
+	 * @param The number of drones expected for this flight/server session
 	 */
 	void startServer(const char *, const char *, int);
 	/*
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
+	 * @param The IP supplied for a client socket
+	 * @param The port number supplied for a client socket
+	 * @param The ID of the thread this method is starting
 	 */
 	void runServer(const char *, const char *, int);
 
 	/*
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
 	 * is then stored in the current instance of GaTACDroneControl for later communication with the server.
+ 	 * @param The IP supplied for the server's socket
+	 * @param The port number supplied for the server's socket
 	 */
 	void launchClient(char *, char *);
 
 	/*
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
+	 * @param X-axis dimension
+	 * @param Y-axis dimension
 	 */
 	void setGridSize(int, int);
 
@@ -80,6 +92,8 @@ public:
 	/*
 	 * This method sets up a new drone. The size of the grid and initial
 	 * position of the drone on that grid must be specified.
+	 * @param Drone's initial position, X-axis
+	 * @param Drone's intiial position, Y-axis
 	 */
 	void setupDrone(int, int);
 
@@ -96,31 +110,39 @@ public:
 	void readyUp();
 	/*
 	 * This method will move the specified drone to the desired (x, y) position.
+	 * @param ID of drone to move
+	 * @param Drone's desired position, X-axis
+	 * @param Drone's desired position, Y-axis
 	 */
 	void move(int, int, int);
 
 	/*
 	 * This method will land the specified drone.
+	 * @param ID of drone to land
 	 */
 	void land(int);
 
 	/* 
 	 * This method allows a drone to hover.
+	 * @param ID of drone to hover
 	 */
 	void hover(int);
 
 	/*
 	 * This method will make the specified drone take off.
+	 * @param ID of drone to takeoff
 	 */
 	void takeoff(int);
 
 	/*
 	 * This method will trigger the reset mode for the specified drone.
+	 * @param ID of drone to reset
 	 */
 	void reset(int);
     
 	/*
 	 * Used to set a client's unique drone ID
+	 * @param Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
 	 */
 	void setClientUniqueId(int);
 
@@ -136,46 +158,56 @@ public:
 
 	/*
 	 * Used to set a client's "readyForCommands" boolean value
+	 * @param Boolean specifies whether or not client is ready to receive server commands
 	 */
 	void setClientReadyToCommand(bool);
 
 	/*
 	 * This method will return and print the current battery percentage to the client's display.
+	 * @param ID of drone to return navdata from
          */
 	std::string getBattery(int);
 
 	/*
 	 * This method will return and print the current forward velocity to the client's display.
+	 * @param ID of drone to return navdata from
          */
 	std::string getForwardVelocity(int);
 
 	/*
 	 * This method will return and print the current sideways velocity to the client's display.
+	 * @param ID of drone to return navdata from
          */
 	std::string getSidewaysVelocity(int);
 
 	/*
 	 * This method will return and print the current vertical velocity to the client's display.
+	 * @param ID of drone to return navdata from
          */
 	std::string getVerticalVelocity(int);
 
 	/*
 	 * This method will return and print the current sonar reading to the client's display.
+	 * @param ID of drone to return navdata from
          */
 	std::string getSonar(int);
 
 	/*
 	 * This method will return and print the current position of a given drone on the grid.
+	 * @param ID of drone to return navdata from
          */
 	std::string getGridPosition(int);
 
 	/*
 	 * This method will return and print data related to tag spotting.
+	 * @param ID of drone to return navdata from
          */
 	std::string getTagSpotted(int);
 
 	/*
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
+	 * @param ID of drone to return navdata from
+	 * @param Option of which data to receive, calls correct helper method (transparent to user)
          */
 	std::string getData(int, int);
 	
