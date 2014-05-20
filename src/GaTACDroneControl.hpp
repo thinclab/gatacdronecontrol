@@ -168,7 +168,7 @@ private:
 	bool gridStarted;
 	int serverThreads;
 	int clientUniqueId; //used to assign a unique drone ID to a client
-	string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; //used for drone-specific navdata
+	std::string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; //used for drone-specific navdata
 	bool readyToCommand; //so the server can ensure everything is ready before receiving commands
 	boost::thread* threads[2]; // used for multi threaded server
 

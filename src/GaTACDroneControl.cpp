@@ -1,6 +1,7 @@
 #include <iostream>
 #include <errno.h> // For printing error #'s/debugging
 #include <stdlib.h>
+#include <stdio.h>
 #include <sstream> // For converting chars to ints to update positions vector
 #include <fstream> // For editing files
 #include <boost/thread.hpp> // For concurrent flight
@@ -512,7 +513,7 @@ void GaTACDroneControl::hover(int droneId) {
 
 	// Send command to server
 	bool worked = commandDrone('h', droneId);
-	printf("Sending command to make drone hover.\n", droneId, x, y);
+	printf("Sending command to make drone hover.\n", droneId);
 		char message[3];
 		sprintf(message, "h %d", droneId);
 		worked = sendMessage(message, serverSocket, srv);
@@ -919,7 +920,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 		}
 	}		
 	}while ((dx != 0) || (dy != 0));
-	cout<<"Drone "<<droneId<<" moved to ("<<x<<", "<<y<<")" <<endl;
+	cout << this->getGridPosition(droneId) << endl;
 
 }
 bool GaTACDroneControl::sharedSpace()
@@ -989,45 +990,54 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 string GaTACDroneControl::getBattery(int droneId)
 {
 	this->getData(droneId, 0);
-	return this->batteryCurrent;
+	return "";
 }
 
 string GaTACDroneControl::getGridPosition(int droneId)
 {
+	std::stringstream strID;
+	std::stringstream strX;
+	std::stringstream strY;
 	int xPos = dronePositions.at(droneId).first;
 	int yPos = dronePositions.at(droneId).second;
- 	string toReturn = "Drone position: (" << xPos <<", " << yPos << ")" << endl;
+	strID << droneId;
+	strX << xPos;
+	strY << yPos;
+	string id_str = strID.str();
+	string x_str = strX.str();
+	string y_str = strY.str();
+ 	string toReturn = "Drone " + id_str + " position: (" + x_str + ", " + y_str + ")";
 	return toReturn;
 }
 
 string GaTACDroneControl::getForwardVelocity(int droneId)
 {
 	this->getData(droneId, 1);
-	return this->forwardVelocityCurrent;
+	return "";
 }
 
 string GaTACDroneControl::getSidewaysVelocity(int droneId)
 {
 	this->getData(droneId, 2);
-	return this->sidewaysVelocityCurrent;
+	return "";
 }
 
 string GaTACDroneControl::getVerticalVelocity(int droneId)
 {
 	this->getData(droneId, 3);
-	return this->verticalVelocityCurrent;
+	return "";
 }
 
 string GaTACDroneControl::getSonar(int droneId)
 {
 	this->getData(droneId, 4);
-	return this->sonarCurrent;
+	return "";
 }
 
 string GaTACDroneControl::getTagSpotted(int droneId)
 {
 	this->getData(droneId, 5);
-	return this->tagsCountCurrent;
+	return "";
 }
 //Publishes request for relevant data to drone's PrintNavdata service, prints result in nice human readable string
 	
@@ -1036,42 +1046,111 @@ string GaTACDroneControl::getData(int droneId, int option)
 	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
 	int id = droneId;
-	int n = 0;
 	string line;
+	ifstream stream0("currentNavdata0.txt");
+	ifstream stream1("currentNavdata1.txt");
+	ifstream stream2("currentNavdata2.txt");
 	cout<< "Printing requested Navdata: " << endl;
 	//battery
 	if(option == 0){
-
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
-	sleep(3);
-	bool navWorked = false;
-	cout << "Sending nav request to smartmain." << endl;
-		char message[2] = "0";
-		worked = sendMessage(message, serverSocket, srv);
-	
+	if(id == 0)
+	getline(stream0, line);
+	else if(id == 1)
+	getline(stream1, line);
+	else if(id == 2)
+	getline(stream2, line);
 	}
 	//forward velocity
 	else if(option == 1){
-
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	ifstream stream("currentNavdata.txt");
+	for(int i = 0; i < 1; ++i)
+  		getline(stream, line);
+	getline(stream, line);
 	}
 	//sideways velocity
 	else if(option == 2){
-
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	if(id == 0){
+	for(int i = 0; i < 2; ++i)
+  		getline(stream0, line);
+	getline(stream0, line);
+	}
+	else if(id == 1){
+	for(int i = 0; i < 2; ++i)
+  		getline(stream1, line);
+	getline(stream1, line);
+	}
+	else if(id == 2){
+	for(int i = 0; i < 2; ++i)
+  		getline(stream2, line);
+	getline(stream2, line);
+	}
 	}
 	//vertical velocity
 	else if(option == 3){
-
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	if(id == 0){
+	for(int i = 0; i < 3; ++i)
+  		getline(stream0, line);
+	getline(stream0, line);
+	}
+	else if(id == 1){
+	for(int i = 0; i < 3; ++i)
+  		getline(stream1, line);
+	getline(stream1, line);
+	}
+	else if(id == 2){
+	for(int i = 0; i < 3; ++i)
+  		getline(stream2, line);
+	getline(stream2, line);
+	}
 	}
 	//sonar 
 	else if(option == 4){
-
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	if(id == 0){
+	for(int i = 0; i < 4; ++i)
+  		getline(stream0, line);
+	getline(stream0, line);
+	}
+	else if(id == 1){
+	for(int i = 0; i < 4; ++i)
+  		getline(stream1, line);
+	getline(stream1, line);
+	}
+	else if(id == 2){
+	for(int i = 0; i < 4; ++i)
+  		getline(stream2, line);
+	getline(stream2, line);
+	}
 	}
 	//tags spotted data
 	else if(option == 5){
-
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	if(id == 0){
+	for(int i = 0; i < 5; ++i)
+  		getline(stream0, line);
+	getline(stream0, line);
+	}
+	else if(id == 1){
+	for(int i = 0; i < 5; ++i)
+  		getline(stream1, line);
+	getline(stream1, line);
+	}
+	else if(id == 2){
+	for(int i = 0; i < 5; ++i)
+  		getline(stream2, line);
+	getline(stream2, line);
+	}
 	}
 	cout<< line << endl;
-	return line;
+	return "getData";
 }
-
