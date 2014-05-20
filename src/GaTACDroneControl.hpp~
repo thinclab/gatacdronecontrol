@@ -82,6 +82,11 @@ public:
 	 */
 	void land(int);
 
+	/* 
+	 * This method allows a drone to hover.
+	 */
+	void hover(int);
+
 	/*
 	 * This method will make the specified drone take off.
 	 */
@@ -115,30 +120,40 @@ public:
 	/*
 	 * This method will return and print the current battery percentage to the client's display.
          */
-	void getBattery(int);
+	std::string getBattery(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current forward velocity to the client's display.
          */
-	void getForwardVelocity(int);
+	std::string getForwardVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current sideways velocity to the client's display.
          */
-	void getSidewaysVelocity(int);
+	std::string getSidewaysVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current vertical velocity to the client's display.
          */
-	void getVerticalVelocity(int);
+	std::string getVerticalVelocity(int);
 
 	/*
-	 * This method will return and print the current battery percentage to the client's display.
+	 * This method will return and print the current sonar reading to the client's display.
          */
-	void getSonar(int);
+	std::string getSonar(int);
 
 	/*
-	 * This method will call the PrintNavdata service to return the requested data to the client.
+	 * This method will return and print the current position of a given drone on the grid.
+         */
+	std::string getGridPosition(int);
+
+	/*
+	 * This method will return and print data related to tag spotting.
+         */
+	std::string getTagSpotted(int);
+
+	/*
+	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
          */
 	std::string getData(int, int);
 	
@@ -153,6 +168,7 @@ private:
 	bool gridStarted;
 	int serverThreads;
 	int clientUniqueId; //used to assign a unique drone ID to a client
+	string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; //used for drone-specific navdata
 	bool readyToCommand; //so the server can ensure everything is ready before receiving commands
 	boost::thread* threads[2]; // used for multi threaded server
 

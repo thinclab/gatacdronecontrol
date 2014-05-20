@@ -386,6 +386,36 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}	
 			break;
 
+			//Client requests battery percent
+		case 'b':
+			cout << "Client battery request" << endl;
+			this->getData(droneId, 0);
+
+			//Client requests forward velocity
+		case 'f':
+			cout << "Client forward velocity request" << endl;
+			this->getData(droneId, 1);
+
+			//Client requests sideways velocity
+		case 'w':
+			cout << "Client sideways velocity request" << endl;
+			this->getData(droneId, 2);
+
+			//Client requests vertical velocity
+		case 'v':
+			cout << "Client vertical velocity request" << endl;
+			this->getData(droneId, 3);
+
+			//Client requests sonar reading
+		case 'n':
+			cout << "Client sonar reading request" << endl;
+			this->getData(droneId, 4);
+
+			//Client requests tags spotted reading
+		case 'p':
+			cout << "Client tag spotted request" << endl;
+			this->getData(droneId, 5);
+
 		default:
 			cout << "Error parsing raw command - invalid command character received." << endl;
 			break;
@@ -987,12 +1017,6 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 	return true;
 }
 
-string GaTACDroneControl::getBattery(int droneId)
-{
-	this->getData(droneId, 0);
-	return "";
-}
-
 string GaTACDroneControl::getGridPosition(int droneId)
 {
 	std::stringstream strID;
@@ -1010,7 +1034,13 @@ string GaTACDroneControl::getGridPosition(int droneId)
 	return toReturn;
 }
 
-string GaTACDroneControl::getForwardVelocity(int droneId)
+string GaTACDroneControl::getBattery(int droneId)
+{
+	this->getData(droneId, 0);
+	return "";
+}
+
+void GaTACDroneControl::getForwardVelocity(int droneId)
 {
 	this->getData(droneId, 1);
 	return "";
@@ -1162,6 +1192,5 @@ string GaTACDroneControl::getData(int droneId, int option)
 	getline(stream2, line);
 	}
 	}
-	cout<< line << endl;
-	return "getData";
+	return line;
 }
