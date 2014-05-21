@@ -170,31 +170,31 @@ public:
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param ID of drone to return navdata from
          */
-	std::string getBattery(int);
+	void getBattery(int);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
-	std::string getForwardVelocity(int);
+	void getForwardVelocity(int);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
-	std::string getSidewaysVelocity(int);
+	void getSidewaysVelocity(int);
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
-	std::string getVerticalVelocity(int);
+	void getVerticalVelocity(int);
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
 	 * @param ID of drone to return navdata from
          */
-	std::string getSonar(int);
+	void getSonar(int);
 
 	/**
 	 * This method will return and print the current position of a given drone on the grid.
@@ -206,14 +206,15 @@ public:
 	 * This method will return and print data related to tag spotting.
 	 * @param ID of drone to return navdata from
          */
-	std::string getTagSpotted(int);
+	void getTagSpotted(int);
 
 	/**
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
 	 * @param ID of drone to return navdata from
 	 * @param Option of which data to receive, calls correct helper method (transparent to user)
+	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
-	std::string getData(int, int);
+	const char* getData(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
