@@ -716,7 +716,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'b' || cmdCheck == 'f' ||
 				cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
 			success = true;
-			for(int i = 0; i < BUFLEN; i++){
+			for(int i = 0; i < strlen(receiveBuffer); i++){
 			cout << receiveBuffer[i]; 
 			}
 			cout << endl;
