@@ -227,7 +227,6 @@ private:
 	bool gridStarted; //!< Indicates to server whather theg rid has been started and ROS nodes for each drone have been initialized
 	int serverThreads; //!< Indicates to server the number of threads currently running to process client requests
 	int clientUniqueId; //!< ID unique to this client's drone
-	std::string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; 
 	bool readyToCommand; //!< Indicates to server whether everything is ready before sending out commands
 	boost::thread* threads[2]; //!< Used to keep track of currently operating threads
 
