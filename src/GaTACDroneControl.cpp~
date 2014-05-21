@@ -310,7 +310,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			else if (validLocation(xInt, yInt) == false) {
 				errorMessage = invalidLocation;
 			}
-
 			if (errorMessage != "none") {
 			printf("Error: couldn't move drone. %s\n", errorMessage.c_str());
 			}
@@ -458,14 +457,14 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			navDataToSend = this->getData(droneInt, 5);
 			break;
 
-
+			//Default case, for command characters that are undefined
 		default:
 			cout << "Error parsing raw command - invalid command character received." << endl;
 			break;
 		}
 
 		// Sending acknowledgment message to client
-		int len = strlen(receiveBuffer);
+		int len = BUFLEN;
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
@@ -493,11 +492,10 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		//If command was nav request, response is a human-readable string describing and displaying the value of navdata requested
 		else if(rawCommand == 'b' || rawCommand == 'v' ||
 			rawCommand == 'f' || rawCommand == 'n' ||
-			rawCommand == 'w' || rawCommand == 'p'){
+			rawCommand == 'w' || rawCommand == 'p'  ){
 		strcpy(navBuffer, navDataToSend);
 		int numSent = 0;
-		sleep(5);
-		if ((numSent = sendto(sock, navBuffer, strlen(navBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+		if ((numSent = sendto(sock, navBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
 			exit(1);
 		}
@@ -687,14 +685,14 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 
 	// Sending message
 	int bytesSent = 0;
-	if ((bytesSent = sendto(socket, sendBuffer, strlen(sendBuffer), 0, addrInfo->ai_addr, addrInfo->ai_addrlen)) == -1) {
+	if ((bytesSent = sendto(socket, sendBuffer, BUFLEN, 0, addrInfo->ai_addr, addrInfo->ai_addrlen)) == -1) {
 		cout << "Error sending message to server with errno: " << errno << endl;
 		success = false;
 	}
 
 	// Waiting for feedback (ensuring that the server received our message)
 	int bytesReceived = 0;
-	if ((bytesReceived = recvfrom(socket, receiveBuffer, strlen(sendBuffer), 0, NULL, NULL)) == -1) {
+	if ((bytesReceived = recvfrom(socket, receiveBuffer, BUFLEN, 0, NULL, NULL)) == -1) {
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {
@@ -719,7 +717,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 				cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
 			success = true;
 			for(int i = 0; i < BUFLEN; i++){
-			cout << receiveBuffer[i]; 
+			cout << i << " : " << receiveBuffer[i]; 
 			}
 			cout << endl;
 		} else {

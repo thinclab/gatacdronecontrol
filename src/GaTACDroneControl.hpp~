@@ -214,7 +214,7 @@ public:
 	 * @param Option of which data to receive, calls correct helper method (transparent to user)
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
-	const char getData(int, int);
+	const char* getData(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
