@@ -242,6 +242,13 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			sprintf(publishMessage, publishCommand, droneNumber, "land");
 			system(publishMessage);
 			sleep(3); // Wait for drone to land completely
+			// Delete drone's navdata file
+			if(droneInt == 0)
+				remove("currentNavdata0.txt");
+			else if(droneInt == 1)
+				remove("currentNavdata1.txt");
+			else if(droneInt == 2)	  
+				remove("currentNavdata2.txt");
 			}
 			break;
 
