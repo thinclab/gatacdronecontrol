@@ -40,26 +40,27 @@ using std::pair;
 
 class GaTACDroneControl {
 public:
-	/*
+	/**
 	 * Default constructor. Initializes all member variables.
          * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
 	 */
 	GaTACDroneControl();
 
-	/*
+	/**
 	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
 	 * @param If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
 	 */
 	GaTACDroneControl(const char*);
 
-	/*
+	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
 	 * @param The IP supplied for a client socket
 	 * @param The port number supplied for a client socket
 	 * @param The number of drones expected for this flight/server session
 	 */
 	void startServer(const char *, const char *, int);
-	/*
+
+	/**
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
@@ -69,7 +70,7 @@ public:
 	 */
 	void runServer(const char *, const char *, int);
 
-	/*
+	/**
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
 	 * is then stored in the current instance of GaTACDroneControl for later communication with the server.
  	 * @param The IP supplied for the server's socket
@@ -77,19 +78,19 @@ public:
 	 */
 	void launchClient(char *, char *);
 
-	/*
+	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
 	 * @param X-axis dimension
 	 * @param Y-axis dimension
 	 */
 	void setGridSize(int, int);
 
-	/*
+	/**
 	 * This method closes the UDP client socket.
 	 */
 	void closeClient();
 
-	/*
+	/**
 	 * This method sets up a new drone. The size of the grid and initial
 	 * position of the drone on that grid must be specified.
 	 * @param Drone's initial position, X-axis
@@ -97,18 +98,19 @@ public:
 	 */
 	void setupDrone(int, int);
 
-	/*
+	/**
 	 * This method will start the drone simulator with size and number/location of drones
 	 * as specified by previous method calls.
 	 */
 	void startGrid();
 
-	/*
+	/**
 	 * This method is called by a client to send a ready message in multi-client environments.
 	 * When a server has received one from each client, it makes the decision to start the grid.
 	 */
 	void readyUp();
-	/*
+
+	/**
 	 * This method will move the specified drone to the desired (x, y) position.
 	 * @param ID of drone to move
 	 * @param Drone's desired position, X-axis
@@ -116,95 +118,97 @@ public:
 	 */
 	void move(int, int, int);
 
-	/*
+	/**
 	 * This method will land the specified drone.
 	 * @param ID of drone to land
 	 */
 	void land(int);
 
-	/* 
+	/**
 	 * This method allows a drone to hover.
 	 * @param ID of drone to hover
 	 */
 	void hover(int);
 
-	/*
+	/**
 	 * This method will make the specified drone take off.
 	 * @param ID of drone to takeoff
 	 */
 	void takeoff(int);
 
-	/*
+	/**
 	 * This method will trigger the reset mode for the specified drone.
 	 * @param ID of drone to reset
 	 */
 	void reset(int);
     
-	/*
+	/**
 	 * Used to set a client's unique drone ID
 	 * @param Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
 	 */
 	void setClientUniqueId(int);
 
-	/*
+	/**
 	 * Used to get a client's unique drone ID
+	 * @return Client's unique drone ID
 	 */
 	int getClientUniqueId();
 	
-	/*
+	/**
 	 * Used to get a client's "readyForCommands" boolean value
+	 * @return Boolean value that tells whether a client is ready to receive commands
 	 */
 	bool getClientReadyToCommand();
 
-	/*
+	/**
 	 * Used to set a client's "readyForCommands" boolean value
 	 * @param Boolean specifies whether or not client is ready to receive server commands
 	 */
 	void setClientReadyToCommand(bool);
 
-	/*
+	/**
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param ID of drone to return navdata from
          */
 	std::string getBattery(int);
 
-	/*
+	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
 	std::string getForwardVelocity(int);
 
-	/*
+	/**
 	 * This method will return and print the current sideways velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
 	std::string getSidewaysVelocity(int);
 
-	/*
+	/**
 	 * This method will return and print the current vertical velocity to the client's display.
 	 * @param ID of drone to return navdata from
          */
 	std::string getVerticalVelocity(int);
 
-	/*
+	/**
 	 * This method will return and print the current sonar reading to the client's display.
 	 * @param ID of drone to return navdata from
          */
 	std::string getSonar(int);
 
-	/*
+	/**
 	 * This method will return and print the current position of a given drone on the grid.
 	 * @param ID of drone to return navdata from
          */
 	std::string getGridPosition(int);
 
-	/*
+	/**
 	 * This method will return and print data related to tag spotting.
 	 * @param ID of drone to return navdata from
          */
 	std::string getTagSpotted(int);
 
-	/*
+	/**
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
 	 * @param ID of drone to return navdata from
 	 * @param Option of which data to receive, calls correct helper method (transparent to user)
@@ -213,97 +217,125 @@ public:
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
-	vector<pair<int, int> > dronePositions;//updates at every movement with current position for each drone
-	struct addrinfo *srv;
-	vector<int> dronesSharingSpace; //for keeping track of shared cells
-	vector<bool> clientsReady; //for keeping track of shared cells
-	bool simulatorMode;
-	bool gridSizeSet;//global variables due to multi-client use
-	bool gridStarted;
-	int serverThreads;
-	int clientUniqueId; //used to assign a unique drone ID to a client
-	std::string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; //used for drone-specific navdata
-	bool readyToCommand; //so the server can ensure everything is ready before receiving commands
-	boost::thread* threads[2]; // used for multi threaded server
+	vector<pair<int, int> > dronePositions; //!< Updates at every movement with current position for each drone
+	struct addrinfo *srv; //!< Struct containing server socket data
+	vector<int> dronesSharingSpace; //!< Updates to keep track of shared cells
+	vector<bool> clientsReady; //!< Indicates which clients are ready to receive commands
+	bool simulatorMode; //!< Indicates whether the client-server session is operating on real or simulated drones
+	bool gridSizeSet; //!< Indicates to server whether the grid size has been set
+	bool gridStarted; //!< Indicates to server whather theg rid has been started and ROS nodes for each drone have been initialized
+	int serverThreads; //!< Indicates to server the number of threads currently running to process client requests
+	int clientUniqueId; //!< ID unique to this client's drone
+	std::string batteryCurrent, sonarCurrent, forwardVelocityCurrent, sidewaysVelocityCurrent, verticalVelocityCurrent, tagsCountCurrent, tagsTypeCurrent; 
+	bool readyToCommand; //!< Indicates to server whether everything is ready before sending out commands
+	boost::thread* threads[2]; //!< Used to keep track of currently operating threads
 
-	/*
+	/**
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
+	 * @param Command to send to client, indicated by a single char
+	 * @param ID of drone in question
+	 * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
 	 */
 	bool commandDrone(char, int);
 
-	/*
+	/**
 	 * This method sends the message specified through the main UDP socket
 	 * to whatever machine is currently running the drone server. Returns a bool value depending on
 	 * whether the specified destination received the message and sent an acknowledgement back.
+	 * @param The message to be sent, as a string of characters
+	 * @param The socket to send to
+	 * @param A struct of socket address information
+	 * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
 	 */
 	bool sendMessage(char *, int, struct addrinfo *);
 
-	/*
+	/**
 	 * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,
 	 * and with any drones that have been set up via the setUpDrone method.
 	 * 
-	 * ***When using real drones, this method instead prepares the ROS nodes for each drone.***
+	 * ***NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone.***
 	 */
 	void launchGrid();
 
-	/*
+	/**
 	 * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.
 	 * The user will specify a grid size (A x B), and this method will find the Gazebo coordinates of (0, 0) on the user's grid.
+	 * @param User grid's X-axis origin
+	 * @param User grid's Y-axis origin
 	 */
 	void getGazeboOrigin(int&, int&);
 
-	/*
+	/**
 	 * This method modifies the grid_flight.launch file used by Gazebo to start the simulator.
 	 * It specifies the grid size and number/starting position of all drones.
+	 * 
+	 * ***NOTE: Directory to create launch file in can be specified here.***
 	 */
 	void configureLaunchFile();
 	
-	/*
-	 * This method varies the altitude of each drone as a fucntion of their ID
+	/**
+	 * This method varies the altitude of each drone as a function of their ID
 	 * (Larger ID = higher flight)
+	 * @param ID of the drone being elevated
 	 */
 	void varyHeights(int);
 	
-	/*
+	/**
 	 * This method takes movement parameters and sends waypoint messages one cell at a time.
 	 * As movements are made, it updates the position of moving drone and checks for shared cells
-	 * using sharedSpace() method.
+	 * using sharedSpace() method. On completion of desired movement, drone's final destination is printed on the server terminal.
+	 * @param Desired X-axis destination
+	 * @param Desired Y-axis destination
+	 * @param ID of the drone being moved
 	 */
 	void moveAndCheck(int, int, int);
 	
-	/*
+	/**
 	 * This method compares current locations of drones and returns true if a cell is being shared.
 	 * Additionally, it updates a vector of which drones are sharing a cell.
+   	 * If a shared cell is detected, the coordinates and drone ID's are printed to server terminal.
+	 * @return Boolean indicating whether a cell on the grid is occupied by two or more drones; true indicates a shared cell is detected
 	 */
 	bool sharedSpace();
 	
-	/*
+	/**
 	 * This method returns the value of boolean gridSizeSet, which lets the server check if the grid size has been set.
+	 * @return Boolean indicating whether the grid size has been set, true if the size has already been set
          */	
 	bool gridSizeCheck();
 
-	/*
-	 * This method returns the value of boolean gridStarted, which lets the server check if the grid size has been set.
+	/**
+	 * This method returns the value of boolean gridStarted, which lets the server know if the grid has been started and the drones' ROS nodes have been initialized
+	 * @return Boolean indicating whether the grid has started and ROS nodes have been initialized, true if the size has already been set
          */	
 	bool gridStartCheck();
 
-	/*
+	/**
 	 * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
+	 * @param Drone ID to be verified
+	 * @return Boolean indicating whether the given drone ID is currently on the grid, true if the ID is in use and drone is present
          */	
 	bool validDroneId(int);
 
-	/*
+	/**
 	 * This method returns true if a location sent by the client is within the bounds of the grid.
+	 * @param X-axis value to be verified
+	 * @param Y-axis value to be verified
+	 * @return Boolean indicating the given location is on the grid, true if the location is valid
          */	
 	bool validLocation(int, int);
 	
-	/*
+	/**
 	 * This method returns true if a client-set grid is between 0x0 and 10x10.
+	 * @param X-axis dimension to be verified
+	 * @param Y-axis dimension to be verified
+	 * @return Boolean indicating whether the specified grid dimensions are valid, true if valid
          */	
 	bool validGridSize(int, int);
 
-	/*
+	/**
 	 * This method returns true if the maximum number of drones has already been spawned.
+         * @return Boolean indicating whether 3 drones are already on the grid, true if this is the case
          */	
 	bool maxDrones();
 };
