@@ -48,15 +48,15 @@ public:
 
 	/**
 	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
-	 * @param If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
+	 * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
 	 */
 	GaTACDroneControl(const char*);
 
 	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
-	 * @param The IP supplied for a client socket
-	 * @param The port number supplied for a client socket
-	 * @param The number of drones expected for this flight/server session
+	 * @param remoteIP The IP supplied for a client socket
+	 * @param remotePort The port number supplied for a client socket
+	 * @param expectedDrones The number of drones expected for this flight/server session
 	 */
 	void startServer(const char *, const char *, int);
 
@@ -64,24 +64,24 @@ public:
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
 	 * The machine running this main server must therefore have all necessary ROS packages installed.
-	 * @param The IP supplied for a client socket
-	 * @param The port number supplied for a client socket
-	 * @param The ID of the thread this method is starting
+	 * @param remoteIP The IP supplied for a client socket
+	 * @param remotePort The port number supplied for a client socket
+	 * @param threadNo The ID of the thread this method is starting
 	 */
 	void runServer(const char *, const char *, int);
 
 	/**
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
 	 * is then stored in the current instance of GaTACDroneControl for later communication with the server.
- 	 * @param The IP supplied for the server's socket
-	 * @param The port number supplied for the server's socket
+ 	 * @param serverIp The IP supplied for the server's socket
+	 * @param serverPort The port number supplied for the server's socket
 	 */
 	void launchClient(char *, char *);
 
 	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
-	 * @param X-axis dimension
-	 * @param Y-axis dimension
+	 * @param numberOfColumns X-axis dimension
+	 * @param numberOfRows Y-axis dimension
 	 */
 	void setGridSize(int, int);
 
@@ -93,8 +93,8 @@ public:
 	/**
 	 * This method sets up a new drone. The size of the grid and initial
 	 * position of the drone on that grid must be specified.
-	 * @param Drone's initial position, X-axis
-	 * @param Drone's intiial position, Y-axis
+	 * @param droneCol Drone's initial position, X-axis
+	 * @param droneRow Drone's intiial position, Y-axis
 	 */
 	void setupDrone(int, int);
 
@@ -112,39 +112,39 @@ public:
 
 	/**
 	 * This method will move the specified drone to the desired (x, y) position.
-	 * @param ID of drone to move
-	 * @param Drone's desired position, X-axis
-	 * @param Drone's desired position, Y-axis
+	 * @param droneId ID of drone to move
+	 * @param x Drone's desired position, X-axis
+	 * @param y Drone's desired position, Y-axis
 	 */
 	void move(int, int, int);
 
 	/**
 	 * This method will land the specified drone.
-	 * @param ID of drone to land
+	 * @param droneId ID of drone to land
 	 */
 	void land(int);
 
 	/**
 	 * This method allows a drone to hover.
-	 * @param ID of drone to hover
+	 * @param droneId ID of drone to hover
 	 */
 	void hover(int);
 
 	/**
 	 * This method will make the specified drone take off.
-	 * @param ID of drone to takeoff
+	 * @param droneId ID of drone to takeoff
 	 */
 	void takeoff(int);
 
 	/**
 	 * This method will trigger the reset mode for the specified drone.
-	 * @param ID of drone to reset
+	 * @param droneId ID of drone to reset
 	 */
 	void reset(int);
     
 	/**
 	 * Used to set a client's unique drone ID
-	 * @param Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
+	 * @param toSet Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
 	 */
 	void setClientUniqueId(int);
 
@@ -162,56 +162,57 @@ public:
 
 	/**
 	 * Used to set a client's "readyForCommands" boolean value
-	 * @param Boolean specifies whether or not client is ready to receive server commands
+	 * @param toSet Boolean specifies whether or not client is ready to receive server commands
 	 */
 	void setClientReadyToCommand(bool);
 
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getBattery(int);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getForwardVelocity(int);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getSidewaysVelocity(int);
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getVerticalVelocity(int);
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getSonar(int);
 
 	/**
 	 * This method will return and print the current position of a given drone on the grid.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
+	 * @return human-readable string denoting the drone's current location on the grid
          */
 	std::string getGridPosition(int);
 
 	/**
 	 * This method will return and print data related to tag spotting.
-	 * @param ID of drone to return navdata from
+	 * @param droneId ID of drone to return navdata from
          */
 	void getTagSpotted(int);
 
 	/**
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
-	 * @param ID of drone to return navdata from
-	 * @param Option of which data to receive, calls correct helper method (transparent to user)
+	 * @param droneId ID of drone to return navdata from
+	 * @param option Option of which data to receive, calls correct helper method (transparent to user)
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
 	const char* getData(int, int);
@@ -232,8 +233,8 @@ private:
 
 	/**
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
-	 * @param Command to send to client, indicated by a single char
-	 * @param ID of drone in question
+	 * @param command Command to send to client, indicated by a single char
+	 * @param droneId ID of drone in question
 	 * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
 	 */
 	bool commandDrone(char, int);
@@ -242,9 +243,9 @@ private:
 	 * This method sends the message specified through the main UDP socket
 	 * to whatever machine is currently running the drone server. Returns a bool value depending on
 	 * whether the specified destination received the message and sent an acknowledgement back.
-	 * @param The message to be sent, as a string of characters
-	 * @param The socket to send to
-	 * @param A struct of socket address information
+	 * @param message The message to be sent, as a string of characters
+	 * @param socket The socket to send to
+	 * @param addrinfo A struct of socket address information
 	 * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
 	 */
 	bool sendMessage(char *, int, struct addrinfo *);
@@ -260,8 +261,8 @@ private:
 	/**
 	 * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.
 	 * The user will specify a grid size (A x B), and this method will find the Gazebo coordinates of (0, 0) on the user's grid.
-	 * @param User grid's X-axis origin
-	 * @param User grid's Y-axis origin
+	 * @param x User grid's X-axis origin
+	 * @param y User grid's Y-axis origin
 	 */
 	void getGazeboOrigin(int&, int&);
 
@@ -276,7 +277,7 @@ private:
 	/**
 	 * This method varies the altitude of each drone as a function of their ID
 	 * (Larger ID = higher flight)
-	 * @param ID of the drone being elevated
+	 * @param droneNumber ID of the drone being elevated
 	 */
 	void varyHeights(int);
 	
@@ -284,9 +285,9 @@ private:
 	 * This method takes movement parameters and sends waypoint messages one cell at a time.
 	 * As movements are made, it updates the position of moving drone and checks for shared cells
 	 * using sharedSpace() method. On completion of desired movement, drone's final destination is printed on the server terminal.
-	 * @param Desired X-axis destination
-	 * @param Desired Y-axis destination
-	 * @param ID of the drone being moved
+	 * @param x Desired X-axis destination
+	 * @param y Desired Y-axis destination
+	 * @param Id ID of the drone being moved
 	 */
 	void moveAndCheck(int, int, int);
 	
@@ -312,23 +313,23 @@ private:
 
 	/**
 	 * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
-	 * @param Drone ID to be verified
+	 * @param id Drone ID to be verified
 	 * @return Boolean indicating whether the given drone ID is currently on the grid, true if the ID is in use and drone is present
          */	
 	bool validDroneId(int);
 
 	/**
 	 * This method returns true if a location sent by the client is within the bounds of the grid.
-	 * @param X-axis value to be verified
-	 * @param Y-axis value to be verified
+	 * @param x X-axis value to be verified
+	 * @param y Y-axis value to be verified
 	 * @return Boolean indicating the given location is on the grid, true if the location is valid
          */	
 	bool validLocation(int, int);
 	
 	/**
 	 * This method returns true if a client-set grid is between 0x0 and 10x10.
-	 * @param X-axis dimension to be verified
-	 * @param Y-axis dimension to be verified
+	 * @param x X-axis dimension to be verified
+	 * @param y Y-axis dimension to be verified
 	 * @return Boolean indicating whether the specified grid dimensions are valid, true if valid
          */	
 	bool validGridSize(int, int);

@@ -42,7 +42,10 @@ using namespace std;
  * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
  */
 
-
+/**
+ * Default constructor. Initializes all member variables.
+ * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
+ */
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
@@ -51,6 +54,10 @@ GaTACDroneControl::GaTACDroneControl() {
 	serverThreads = 0;	
 }
 
+/**
+ * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
+ * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
+ */
 GaTACDroneControl::GaTACDroneControl(const char* c) {
 	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
@@ -58,6 +65,13 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	srv = NULL;
 	serverThreads = 0;
 }
+
+/**
+ * This method is called by the GaTAC server. It begins a new server thread for each drone started.
+ * @param remoteIP The IP supplied for a client socket
+ * @param remotePort The port number supplied for a client socket
+ * @param expectedDrones The number of drones expected for this flight/server session
+ */
 void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
 	cout << "Main server running." << endl;	
 	for(int i = 0; i < expectedDrones; i++)
@@ -84,6 +98,15 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
 	}
 
 }
+
+/**
+ * This method sets up the main UDP socket server. It loops continuously, parsing the input
+ * received from the UDP socket and launching the correct ROS services on the machine it's running on.
+ * The machine running this main server must therefore have all necessary ROS packages installed.
+ * @param remoteIP The IP supplied for a client socket
+ * @param remotePort The port number supplied for a client socket
+ * @param threadNo The ID of the thread this method is starting
+ */
 void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	char localport[4];
@@ -521,6 +544,12 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 	close(sock);
 }
 
+/**
+ * This method sets up the main UDP socket client. Once created, all relevant socket information
+ * is then stored in the current instance of GaTACDroneControl for later communication with the server.
+ * @param serverIp The IP supplied for the server's socket
+ * @param serverPort The port number supplied for the server's socket
+ */
 void GaTACDroneControl::launchClient(char *serverIp, char *serverPort) {
 	char *host = serverIp;
 	char *port = serverPort;
@@ -563,6 +592,10 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort) {
 	sleep(3);
 }
 
+/**
+ * This method will start the drone simulator with size and number/location of drones
+ * as specified by previous method calls.
+ */
 void GaTACDroneControl::startGrid() {
 	bool worked = false;
 		cout << "Sending command to start grid." << endl;
@@ -570,6 +603,10 @@ void GaTACDroneControl::startGrid() {
 		worked = sendMessage(message, serverSocket, srv);
 }
 
+/**
+ * This method is called by a client to send a ready message in multi-client environments.
+ * When a server has received one from each client, it makes the decision to start the grid.
+ */
 void GaTACDroneControl::readyUp() {
 	bool worked = false;
 		cout << "Sending ready message to server." << endl;
@@ -577,6 +614,11 @@ void GaTACDroneControl::readyUp() {
 		worked = sendMessage(message, serverSocket, srv);
 }
 
+/**
+ * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
+ * @param numberOfColumns X-axis dimension
+ * @param numberOfRows Y-axis dimension
+ */
 void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 	bool worked = false;
 	// Send command to server
@@ -592,6 +634,12 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 		}
 }
 
+/**
+ * This method will move the specified drone to the desired (x, y) position.
+ * @param droneId ID of drone to move
+ * @param x Drone's desired position, X-axis
+ * @param y Drone's desired position, Y-axis
+ */
 void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
 	// Send command to server, checks for valid ID and location done server-side	
@@ -601,6 +649,10 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 		worked = sendMessage(message, serverSocket, srv);
 }
 
+/**
+ * This method allows a drone to hover.
+ * @param droneId ID of drone to hover
+ */
 void GaTACDroneControl::hover(int droneId) {
 
 	// Send command to server
@@ -611,6 +663,10 @@ void GaTACDroneControl::hover(int droneId) {
 		worked = sendMessage(message, serverSocket, srv);
 }
 
+/**
+ * This method will land the specified drone.
+ * @param droneId ID of drone to land
+ */
 void GaTACDroneControl::land(int droneId) {
 	printf("Sending command to land drone #%d.\n", droneId);
 
@@ -622,6 +678,10 @@ void GaTACDroneControl::land(int droneId) {
 	}
 }
 
+/**
+ * This method will make the specified drone take off.
+ * @param droneId ID of drone to takeoff
+ */
 void GaTACDroneControl::takeoff(int droneId) {
 	printf("Sending command to takeoff drone #%d.\n", droneId);
 
@@ -633,6 +693,10 @@ void GaTACDroneControl::takeoff(int droneId) {
 	}
 }
 
+/**
+ * This method will trigger the reset mode for the specified drone.
+ * @param droneId ID of drone to reset
+ */
 void GaTACDroneControl::reset(int droneId) {
 	printf("Sending command to reset drone #%d.\n", droneId);
 
@@ -644,6 +708,12 @@ void GaTACDroneControl::reset(int droneId) {
 	}
 }
 
+/**
+ * This method sets up a new drone. The size of the grid and initial
+ * position of the drone on that grid must be specified.
+ * @param droneCol Drone's initial position, X-axis
+ * @param droneRow Drone's intiial position, Y-axis
+ */
 void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	bool worked = false;
 	// Send command to server
@@ -653,27 +723,46 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 		worked = sendMessage(msg, serverSocket, srv);
 }
 
+/**
+ * This method closes the UDP client socket.
+ */
 void GaTACDroneControl::closeClient() {
 	close(serverSocket);
 	this->setClientReadyToCommand(false);
 	freeaddrinfo(srv);
 }
 
+/**
+ * Used to set a client's unique drone ID
+ * @param toSet Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
+ */
 void GaTACDroneControl::setClientUniqueId(int toSet)
 {
  this->clientUniqueId = toSet;
 }
 
+/**
+ * Used to get a client's unique drone ID
+ * @return Client's unique drone ID
+ */
 int GaTACDroneControl::getClientUniqueId()
 {
  return this->clientUniqueId;
 }
 
+/**
+ * Used to set a client's "readyForCommands" boolean value
+ * @param toSet Boolean specifies whether or not client is ready to receive server commands
+ */
 void GaTACDroneControl::setClientReadyToCommand(bool toSet)
 {
  this->readyToCommand = toSet;
 }
 
+/**
+ * Used to get a client's "readyForCommands" boolean value
+ * @return Boolean value that tells whether a client is ready to receive commands
+ */
 bool GaTACDroneControl::getClientReadyToCommand()
 {
  return this->readyToCommand;
@@ -683,6 +772,15 @@ bool GaTACDroneControl::getClientReadyToCommand()
  * Private Methods
  */
 
+/**
+ * This method sends the message specified through the main UDP socket
+ * to whatever machine is currently running the drone server. Returns a bool value depending on
+ * whether the specified destination received the message and sent an acknowledgement back.
+ * @param message The message to be sent, as a string of characters
+ * @param socket The socket to send to
+ * @param addrinfo A struct of socket address information
+ * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
+ */
 bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *addrInfo) {
 	bool success = false;
 	char sendBuffer[BUFLEN];
@@ -737,6 +835,12 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 	return success;
 }
 
+/**
+ * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
+ * @param command Command to send to client, indicated by a single char
+ * @param droneId ID of drone in question
+ * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
+ */
 bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	bool success = false;
 	// Send command to server
@@ -747,6 +851,12 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	return success;
 }
 
+/**
+ * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,
+ * and with any drones that have been set up via the setUpDrone method.
+ * 
+ * ***NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone.***
+ */
 void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == true */	
 	if(simulatorMode == true){
@@ -817,6 +927,12 @@ void GaTACDroneControl::launchGrid() {
 	}
 }
 
+/**
+ * This method modifies the grid_flight.launch file used by Gazebo to start the simulator.
+ * It specifies the grid size and number/starting position of all drones.
+ * 
+ * ***NOTE: Directory to create launch file in can be specified here.***
+ */
 void GaTACDroneControl::configureLaunchFile() {
 	cout << "Configuring launch file." << endl;
 	/* simulatorMode == true */
@@ -955,10 +1071,22 @@ void GaTACDroneControl::configureLaunchFile() {
 	}
 }
 
+/**
+ * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.
+ * The user will specify a grid size (A x B), and this method will find the Gazebo coordinates of (0, 0) on the user's grid.
+ * @param x User grid's X-axis origin
+ * @param y User grid's Y-axis origin
+ */
 void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
 	x = (-1) * (numberOfRows - 1);
 	y = numberOfColumns - 1;
 }
+
+/**
+ * This method varies the altitude of each drone as a function of their ID
+ * (Larger ID = higher flight)
+ * @param droneNumber ID of the drone being elevated
+ */
 void GaTACDroneControl::varyHeights(int droneNumber)
 {
 	/* simulatorMode == true and false */
@@ -981,6 +1109,15 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 		
 	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;
 }
+
+/**
+ * This method takes movement parameters and sends waypoint messages one cell at a time.
+ * As movements are made, it updates the position of moving drone and checks for shared cells
+ * using sharedSpace() method. On completion of desired movement, drone's final destination is printed on the server terminal.
+ * @param x Desired X-axis destination
+ * @param y Desired Y-axis destination
+ * @param Id ID of the drone being moved
+ */
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
@@ -1031,6 +1168,13 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	cout << "Drone " << droneId << "hovering." << endl;
 	}
 }
+
+/**
+ * This method compares current locations of drones and returns true if a cell is being shared.
+ * Additionally, it updates a vector of which drones are sharing a cell.
+ * If a shared cell is detected, the coordinates and drone ID's are printed to server terminal.
+ * @return Boolean indicating whether a cell on the grid is occupied by two or more drones; true indicates a shared cell is detected
+ */
 bool GaTACDroneControl::sharedSpace()
 {	
 	/* simulatorMode == true and false */
@@ -1056,6 +1200,11 @@ bool GaTACDroneControl::sharedSpace()
 	}
 	return sharing;
 }
+
+/**
+ * This method returns true if the maximum number of drones has already been spawned.
+ * @return Boolean indicating whether 3 drones are already on the grid, true if this is the case
+ */
 bool GaTACDroneControl::maxDrones()
 {	
 	if(numberOfDrones == 3)
@@ -1064,6 +1213,11 @@ bool GaTACDroneControl::maxDrones()
 	return false;
 }
 
+/**
+ * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
+ * @param id Drone ID to be verified
+ * @return Boolean indicating whether the given drone ID is currently on the grid, true if the ID is in use and drone is present
+ */	
 bool GaTACDroneControl::validDroneId(int id)
 {	
 	if(id < 0 || id > (numberOfDrones))
@@ -1071,14 +1225,31 @@ bool GaTACDroneControl::validDroneId(int id)
 	else
 	return true;
 }
+
+/**
+ * This method returns the value of boolean gridSizeSet, which lets the server check if the grid size has been set.
+ * @return Boolean indicating whether the grid size has been set, true if the size has already been set
+ */	
 bool GaTACDroneControl::gridSizeCheck()
 {	
 	return gridSizeSet;
 }
+
+/**
+ * This method returns the value of boolean gridStarted, which lets the server know if the grid has been started and the drones' ROS nodes have been initialized
+ * @return Boolean indicating whether the grid has started and ROS nodes have been initialized, true if the size has already been set
+ */
 bool GaTACDroneControl::gridStartCheck()
 {
 	return gridStarted;
 }
+
+/**
+ * This method returns true if a location sent by the client is within the bounds of the grid.
+ * @param x X-axis value to be verified
+ * @param y Y-axis value to be verified
+ * @return Boolean indicating the given location is on the grid, true if the location is valid
+ */	
 bool GaTACDroneControl::validLocation(int x, int y)
 {	
 	if(x < 0 || y < 0 || x >= numberOfColumns || y >= numberOfRows)
@@ -1087,6 +1258,12 @@ bool GaTACDroneControl::validLocation(int x, int y)
 	return true;
 }
 
+/**
+ * This method returns true if a client-set grid is between 0x0 and 10x10.
+ * @param x X-axis dimension to be verified
+ * @param y Y-axis dimension to be verified
+ * @return Boolean indicating whether the specified grid dimensions are valid, true if valid
+ */	
 bool GaTACDroneControl::validGridSize(int x, int y)
 {	
 	if(x < 1 || y < 1 || x > 10 || y > 10)
@@ -1095,6 +1272,11 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 	return true;
 }
 
+/**
+ * This method will return and print the current position of a given drone on the grid.
+ * @param droneId ID of drone to return navdata from
+ * @return human-readable string denoting the drone's current location on the grid
+ */
 string GaTACDroneControl::getGridPosition(int droneId)
 {
 	std::stringstream strID;
@@ -1112,6 +1294,10 @@ string GaTACDroneControl::getGridPosition(int droneId)
 	return toReturn;
 }
 
+/**
+ * This method will return and print the current battery percentage to the client's display.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getBattery(int droneId)
 {
 	printf("Sending command to print battery percentage, drone #%d.\n", droneId);
@@ -1123,6 +1309,10 @@ void GaTACDroneControl::getBattery(int droneId)
 	}
 }
 
+/**
+ * This method will return and print the current forward velocity to the client's display.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getForwardVelocity(int droneId)
 {
 	printf("Sending command to print forward velocity, drone #%d.\n", droneId);
@@ -1134,6 +1324,10 @@ void GaTACDroneControl::getForwardVelocity(int droneId)
 	}
 }
 
+/**
+ * This method will return and print the current sideways velocity to the client's display.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getSidewaysVelocity(int droneId)
 {
 	printf("Sending command to print sideways velocity, drone #%d.\n", droneId);
@@ -1145,6 +1339,10 @@ void GaTACDroneControl::getSidewaysVelocity(int droneId)
 	}
 }
 
+/**
+ * This method will return and print the current vertical velocity to the client's display.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getVerticalVelocity(int droneId)
 {
 	printf("Sending command to print vertical velocity, drone #%d.\n", droneId);
@@ -1156,6 +1354,10 @@ void GaTACDroneControl::getVerticalVelocity(int droneId)
 	}
 }
 
+/**
+ * This method will return and print the current sonar reading to the client's display.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getSonar(int droneId)
 {
 	printf("Sending command to print sonar reading, drone #%d.\n", droneId);
@@ -1167,6 +1369,10 @@ void GaTACDroneControl::getSonar(int droneId)
 	}
 }
 
+/**
+ * This method will return and print data related to tag spotting.
+ * @param droneId ID of drone to return navdata from
+ */
 void GaTACDroneControl::getTagSpotted(int droneId)
 {
 	printf("Sending command to print tag spotted data, drone #%d.\n", droneId);
@@ -1177,8 +1383,13 @@ void GaTACDroneControl::getTagSpotted(int droneId)
 		exit(1);
 	}
 }
-//Publishes request for relevant data to drone's PrintNavdata service, prints result in nice human readable string
-	
+
+/**
+ * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
+ * @param droneId ID of drone to return navdata from
+ * @param option Option of which data to receive, calls correct helper method (transparent to user)
+ * @return Human-readable string of characters describing and displaying the value of navdata desired
+ */	
 const char* GaTACDroneControl::getData(int droneId, int option)
 {
 	char printNavMessage[BUFLEN];
