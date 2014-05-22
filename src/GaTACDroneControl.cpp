@@ -720,6 +720,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 			success = true;
 			this->setClientReadyToCommand(true);
 			cout << "Server received the command!" << endl;
+		//Special case: if message was a navdata print command, client receives a string of data and prints it to display
 		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'b' || cmdCheck == 'f' ||
 				cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
 			success = true;
@@ -989,6 +990,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	int dy = dronePositions.at(droneId).second - y;
 	//Using same logic as ardrone_thinc.cpp file, send messages for movement one cell at a time
 	/* simulatorMode == true and false */
+	if(!(dx == 0 && dy == 0)){	
 	do
 	{
 	if(dx > 0){
@@ -1021,7 +1023,13 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	}		
 	}while ((dx != 0) || (dy != 0));
 	cout << this->getGridPosition(droneId) << endl;
-
+	}
+	else if(dx == 0 && dy == 0)
+	{
+	sprintf(publishMessage, moveCommand, droneId, x, y, droneId);
+	system(publishMessage);   
+	cout << "Drone " << droneId << "hovering." << endl;
+	}
 }
 bool GaTACDroneControl::sharedSpace()
 {	
