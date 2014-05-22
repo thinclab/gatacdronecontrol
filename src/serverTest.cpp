@@ -17,7 +17,7 @@ int main() {
 	GaTACDroneControl gatac;
 
 	// Run drone server
-	gatac.startServer(ip, port, 1);
+	gatac.startServer(ip, port, 2);
         
 	sleep(300);
        

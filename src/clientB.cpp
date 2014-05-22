@@ -31,15 +31,21 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-	gatac.move(id, 1, 5);
-	gatac.move(id, 4, 5);
-	gatac.move(id, 4, 1);
-	gatac.move(id, 1, 1);
-	gatac.move(id, 1, 5);
-	gatac.move(id, 4, 5);
-	gatac.move(id, 4, 1);
-	gatac.move(id, 1, 1);
-
+	gatac.move(id, 1, 4);
+	gatac.move(id, 2, 4);
+	gatac.getBattery(id);
+	gatac.move(id, 2, 2);
+	gatac.getBattery(id);
+	gatac.getForwardVelocity(id);
+	gatac.move(id, 1, 2);
+	gatac.getSidewaysVelocity(id);
+	gatac.move(id, 1, 4);
+	gatac.getVerticalVelocity(id);
+	gatac.move(id, 2, 4);
+	gatac.getSonar(id);	
+	gatac.move(id, 2, 2);
+	gatac.getTagSpotted(id);	
+	gatac.move(id, 1, 2);
 	//Drones land
 	gatac.land(id);
 	

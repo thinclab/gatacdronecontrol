@@ -21,7 +21,7 @@ int main() {
 	gatac.setGridSize(5, 8);
 	
 	//set up drone
-	gatac.setupDrone(0, 1); // Spawn drone at (2, 2)
+	gatac.setupDrone(0, 0); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
@@ -31,14 +31,21 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-	gatac.move(id, 2, 5);
-	gatac.move(id, 3, 5);
+	gatac.move(id, 2, 3);
+	gatac.move(id, 3, 3);
+	gatac.getBattery(id);
 	gatac.move(id, 3, 1);
-	gatac.move(id, 0, 1);
-	gatac.move(id, 2, 5);
-	gatac.move(id, 3, 5);
+	gatac.getBattery(id);
+	gatac.getForwardVelocity(id);
+	gatac.move(id, 2, 1);
+	gatac.getSidewaysVelocity(id);
+	gatac.move(id, 2, 3);
+	gatac.getVerticalVelocity(id);
+	gatac.move(id, 3, 3);
+	gatac.getSonar(id);	
 	gatac.move(id, 3, 1);
-	gatac.move(id, 0, 1);
+	gatac.getTagSpotted(id);	
+	gatac.move(id, 2, 1);
 
 	//Drones land
 	gatac.land(id);
