@@ -1164,7 +1164,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	}
 	else if(dx == 0 && dy == 0)
 	{
-	sprintf(publishMessage, moveCommand, droneId, 0 , 0, droneId);
+	sprintf(publishMessage, moveCommand, droneId, x, y, droneId);
 	system(publishMessage);   
 	cout << "Drone " << droneId << "hovering." << endl;
 	}
