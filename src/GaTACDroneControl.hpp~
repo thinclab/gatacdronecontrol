@@ -219,17 +219,61 @@ public:
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
-	vector<pair<int, int> > dronePositions; //!< Updates at every movement with current position for each drone
-	struct addrinfo *srv; //!< Struct containing server socket data
-	vector<int> dronesSharingSpace; //!< Updates to keep track of shared cells
-	vector<bool> clientsReady; //!< Indicates which clients are ready to receive commands
-	bool simulatorMode; //!< Indicates whether the client-server session is operating on real or simulated drones
-	bool gridSizeSet; //!< Indicates to server whether the grid size has been set
-	bool gridStarted; //!< Indicates to server whather theg rid has been started and ROS nodes for each drone have been initialized
-	int serverThreads; //!< Indicates to server the number of threads currently running to process client requests
-	int clientUniqueId; //!< ID unique to this client's drone
-	bool readyToCommand; //!< Indicates to server whether everything is ready before sending out commands
-	boost::thread* threads[2]; //!< Used to keep track of currently operating threads
+
+	/**
+	 * @brief Updates at every movement with current position for each drone
+	 */
+	vector<pair<int, int> > dronePositions; 
+
+	/**
+	 * @brief Struct containing server socket data
+	 */
+	struct addrinfo *srv; 
+
+	/**
+	 * @brief Updates to keep track of shared cells
+	 */	
+	vector<int> dronesSharingSpace; 
+
+	/**
+	 * @brief Indicates which clients are ready to receive commands
+	 */	
+	vector<bool> clientsReady; 
+
+	/**
+	 * @brief Indicates whether the client-server session is operating on real or simulated drones
+	 */
+	bool simulatorMode;  
+	
+	/**
+	 * @brief Indicates to server whether the grid size has been set
+	 */
+	bool gridSizeSet;
+	
+	/**
+	 * @brief Indicates to server whether the grid has been started and ROS nodes for each drone have been initialized
+	 */
+	bool gridStarted;
+
+	/**
+	 * @brief Indicates to server the number of threads currently running to process client requests
+	 */
+	int serverThreads; 
+
+	/**
+	 * @brief ID unique to this client's drone
+	 */
+	int clientUniqueId; 
+	
+	/**
+	 * @brief Indicates to server whether everything is ready before sending out commands
+	 */
+	bool readyToCommand;
+	
+	/**
+	 * @brief Used to keep track of currently operating threads
+	 */
+	boost::thread* threads[2];
 
 	/**
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.

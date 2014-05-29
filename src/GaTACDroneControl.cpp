@@ -910,9 +910,9 @@ void GaTACDroneControl::launchGrid() {
 		system(thincSmartMessage);
 		sleep(3);
 		if(droneID == 0)
-		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
-		if(droneID == 1)
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
+		if(droneID == 1)
+		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
 		cout << "publishing message: " << ardroneDriverMessage << endl;
 		system(ardroneDriverMessage);
 		sleep(5);
@@ -921,8 +921,8 @@ void GaTACDroneControl::launchGrid() {
 		cout << "Flattened trim for drone " << droneID << endl;
 		cout << "Toggled cam for drone " << droneID << endl;
 		sleep(5);
-		sprintf(toggleCamMessage, toggleCam, droneID, droneID);
-		system(toggleCamMessage);
+	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
+		system(toggleCamMessage);   */
 	}
 	}
 }
@@ -1014,6 +1014,7 @@ void GaTACDroneControl::configureLaunchFile() {
 	}
 	/* simulatorMode == false */
 	if(simulatorMode == false){
+	/* change enemy_type value to “1″, “2″, or “3″, depending on whether your tags are Orange-Green-Orange, Orange-Yellow-Orange or Orange-Blue-Orange respectively */
 	// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
 	const char *startingText =
 			"<?xml version=\"1.0\"?>\n\n"
@@ -1021,12 +1022,12 @@ void GaTACDroneControl::configureLaunchFile() {
 	const char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-				"<include file=\"$(find ardrone_autonomy)/launch/ardrone.launch\" >\n\t\t\t"
+				"<include file=\"$(find gatacdronecontrol)/src/launch/tagDetectLaunch.launch\" >\n\t\t\t"
 				"</include>\n\t"
 			"</group>\n\n";
 	const char *endingText = "</launch>";
 
-	// Open launch file. Check what ROS distribution is currently being used
+	// Open launch file. Check what ROS distribution is currently being used 
 	char *distro = getenv("ROS_DISTRO"); 
 	if(distro == NULL){
 		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
@@ -1036,7 +1037,7 @@ void GaTACDroneControl::configureLaunchFile() {
 	// Assume launch file is located in default stacks directory for current ROS distribution
 	char launchFilePath[100];
         // sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro);    /* File path on gray laptop */
-        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/two_real_flight.launch", distro);
+        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
 	// Open file stream
 	ofstream fileStream(launchFilePath, ios::trunc);
 
@@ -1097,7 +1098,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 	const char *variableHeightTakeoff2 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,0]' '[0,0,0]'&"; //stops lifting
 
 		double kDub = (double) droneNumber;
-		float vHt = (float) (kDub+1.0)/10;
+		float vHt = (float) (kDub+0.5)/10;
 		strID << droneNumber;
 		temp = strID.str();		
 		sprintf(publishMessage, variableHeightTakeoff1, temp.c_str(), vHt);
@@ -1107,7 +1108,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 		strID.str("");
 		dronesSharingSpace.push_back(false);
 		
-	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;
+	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;          
 }
 
 /**
@@ -1121,7 +1122,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
-	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
+	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d&"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
@@ -1163,7 +1164,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	}
 	else if(dx == 0 && dy == 0)
 	{
-	sprintf(publishMessage, moveCommand, droneId, x, y, droneId);
+	sprintf(publishMessage, moveCommand, droneId, 0 , 0, droneId);
 	system(publishMessage);   
 	cout << "Drone " << droneId << "hovering." << endl;
 	}
