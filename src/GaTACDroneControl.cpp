@@ -1520,8 +1520,26 @@ const char* GaTACDroneControl::getData(int droneId, int option)
  */
 int GaTACDroneControl::senseNorth(int droneId)
 {
-
+	xCurrent = dronePositions.at(droneId).first;
+	yCurrent = dronePositions.at(droneId).second;
+	
+	//cycles through current drone positions and tests them against querying client position
+	for(int k = 0; k <dronePositions.size(); k++)
+	{
+	if(droneId != k){
+		//case: another drone is not North of subject drone
+		if((dronePositions.at(k).second <= yCurrent))	
+			return 0;
+		//case: another drone is 1 square North of subject drone
+		else if((dronePositions.at(k).second == yCurrent + 1))	
+			return 1;
+		//case: another drone is 2 or more squares North of subject drone
+		else if((dronePositions.at(k).second >= yCurrent + 2))
+			return 2;
+		}
+	}
 }
+
 
 /**
  * This message allows a client to query the server whether another drone is below the client's drone on the grid.
@@ -1530,7 +1548,24 @@ int GaTACDroneControl::senseNorth(int droneId)
  */
 int GaTACDroneControl::senseSouth(int droneId)
 {
-
+	xCurrent = dronePositions.at(droneId).first;
+	yCurrent = dronePositions.at(droneId).second;
+	
+	//cycles through current drone positions and tests them against querying client position
+	for(int k = 0; k <dronePositions.size(); k++)
+	{
+	if(droneId != k){
+		//case: another drone is not North of subject drone
+		if((dronePositions.at(k).second >= yCurrent))	
+			return 0;
+		//case: another drone is 1 square North of subject drone
+		else if((dronePositions.at(k).second == yCurrent - 1))	
+			return 1;
+		//case: another drone is 2 or more squares North of subject drone
+		else if((dronePositions.at(k).second <= yCurrent - 2))
+			return 2;
+		}
+	}
 }
 
 /**
@@ -1540,7 +1575,24 @@ int GaTACDroneControl::senseSouth(int droneId)
  */
 int GaTACDroneControl::senseEast(int droneId)
 {
-
+	xCurrent = dronePositions.at(droneId).first;
+	yCurrent = dronePositions.at(droneId).second;
+	
+	//cycles through current drone positions and tests them against querying client position
+	for(int k = 0; k <dronePositions.size(); k++)
+	{
+	if(droneId != k){
+		//case: another drone is not North of subject drone
+		if((dronePositions.at(k).first <= xCurrent))	
+			return 0;
+		//case: another drone is 1 square North of subject drone
+		else if((dronePositions.at(k).first == xCurrent + 1))	
+			return 1;
+		//case: another drone is 2 or more squares North of subject drone
+		else if((dronePositions.at(k).first >= xCurrent + 2))
+			return 2;
+		}
+	}
 }
 
 /**
@@ -1550,5 +1602,22 @@ int GaTACDroneControl::senseEast(int droneId)
  */
 int GaTACDroneControl::senseWest(int droneId)
 {
-
+	xCurrent = dronePositions.at(droneId).first;
+	yCurrent = dronePositions.at(droneId).second;
+	
+	//cycles through current drone positions and tests them against querying client position
+	for(int k = 0; k <dronePositions.size(); k++)
+	{
+	if(droneId != k){
+		//case: another drone is not North of subject drone
+		if((dronePositions.at(k).first >= xCurrent))	
+			return 0;
+		//case: another drone is 1 square North of subject drone
+		else if((dronePositions.at(k).first == xCurrent - 1))	
+			return 1;
+		//case: another drone is 2 or more squares North of subject drone
+		else if((dronePositions.at(k).first <= xCurrent - 2))
+			return 2;
+		}
+	}
 }
