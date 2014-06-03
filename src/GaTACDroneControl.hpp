@@ -383,5 +383,33 @@ private:
          * @return Boolean indicating whether 3 drones are already on the grid, true if this is the case
          */	
 	bool maxDrones();
+
+	/**
+	 * This message allows a client to query the server whether another drone is above the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
+	 */
+	int senseNorth(int);
+
+	/**
+	 * This message allows a client to query the server whether another drone is below the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @return 0 if no drone is below client drone, 1 if another drone is within one square below, 2 if another drone is greater than one square below
+	 */
+	int senseSouth(int);
+	
+	/**
+	 * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @return 0 if no drone is to the right of client drone, 1 if another drone is within one square to the right, 2 if another drone is greater than one square to the right
+	 */
+	int senseEast(int);
+
+	/**
+	 * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @return 0 if no drone is to the left of client drone, 1 if another drone is within one square to the left, 2 if another drone is greater than one square to the left
+	 */
+	int senseWest(int);
 };
 #endif

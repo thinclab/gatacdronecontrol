@@ -884,7 +884,7 @@ void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == false */	
 	if(simulatorMode == false){
 	const char *coreMessage = "xterm -e roscore&";
-	const char *launchMessage = "xterm -e roslaunch gatacdronecontrol two_real_flight.launch&";
+	const char *launchMessage = "xterm -e roslaunch gatacdronecontrol tagLaunch.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
@@ -909,20 +909,20 @@ void GaTACDroneControl::launchGrid() {
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 		sleep(3);
-		if(droneID == 0)
-		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
-		if(droneID == 1)
+/*		if(droneID == 0)
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
+		if(droneID == 1)
+		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
 		cout << "publishing message: " << ardroneDriverMessage << endl;
-		system(ardroneDriverMessage);
+		system(ardroneDriverMessage);                                               */                  
 		sleep(5);
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
 		cout << "Toggled cam for drone " << droneID << endl;
 		sleep(5);
-	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
-		system(toggleCamMessage);   */
+		sprintf(toggleCamMessage, toggleCam, droneID, droneID);
+		system(toggleCamMessage);   
 	}
 	}
 }
@@ -939,137 +939,135 @@ void GaTACDroneControl::configureLaunchFile() {
 	if(simulatorMode == true){
 	// The following strings match the formatting of the grid_flight.launch file found in the thinc_sim_gazebo ros package (in the launch folder).
 	const char *genTextureText =
-			"<?xml version=\"1.0\"?>\n\n"
-			"<launch>\n\t"
-				"<node\n\t\t"
-					"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
-					"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
-				"/>\n\t";
-	const char *genDaeText =
-			"<node\n\t\t"
-				"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
-				"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
-			"/>\n\n\t"
-			"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
-			"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
-			"<!-- Spawn simulated quadrotor uav -->\n";
-	const char *droneText =
-			"\t<group ns=\"drone%d\">\n\t\t"
-				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-				"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
-					"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
-					"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
-					"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
-				"</include>\n\t"
-			"</group>\n\n";
-	const char *endingText = "</launch>";
+	"<?xml version=\"1.0\"?>\n\n"
+	"<launch>\n\t"
+	"<node\n\t\t"
+	"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
+"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
+"/>\n\t";
+const char *genDaeText =
+"<node\n\t\t"
+"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
+"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
+"/>\n\n\t"
+"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
+"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
+"<!-- Spawn simulated quadrotor uav -->\n";
+const char *droneText =
+"\t<group ns=\"drone%d\">\n\t\t"
+"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
+"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
+"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
+"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
+"</include>\n\t"
+"</group>\n\n";
+const char *endingText = "</launch>";
 
-	// Open launch file. Check what ROS distribution is currently being used
-	char *distro = getenv("ROS_DISTRO"); 
-	if(distro == NULL){
-		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-		exit(1);
-	}
+// Open launch file. Check what ROS distribution is currently being used
+char *distro = getenv("ROS_DISTRO");
+if(distro == NULL){
+cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
+exit(1);
+}
 
-	// Assume launch file is located in default stacks directory for current ROS distribution
-	char launchFilePath[100];
-        // sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro);    /* File path on gray laptop */
-        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
-	
+// Assume launch file is located in default stacks directory for current ROS distribution
+char launchFilePath[100];
+// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
+sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
 // Open file stream
-	ofstream fileStream(launchFilePath, ios::trunc);
+ofstream fileStream(launchFilePath, ios::trunc);
 
-	// Write gen_texture and gen_dae text to file
-	char textureBuffer[strlen(genTextureText) + 1];
-	char daeBuffer[strlen(genDaeText) + 1];
-	sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
-	sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
+// Write gen_texture and gen_dae text to file
+char textureBuffer[strlen(genTextureText) + 1];
+char daeBuffer[strlen(genDaeText) + 1];
+sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
+sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
 
-	if (fileStream.is_open()) {
-		fileStream << textureBuffer;
-		fileStream << daeBuffer;
-	}
+if (fileStream.is_open()) {
+fileStream << textureBuffer;
+fileStream << daeBuffer;
+}
 
-	// Find coordinates of (0,0) in Gazebo terms
-	int originX, originY;
-	getGazeboOrigin(originX, originY);
+// Find coordinates of (0,0) in Gazebo terms
+int originX, originY;
+getGazeboOrigin(originX, originY);
 
-	// Write all drone sub-launch text to file
-	int droneID;
-	float droneX, droneY;
-	char droneBuffer[strlen(droneText)];
-	if (fileStream.is_open()) {
-		for (int i = 0; i < numberOfDrones; i++) {
-			droneID = i;
-			droneX = originX + (2 * dronePositions.at(droneID).second);
-			droneY = originY - (2 * dronePositions.at(droneID).first);
-			sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
-			fileStream << droneBuffer;
-		}
-		fileStream << endingText;
-	}
+// Write all drone sub-launch text to file
+int droneID;
+float droneX, droneY;
+char droneBuffer[strlen(droneText)];
+if (fileStream.is_open()) {
+for (int i = 0; i < numberOfDrones; i++) {
+droneID = i;
+droneX = originX + (2 * dronePositions.at(droneID).second);
+droneY = originY - (2 * dronePositions.at(droneID).first);
+sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+fileStream << droneBuffer;
+}
+fileStream << endingText;
+}
 
-	// Close file stream
-	fileStream.close();
-	}
-	/* simulatorMode == false */
-	if(simulatorMode == false){
-	/* change enemy_type value to “1″, “2″, or “3″, depending on whether your tags are Orange-Green-Orange, Orange-Yellow-Orange or Orange-Blue-Orange respectively */
-	// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
-	const char *startingText =
-			"<?xml version=\"1.0\"?>\n\n"
-			"<launch>\n";
-	const char *droneText =
-			"\t<group ns=\"drone%d\">\n\t\t"
-				"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-				"<include file=\"$(find gatacdronecontrol)/src/launch/tagDetectLaunch.launch\" >\n\t\t\t"
-				"</include>\n\t"
-			"</group>\n\n";
-	const char *endingText = "</launch>";
+// Close file stream
+fileStream.close();
+}
+/* simulatorMode == false */
+if(simulatorMode == false){
+// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
+const char *startingText =
+"<?xml version=\"1.0\"?>\n\n"
+"<launch>\n";
+const char *droneText =
+"\t<group ns=\"drone%d\">\n\t\t"
+"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" />\n\t\t\t"
+"<arg name=\"drone_ip\" value=\"-ip 192.168.1.10\"/>"
+"</group>\n\n";
+const char *endingText = "</launch>";
 
-	// Open launch file. Check what ROS distribution is currently being used 
-	char *distro = getenv("ROS_DISTRO"); 
-	if(distro == NULL){
-		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-		exit(1);
-	}
+// Open launch file. Check what ROS distribution is currently being used
+char *distro = getenv("ROS_DISTRO");
+if(distro == NULL){
+cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
+exit(1);
+}
 
-	// Assume launch file is located in default stacks directory for current ROS distribution
-	char launchFilePath[100];
-        // sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro);    /* File path on gray laptop */
-        sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
-	// Open file stream
-	ofstream fileStream(launchFilePath, ios::trunc);
+// Assume launch file is located in default stacks directory for current ROS distribution
+char launchFilePath[100];
+// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
+sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
+// Open file stream
+ofstream fileStream(launchFilePath, ios::trunc);
 
-	// Write gen_texture and gen_dae text to file
-	char startingBuffer[strlen(startingText) + 1];
-	strcpy(startingBuffer, startingText);
-	if (fileStream.is_open()) {
-		fileStream << startingBuffer;
-	}
+// Write gen_texture and gen_dae text to file
+char startingBuffer[strlen(startingText) + 1];
+strcpy(startingBuffer, startingText);
+if (fileStream.is_open()) {
+fileStream << startingBuffer;
+}
 
-	// Find coordinates of (0,0) in Gazebo terms
-	int originX, originY;
-	getGazeboOrigin(originX, originY);
+// Find coordinates of (0,0) in Gazebo terms
+int originX, originY;
+getGazeboOrigin(originX, originY);
 
-	// Write all drone sub-launch text to file
-	int droneID;
-	float droneX, droneY;
-	char droneBuffer[strlen(droneText)];
-	if (fileStream.is_open()) {
-		for (int i = 0; i < numberOfDrones; i++) {
-			droneID = i;
-			droneX = originX + (2 * dronePositions.at(droneID).second);
-			droneY = originY - (2 * dronePositions.at(droneID).first);
-			sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
-			fileStream << droneBuffer;
-		}
-		fileStream << endingText;
+// Write all drone sub-launch text to file
+int droneID;
+float droneX, droneY;
+char droneBuffer[strlen(droneText)];
+if (fileStream.is_open()) {
+for (int i = 0; i < numberOfDrones; i++) {
+droneID = i;
+droneX = originX + (2 * dronePositions.at(droneID).second);
+droneY = originY - (2 * dronePositions.at(droneID).first);
+sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+fileStream << droneBuffer;
+}
+fileStream << endingText;
 
-	}
-		// Close file stream
-	fileStream.close();
-	}
+}
+// Close file stream
+fileStream.close();
+}
 }
 
 /**
@@ -1513,4 +1511,44 @@ const char* GaTACDroneControl::getData(int droneId, int option)
 	}
 	const char *lineChars[BUFLEN] = { line.c_str() };
 	return *lineChars;
+}
+
+/**
+ * This message allows a client to query the server whether another drone is above the client's drone on the grid.
+ * @param droneId The drone ID of the client sending sense request. 
+ * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
+ */
+int GaTACDroneControl::senseNorth(int droneId)
+{
+
+}
+
+/**
+ * This message allows a client to query the server whether another drone is below the client's drone on the grid.
+ * @param droneId The drone ID of the client sending sense request. 
+ * @return 0 if no drone is below client drone, 1 if another drone is within one square below, 2 if another drone is greater than one square below
+ */
+int GaTACDroneControl::senseSouth(int droneId)
+{
+
+}
+
+/**
+ * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
+ * @param droneId The drone ID of the client sending sense request. 
+ * @return 0 if no drone is to the right of client drone, 1 if another drone is within one square to the right, 2 if another drone is greater than one square to the right
+ */
+int GaTACDroneControl::senseEast(int droneId)
+{
+
+}
+
+/**
+ * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
+ * @param droneId The drone ID of the client sending sense request. 
+ * @return 0 if no drone is to the left of client drone, 1 if another drone is within one square to the left, 2 if another drone is greater than one square to the left
+ */
+int GaTACDroneControl::senseWest(int droneId)
+{
+
 }
