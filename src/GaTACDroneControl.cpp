@@ -174,6 +174,8 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		int sleepCtr; // to ensure drones don't send commands before server can process, and drones begin in sync
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
+		char * senseOption;
+		int senseResult, senseInt;
 		const char *navDataToSend = ""; // Holds string of navdata server will send to client on request
 		std::stringstream strX;
 		std::stringstream strY;
@@ -439,6 +441,42 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}	
 			break;
 
+		case 'u': 
+			cout << "Sense North" << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			senseOption = (tokens.at(2)).c_str();
+			senseInt = atoi(senseOption);
+			senseResult = sense(senseInt);
+  			break;
+
+		case 'd':
+			cout << "Sense South" << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			senseOption = (tokens.at(2)).c_str();
+			senseInt = atoi(senseOption);
+			senseResult = sense(senseInt);
+  			break;
+
+		case 'k':
+			cout << "Sense East" << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			senseOption = (tokens.at(2)).c_str();
+			senseInt = atoi(senseOption);
+			senseResult = sense(senseInt);
+  			break;
+
+		case 'j':
+			cout << "Sense West" << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			senseOption = (tokens.at(2)).c_str();
+			senseInt = atoi(senseOption);
+			senseResult = sense(senseInt);
+  			break;
+
 			//Client requests battery percent
 		case 'b':
 			cout << "Client battery request" << endl;
@@ -498,6 +536,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
+
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
@@ -513,6 +552,17 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		else if(rawCommand == 'y'){
 		cout<<"Waiting for other drones..." <<endl;
 		sleep(sleepCtr);
+		int numSent = 0;
+		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
+		}
+		}
+
+		//If command received was a sense command, first char of ACK set to sense return integer
+		if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
+		char senseChar = (char)(((int)'0')+senseResult);
+		sendBuffer[0] = senseChar;
 		int numSent = 0;
 		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
@@ -614,6 +664,28 @@ void GaTACDroneControl::readyUp() {
 		worked = sendMessage(message, serverSocket, srv);
 }
 
+/**
+ * This method is called by a client to send a sense message in multi-client environments.
+ * Options -> calls: 0 -> senseNorth, 1 -> senseSouth, 2 -> senseEast, 3 -> senseWest
+ * @param option Integer denoting which sense method should be called/returned
+ */
+void GaTACDroneControl::sense(int droneId, int option) {	
+	bool worked = false;
+	char senseDir;
+		cout << "Sending sense message to server." << endl;
+		if(option == 0)
+		senseDir = 'u';
+		else if(option == 1)
+		senseDir = 'd';
+		else if(option == 2)
+		senseDir = 'k';
+		else if(option == 3)
+		senseDir = 'j';
+	// Send command to server, checks for valid ID and location done server-side	
+		char message[10];
+		sprintf(message, "%c %d %d", senseDir, droneId, option);
+		worked = sendMessage(message, serverSocket, srv);
+}
 /**
  * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
  * @param numberOfColumns X-axis dimension
@@ -826,6 +898,13 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 			cout << receiveBuffer[i]; 
 			}
 			cout << endl;
+		//Special case: if message was a sense command, server sends back the integer result to the client
+		} else if (strcmp(sendBuffer, receiveBuffer) != 0 && 
+				(cmdCheck == 'u' || cmdCheck == 'j' || cmdCheck == 'k' || cmdCheck == 'd') {
+			success = true;
+			cout << receiveBuffer[0] << endl; 
+
+
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;
@@ -1520,8 +1599,8 @@ const char* GaTACDroneControl::getData(int droneId, int option)
  */
 int GaTACDroneControl::senseNorth(int droneId)
 {
-	xCurrent = dronePositions.at(droneId).first;
-	yCurrent = dronePositions.at(droneId).second;
+	int xCurrent = dronePositions.at(droneId).first;
+	int yCurrent = dronePositions.at(droneId).second;
 	
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
@@ -1548,8 +1627,8 @@ int GaTACDroneControl::senseNorth(int droneId)
  */
 int GaTACDroneControl::senseSouth(int droneId)
 {
-	xCurrent = dronePositions.at(droneId).first;
-	yCurrent = dronePositions.at(droneId).second;
+	int xCurrent = dronePositions.at(droneId).first;
+	int yCurrent = dronePositions.at(droneId).second;
 	
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
@@ -1575,8 +1654,8 @@ int GaTACDroneControl::senseSouth(int droneId)
  */
 int GaTACDroneControl::senseEast(int droneId)
 {
-	xCurrent = dronePositions.at(droneId).first;
-	yCurrent = dronePositions.at(droneId).second;
+	int xCurrent = dronePositions.at(droneId).first;
+	int yCurrent = dronePositions.at(droneId).second;
 	
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
@@ -1602,8 +1681,8 @@ int GaTACDroneControl::senseEast(int droneId)
  */
 int GaTACDroneControl::senseWest(int droneId)
 {
-	xCurrent = dronePositions.at(droneId).first;
-	yCurrent = dronePositions.at(droneId).second;
+	int xCurrent = dronePositions.at(droneId).first;
+	int yCurrent = dronePositions.at(droneId).second;
 	
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)

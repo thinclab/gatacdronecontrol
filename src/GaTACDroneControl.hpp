@@ -119,6 +119,14 @@ public:
 	void move(int, int, int);
 
 	/**
+	 * This method is called by a client to send a sense message in multi-client environments.
+	 * Options -> calls: 0 -> senseNorth, 1 -> senseSouth, 2 -> senseEast, 3 -> senseWest
+	 * @param droneId ID of drone sensing
+	 * @param option Integer denoting which sense method should be called/returned
+	 */
+	void sense(int, int);
+
+	/**
 	 * This method will land the specified drone.
 	 * @param droneId ID of drone to land
 	 */
