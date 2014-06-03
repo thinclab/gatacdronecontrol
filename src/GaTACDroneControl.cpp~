@@ -1555,13 +1555,13 @@ int GaTACDroneControl::senseSouth(int droneId)
 	for(int k = 0; k <dronePositions.size(); k++)
 	{
 	if(droneId != k){
-		//case: another drone is not North of subject drone
+		//case: another drone is not South of subject drone
 		if((dronePositions.at(k).second >= yCurrent))	
 			return 0;
-		//case: another drone is 1 square North of subject drone
+		//case: another drone is 1 square South of subject drone
 		else if((dronePositions.at(k).second == yCurrent - 1))	
 			return 1;
-		//case: another drone is 2 or more squares North of subject drone
+		//case: another drone is 2 or more squares South of subject drone
 		else if((dronePositions.at(k).second <= yCurrent - 2))
 			return 2;
 		}
@@ -1582,13 +1582,13 @@ int GaTACDroneControl::senseEast(int droneId)
 	for(int k = 0; k <dronePositions.size(); k++)
 	{
 	if(droneId != k){
-		//case: another drone is not North of subject drone
+		//case: another drone is not East of subject drone
 		if((dronePositions.at(k).first <= xCurrent))	
 			return 0;
-		//case: another drone is 1 square North of subject drone
+		//case: another drone is 1 square East of subject drone
 		else if((dronePositions.at(k).first == xCurrent + 1))	
 			return 1;
-		//case: another drone is 2 or more squares North of subject drone
+		//case: another drone is 2 or more squares East of subject drone
 		else if((dronePositions.at(k).first >= xCurrent + 2))
 			return 2;
 		}
@@ -1596,7 +1596,7 @@ int GaTACDroneControl::senseEast(int droneId)
 }
 
 /**
- * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
+ * This message allows a client to query the server whether another drone is to the left of the client's drone on the grid.
  * @param droneId The drone ID of the client sending sense request. 
  * @return 0 if no drone is to the left of client drone, 1 if another drone is within one square to the left, 2 if another drone is greater than one square to the left
  */
@@ -1609,13 +1609,13 @@ int GaTACDroneControl::senseWest(int droneId)
 	for(int k = 0; k <dronePositions.size(); k++)
 	{
 	if(droneId != k){
-		//case: another drone is not North of subject drone
+		//case: another drone is not West of subject drone
 		if((dronePositions.at(k).first >= xCurrent))	
 			return 0;
-		//case: another drone is 1 square North of subject drone
+		//case: another drone is 1 square West of subject drone
 		else if((dronePositions.at(k).first == xCurrent - 1))	
 			return 1;
-		//case: another drone is 2 or more squares North of subject drone
+		//case: another drone is 2 or more squares West of subject drone
 		else if((dronePositions.at(k).first <= xCurrent - 2))
 			return 2;
 		}
