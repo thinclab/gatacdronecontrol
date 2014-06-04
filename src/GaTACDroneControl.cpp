@@ -567,7 +567,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		//If command received was a sense command, first char of ACK set to sense return integer
 		else if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
 		char senseChar = (char)(((int)'0')+senseResult);	
-		sendBuffer[0] = senseResult;
+		sendBuffer[0] = senseChar;
 		int numSent = 0;
 			if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
@@ -930,10 +930,7 @@ bool success = false;
 		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
 				cmdCheck == 'k' || cmdCheck == 'j')) {
 			success = true;
-			for(int i = 0; i < strlen(receiveBuffer); i++){
-			cout << receiveBuffer[i]; 
-			}
-			cout << endl;
+			cout << idInt <<endl; 
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;
@@ -1629,7 +1626,7 @@ const char* GaTACDroneControl::getData(int droneId, int option)
  */
 int GaTACDroneControl::sense(int droneId, int option)
 {
-	if(option == 1)
+	if(option == 0)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
@@ -1650,7 +1647,7 @@ int GaTACDroneControl::sense(int droneId, int option)
 			}
 		}
 	}	
-	if(option == 2)
+	else if(option == 1)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
@@ -1671,7 +1668,7 @@ int GaTACDroneControl::sense(int droneId, int option)
 			}
 		}
 	}
-	if(option == 3)
+	else if(option == 2)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
@@ -1692,7 +1689,7 @@ int GaTACDroneControl::sense(int droneId, int option)
 			}
 		}
 	}
-	if(option == 3)
+	else if(option == 3)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
