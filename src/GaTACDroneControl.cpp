@@ -473,65 +473,18 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			senseResult = sense(droneInt, senseInt);
   			break;
 
-			//Client requests battery percent
-		case 'b':
-			cout << "Client battery request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 0);
-			break;
-
-			//Client requests forward velocity
-		case 'f':
-			cout << "Client forward velocity request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 1);
-			break;
-
-			//Client requests sideways velocity
-		case 'w':
-			cout << "Client sideways velocity request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 2);
-			break;
-
-			//Client requests vertical velocity
-		case 'v':
-			cout << "Client vertical velocity request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 3);
-			break;
-
-			//Client requests sonar reading
-		case 'n':
-			cout << "Client sonar reading request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 4);
-			break;
-
-			//Client requests tags spotted reading
-		case 'p':
-			cout << "Client tag spotted request" << endl;
-			droneNumber = (tokens.at(1)).c_str();
-			droneInt = atoi(droneNumber);
-			navDataToSend = this->getData(droneInt, 5);
-			break;
-
 			//Default case, for command characters that are undefined
 		default:
 			cout << "Error parsing raw command - invalid command character received." << endl;
 			break;
 		}
 
-				// Sending acknowledgment message to client
+		// Sending acknowledgment message to client
 		int len = BUFLEN;
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
+		this->getData(droneInt);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
@@ -842,12 +795,126 @@ void GaTACDroneControl::setClientUniqueId(int toSet)
 }
 
 /**
+ * Used to set a client's current battery navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setBattery(string toSet)
+{
+ this->clientCurrentBattery = toSet;
+}
+
+/**
+ * Used to set a client's current sonar navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setSonar(string toSet)
+{
+ this->clientCurrentSonar = toSet;
+}
+
+/**
+ * Used to set a client's current tag spotted navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setTagsSpotted(string toSet)
+{
+ this->clientCurrentTagsSpotted = toSet;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setForwardVelocity(string toSet)
+{
+ this->clientCurrentForwardVelocity = toSet;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setSidewaysVelocity(string toSet)
+{
+ this->clientCurrentSidewaysVelocity = toSet;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+void GaTACDroneControl::setVerticalVelocity(string toSet)
+{
+ this->clientCurrentVerticalVelocity = toSet;
+}
+
+/**
  * Used to get a client's unique drone ID
  * @return Client's unique drone ID
  */
 int GaTACDroneControl::getClientUniqueId()
 {
  return this->clientUniqueId;
+}
+
+/**
+ * Used to set a client's current battery navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getBattery()
+{
+ return this->clientCurrentBattery;
+ cout << this->clientCurrentBattery << endl;
+}
+
+/**
+ * Used to set a client's current sonar navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getSonar()
+{
+ return this->clientCurrentSonar;
+ cout << this->clientCurrentSonar << endl;
+}
+
+/**
+ * Used to set a client's current tag spotted navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getTagsSpotted()
+{
+ return this->clientCurrentTagsSpotted;
+ cout<< this->clientCurrentTagsSpotted << endl;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getForwardVelocity()
+{
+ return this->clientCurrentForwardVelocity;
+ cout << this->clientCurrentForwardVelocity << endl;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getSidewaysVelocity()
+{
+ return this->clientCurrentSidewaysVelocity;
+ cout << this->clientCurrentSidewaysVelocity << endl;
+}
+
+/**
+ * Used to set a client's current velocity navdata
+ * @param toSet String to set this client's navdata value to
+ */
+string GaTACDroneControl::getVerticalVelocity()
+{
+ return this->clientCurrentVerticalVelocity;
+ cout << this->clientCurrentVerticalVelocity << endl;
 }
 
 /**
@@ -1399,102 +1466,12 @@ string GaTACDroneControl::getGridPosition(int droneId)
 }
 
 /**
- * This method will return and print the current battery percentage to the client's display.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getBattery(int droneId)
-{
-	printf("Sending command to print battery percentage, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('b', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
- * This method will return and print the current forward velocity to the client's display.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getForwardVelocity(int droneId)
-{
-	printf("Sending command to print forward velocity, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('f', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
- * This method will return and print the current sideways velocity to the client's display.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getSidewaysVelocity(int droneId)
-{
-	printf("Sending command to print sideways velocity, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('w', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
- * This method will return and print the current vertical velocity to the client's display.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getVerticalVelocity(int droneId)
-{
-	printf("Sending command to print vertical velocity, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('v', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
- * This method will return and print the current sonar reading to the client's display.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getSonar(int droneId)
-{
-	printf("Sending command to print sonar reading, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('n', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
- * This method will return and print data related to tag spotting.
- * @param droneId ID of drone to return navdata from
- */
-void GaTACDroneControl::getTagSpotted(int droneId)
-{
-	printf("Sending command to print tag spotted data, drone #%d.\n", droneId);
-	// Send command to server
-	bool worked = commandDrone('p', droneId);
-	if (!worked) {
-		cout << "Couldn't push navdata request. Please try again." << endl;
-		exit(1);
-	}
-}
-
-/**
  * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
  * @param droneId ID of drone to return navdata from
  * @param option Option of which data to receive, calls correct helper method (transparent to user)
  * @return Human-readable string of characters describing and displaying the value of navdata desired
  */	
-const char* GaTACDroneControl::getData(int droneId, int option)
+void GaTACDroneControl::getData(int droneId)
 {
 	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
@@ -1504,118 +1481,115 @@ const char* GaTACDroneControl::getData(int droneId, int option)
 	ifstream stream1("currentNavdata1.txt");
 	ifstream stream2("currentNavdata2.txt");
 	//battery
-	if(option == 0){
 		sprintf(printNavMessage, printNavdataCommand, id);
 		system(printNavMessage);
-	if(id == 0)
+	if(id == 0){
 		getline(stream0, line);
-	else if(id == 1)
+		this->setBattery(line);
+	}
+	else if(id == 1){
 		getline(stream1, line);
-	else if(id == 2)
+		this->setBattery(line);
+	}
+	else if(id == 2){
 		getline(stream2, line);
+		this->setBattery(line);
 	}
 	//forward velocity
-	else if(option == 1){
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
 	if(id == 0){
 		for(int i = 0; i < 1; ++i)
 	  		getline(stream0, line);
 		getline(stream0, line);
+		this->setForwardVelocity(line);
 	}
 	else if(id == 1){
 		for(int i = 0; i < 1; ++i)
 	  		getline(stream1, line);
 		getline(stream1, line);
+		this->setForwardVelocity(line);
 	}
 	else if(id == 2){
 		for(int i = 0; i < 1; ++i)
 	  		getline(stream2, line);
 		getline(stream2, line);
-	}
+		this->setForwardVelocity(line);
 	}
 	//sideways velocity
-	else if(option == 2){
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
 	if(id == 0){
 		for(int i = 0; i < 2; ++i)
 	  		getline(stream0, line);
 		getline(stream0, line);
+		this->setSidewaysVelocity(line);
 	}
 	else if(id == 1){
 		for(int i = 0; i < 2; ++i)
 	  		getline(stream1, line);
 		getline(stream1, line);
+		this->setSidewaysVelocity(line);
 	}
 	else if(id == 2){
 		for(int i = 0; i < 2; ++i)
 	  		getline(stream2, line);
 		getline(stream2, line);
-	}
+		this->setSidewaysVelocity(line);
 	}
 	//vertical velocity
-	else if(option == 3){
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
 	if(id == 0){
 		for(int i = 0; i < 3; ++i)
 	  		getline(stream0, line);
 		getline(stream0, line);
+		this->setVerticalVelocity(line);
 	}
 	else if(id == 1){
 		for(int i = 0; i < 3; ++i)
 	  		getline(stream1, line);
 		getline(stream1, line);
+		this->setVerticalVelocity(line);
 	}
 	else if(id == 2){
 		for(int i = 0; i < 3; ++i)
 	  		getline(stream2, line);
 		getline(stream2, line);
-	}
+		this->setVerticalVelocity(line);
 	}
 	//sonar 
-	else if(option == 4){
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
 	if(id == 0){
 		for(int i = 0; i < 4; ++i)
 	  		getline(stream0, line);
 		getline(stream0, line);
+		this->setSonar(line);
 	}
 	else if(id == 1){
 		for(int i = 0; i < 4; ++i)
 	  		getline(stream1, line);
 		getline(stream1, line);
+		this->setSonar(line);
 	}
 	else if(id == 2){
 		for(int i = 0; i < 4; ++i)
 	  		getline(stream2, line);
 		getline(stream2, line);
-	}
+		this->setSonar(line);
 	}
 	//tags spotted data
-	else if(option == 5){
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
 	if(id == 0){
 		for(int i = 0; i < 5; ++i)
  	 		getline(stream0, line);
 		getline(stream0, line);
+		this->setTagsSpotted(line);
 	}
 	else if(id == 1){
 		for(int i = 0; i < 5; ++i)
  	 		getline(stream1, line);
 		getline(stream1, line);
+		this->setTagsSpotted(line);
 	}
 	else if(id == 2){
 		for(int i = 0; i < 5; ++i)
  	 		getline(stream2, line);
 		getline(stream2, line);
+		this->setTagsSpotted(line);
 	}
-	}
-	const char *lineChars[BUFLEN] = { line.c_str() };
-	return *lineChars;
 }
 
 /**
