@@ -338,27 +338,27 @@ private:
 	std::string clientCurrentBattery;
 
 	/**
-	 * @brief Current string representation of client's battery navdata
+	 * @brief Current string representation of client's sonar navdata
 	 */
 	std::string clientCurrentSonar;
 
 	/**
-	 * @brief Current string representation of client's battery navdata
+	 * @brief Current string representation of client's forward velocity navdata
 	 */
 	std::string clientCurrentForwardVelocity;
 
 	/**
-	 * @brief Current string representation of client's battery navdata
+	 * @brief Current string representation of client's sideways velocity navdata
 	 */
 	std::string clientCurrentSidewaysVelocity;
 
 	/**
-	 * @brief Current string representation of client's battery navdata
+	 * @brief Current string representation of client's vertical velocity navdata
 	 */
 	std::string clientCurrentVerticalVelocity;
 
 	/**
-	 * @brief Current string representation of client's battery navdata
+	 * @brief Current string representation of client's tags spotted navdata
 	 */
 	std::string clientCurrentTagsSpotted;
 	

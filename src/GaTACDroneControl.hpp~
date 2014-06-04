@@ -165,36 +165,77 @@ public:
 	 * @param toSet Boolean specifies whether or not client is ready to receive server commands
 	 */
 	void setClientReadyToCommand(bool);
-
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void getBattery(int);
+	void setBattery(std::string);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void getForwardVelocity(int);
+	void setForwardVelocity(std::string);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void getSidewaysVelocity(int);
+	void setSidewaysVelocity(std::string);
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void getVerticalVelocity(int);
+	void setVerticalVelocity(std::string);
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void getSonar(int);
+	void setSonar(std::string);
+
+	/**
+	 * This method will return and print data related to tag spotting.
+	 * @param droneId ID of drone to return navdata from
+         */
+	void setTagsSpotted(std::string);
+
+	/**
+	 * This method will return and print the current battery percentage to the client's display.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getBattery();
+
+	/**
+	 * This method will return and print the current forward velocity to the client's display.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getForwardVelocity();
+
+	/**
+	 * This method will return and print the current sideways velocity to the client's display.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getSidewaysVelocity();
+
+	/**
+	 * This method will return and print the current vertical velocity to the client's display.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getVerticalVelocity();
+
+	/**
+	 * This method will return and print the current sonar reading to the client's display.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getSonar();
+
+	/**
+	 * This method will return and print data related to tag spotting.
+	 * @param droneId ID of drone to return navdata from
+         */
+	std::string getTagsSpotted();
 
 	/**
 	 * This method will return and print the current position of a given drone on the grid.
@@ -204,18 +245,12 @@ public:
 	std::string getGridPosition(int);
 
 	/**
-	 * This method will return and print data related to tag spotting.
-	 * @param droneId ID of drone to return navdata from
-         */
-	void getTagSpotted(int);
-
-	/**
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
 	 * @param droneId ID of drone to return navdata from
 	 * @param option Option of which data to receive, calls correct helper method (transparent to user)
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
-	const char* getData(int, int);
+	void getData(int);
 	
 	/**
  	 * This method is called by a client to send a senseNorth message to the server.
@@ -240,6 +275,14 @@ public:
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
 	void senseWest(int);
+
+	/**
+	 * This message allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
+	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
+	 */
+	int sense(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -288,6 +331,36 @@ private:
 	 * @brief ID unique to this client's drone.
 	 */
 	int clientUniqueId; 
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentBattery;
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentSonar;
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentForwardVelocity;
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentSidewaysVelocity;
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentVerticalVelocity;
+
+	/**
+	 * @brief Current string representation of client's battery navdata
+	 */
+	std::string clientCurrentTagsSpotted;
 	
 	/**
 	 * @brief Indicates to server whether everything is ready before sending out commands.
@@ -408,12 +481,5 @@ private:
          */	
 	bool maxDrones();
 
-	/**
-	 * This message allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
-	 * @param droneId The drone ID of the client sending sense request. 
-	 * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
-	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
-	 */
-	int sense(int, int);
 };
 #endif

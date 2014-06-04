@@ -863,8 +863,8 @@ int GaTACDroneControl::getClientUniqueId()
  */
 string GaTACDroneControl::getBattery()
 {
+this->clientCurrentBattery = "this is a test!";
  return this->clientCurrentBattery;
- cout << this->clientCurrentBattery << endl;
 }
 
 /**
