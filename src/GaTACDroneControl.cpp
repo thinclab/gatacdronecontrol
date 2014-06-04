@@ -445,36 +445,32 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			cout << "Sense North" << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
-			senseOption = (tokens.at(2)).c_str();
-			senseInt = atoi(senseOption);
-			senseResult = sense(senseInt);
+			senseInt = 0;
+			senseResult = sense(droneInt, senseInt);
   			break;
 
 		case 'd':
 			cout << "Sense South" << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
-			senseOption = (tokens.at(2)).c_str();
-			senseInt = atoi(senseOption);
-			senseResult = sense(senseInt);
+			senseInt = 1;
+			senseResult = sense(droneInt, senseInt);
   			break;
 
 		case 'k':
 			cout << "Sense East" << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
-			senseOption = (tokens.at(2)).c_str();
-			senseInt = atoi(senseOption);
-			senseResult = sense(senseInt);
+			senseInt = 2;
+			senseResult = sense(droneInt, senseInt);
   			break;
 
 		case 'j':
 			cout << "Sense West" << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
-			senseOption = (tokens.at(2)).c_str();
-			senseInt = atoi(senseOption);
-			senseResult = sense(senseInt);
+			senseInt = 3;
+			senseResult = sense(droneInt, senseInt);
   			break;
 
 			//Client requests battery percent
@@ -531,12 +527,11 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			break;
 		}
 
-		// Sending acknowledgment message to client
+				// Sending acknowledgment message to client
 		int len = BUFLEN;
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
-
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
@@ -558,17 +553,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			exit(1);
 		}
 		}
-
-		//If command received was a sense command, first char of ACK set to sense return integer
-		if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
-		char senseChar = (char)(((int)'0')+senseResult);
-		sendBuffer[0] = senseChar;
-		int numSent = 0;
-		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
-		}
 		//If command was nav request, response is a human-readable string describing and displaying the value of navdata requested
 		else if(rawCommand == 'b' || rawCommand == 'v' ||
 			rawCommand == 'f' || rawCommand == 'n' ||
@@ -579,6 +563,16 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			perror("Server: error sending acknowledgment.");
 			exit(1);
 		}
+		}
+		//If command received was a sense command, first char of ACK set to sense return integer
+		else if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
+		char senseChar = (char)(((int)'0')+senseResult);	
+		sendBuffer[0] = senseResult;
+		int numSent = 0;
+			if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
+			}
 		}
 		else{
 		int numSent = 0;
@@ -665,27 +659,61 @@ void GaTACDroneControl::readyUp() {
 }
 
 /**
- * This method is called by a client to send a sense message in multi-client environments.
- * Options -> calls: 0 -> senseNorth, 1 -> senseSouth, 2 -> senseEast, 3 -> senseWest
- * @param option Integer denoting which sense method should be called/returned
+ * This method is called by a client to send a senseNorth message to the server.
+ * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::sense(int droneId, int option) {	
-	bool worked = false;
-	char senseDir;
-		cout << "Sending sense message to server." << endl;
-		if(option == 0)
-		senseDir = 'u';
-		else if(option == 1)
-		senseDir = 'd';
-		else if(option == 2)
-		senseDir = 'k';
-		else if(option == 3)
-		senseDir = 'j';
-	// Send command to server, checks for valid ID and location done server-side	
-		char message[10];
-		sprintf(message, "%c %d %d", senseDir, droneId, option);
-		worked = sendMessage(message, serverSocket, srv);
+void GaTACDroneControl::senseNorth(int droneId) {	
+	printf("Sending sense north command, drone #%d.\n", droneId);
+	// Send command to server
+	bool worked = commandDrone('u', droneId);
+	if (!worked) {
+		cout << "Couldn't push sense request. Please try again." << endl;
+		exit(1);
+	}
 }
+
+/**
+ * This method is called by a client to send a senseSouth message to the server.
+ * @param droneId Integer denoting which drone is calling the method
+ */
+void GaTACDroneControl::senseSouth(int droneId) {	
+	printf("Sending sense south command, drone #%d.\n", droneId);
+	// Send command to server
+	bool worked = commandDrone('d', droneId);
+	if (!worked) {
+		cout << "Couldn't push sense request. Please try again." << endl;
+		exit(1);
+	}
+}
+
+/**
+ * This method is called by a client to send a senseEast message to the server.
+ * @param droneId Integer denoting which drone is calling the method
+ */
+void GaTACDroneControl::senseEast(int droneId) {	
+	printf("Sending sense east command, drone #%d.\n", droneId);
+	// Send command to server
+	bool worked = commandDrone('k', droneId);
+	if (!worked) {
+		cout << "Couldn't push sense request. Please try again." << endl;
+		exit(1);
+	}
+}
+
+/**
+ * This method is called by a client to send a senseWest message to the server.
+ * @param droneId Integer denoting which drone is calling the method
+ */
+void GaTACDroneControl::senseWest(int droneId) {	
+	printf("Sending sense west command, drone #%d.\n", droneId);
+	// Send command to server
+	bool worked = commandDrone('j', droneId);
+	if (!worked) {
+		cout << "Couldn't push sense request. Please try again." << endl;
+		exit(1);
+	}
+}
+
 /**
  * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
  * @param numberOfColumns X-axis dimension
@@ -854,7 +882,7 @@ bool GaTACDroneControl::getClientReadyToCommand()
  * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
  */
 bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *addrInfo) {
-	bool success = false;
+bool success = false;
 	char sendBuffer[BUFLEN];
 	char receiveBuffer[BUFLEN] = { };
 	strcpy(sendBuffer, message);
@@ -898,13 +926,14 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 			cout << receiveBuffer[i]; 
 			}
 			cout << endl;
-		//Special case: if message was a sense command, server sends back the integer result to the client
-		} else if (strcmp(sendBuffer, receiveBuffer) != 0 && 
-				(cmdCheck == 'u' || cmdCheck == 'j' || cmdCheck == 'k' || cmdCheck == 'd') {
+		//Special case: if message was a sense command, client receives an int to interpret
+		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
+				cmdCheck == 'k' || cmdCheck == 'j')) {
 			success = true;
-			cout << receiveBuffer[0] << endl; 
-
-
+			for(int i = 0; i < strlen(receiveBuffer); i++){
+			cout << receiveBuffer[i]; 
+			}
+			cout << endl;
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;
@@ -1199,7 +1228,7 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {	
 	char publishMessage[BUFLEN];
-	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d&"; //id...  x y z id
+	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
@@ -1593,110 +1622,95 @@ const char* GaTACDroneControl::getData(int droneId, int option)
 }
 
 /**
- * This message allows a client to query the server whether another drone is above the client's drone on the grid.
+ * This method allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
  * @param droneId The drone ID of the client sending sense request. 
+ * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
  * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
  */
-int GaTACDroneControl::senseNorth(int droneId)
+int GaTACDroneControl::sense(int droneId, int option)
 {
+	if(option == 1)
+	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
 	
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
+		{
+		if(droneId != k){
+			//case: another drone is not North of subject drone
+			if((dronePositions.at(k).second <= yCurrent))	
+				return 0;
+			//case: another drone is 1 square North of subject drone
+			else if((dronePositions.at(k).second == yCurrent + 1))	
+				return 1;
+			//case: another drone is 2 or more squares North of subject drone
+			else if((dronePositions.at(k).second >= yCurrent + 2))
+				return 2;
+			}
+		}
+	}	
+	if(option == 2)
 	{
-	if(droneId != k){
-		//case: another drone is not North of subject drone
-		if((dronePositions.at(k).second <= yCurrent))	
-			return 0;
-		//case: another drone is 1 square North of subject drone
-		else if((dronePositions.at(k).second == yCurrent + 1))	
-			return 1;
-		//case: another drone is 2 or more squares North of subject drone
-		else if((dronePositions.at(k).second >= yCurrent + 2))
-			return 2;
+	int xCurrent = dronePositions.at(droneId).first;
+	int yCurrent = dronePositions.at(droneId).second;
+	
+	//cycles through current drone positions and tests them against querying client position
+	for(int k = 0; k <dronePositions.size(); k++)
+		{
+		if(droneId != k){
+			//case: another drone is not South of subject drone
+			if((dronePositions.at(k).second >= yCurrent))	
+				return 0;
+			//case: another drone is 1 square South of subject drone
+			else if((dronePositions.at(k).second == yCurrent - 1))	
+				return 1;
+			//case: another drone is 2 or more squares South of subject drone
+			else if((dronePositions.at(k).second <= yCurrent - 2))
+				return 2;
+			}
 		}
 	}
-}
-
-
-/**
- * This message allows a client to query the server whether another drone is below the client's drone on the grid.
- * @param droneId The drone ID of the client sending sense request. 
- * @return 0 if no drone is below client drone, 1 if another drone is within one square below, 2 if another drone is greater than one square below
- */
-int GaTACDroneControl::senseSouth(int droneId)
-{
+	if(option == 3)
+	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
 	
-	//cycles through current drone positions and tests them against querying client position
-	for(int k = 0; k <dronePositions.size(); k++)
-	{
-	if(droneId != k){
-		//case: another drone is not South of subject drone
-		if((dronePositions.at(k).second >= yCurrent))	
-			return 0;
-		//case: another drone is 1 square South of subject drone
-		else if((dronePositions.at(k).second == yCurrent - 1))	
-			return 1;
-		//case: another drone is 2 or more squares South of subject drone
-		else if((dronePositions.at(k).second <= yCurrent - 2))
-			return 2;
+		//cycles through current drone positions and tests them against querying client position
+		for(int k = 0; k <dronePositions.size(); k++)
+		{
+		if(droneId != k){
+			//case: another drone is not East of subject drone
+			if((dronePositions.at(k).first <= xCurrent))	
+				return 0;
+			//case: another drone is 1 square East of subject drone
+			else if((dronePositions.at(k).first == xCurrent + 1))	
+				return 1;
+			//case: another drone is 2 or more squares East of subject drone
+			else if((dronePositions.at(k).first >= xCurrent + 2))
+				return 2;
+			}
 		}
 	}
-}
-
-/**
- * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
- * @param droneId The drone ID of the client sending sense request. 
- * @return 0 if no drone is to the right of client drone, 1 if another drone is within one square to the right, 2 if another drone is greater than one square to the right
- */
-int GaTACDroneControl::senseEast(int droneId)
-{
+	if(option == 3)
+	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
 	
-	//cycles through current drone positions and tests them against querying client position
-	for(int k = 0; k <dronePositions.size(); k++)
-	{
-	if(droneId != k){
-		//case: another drone is not East of subject drone
-		if((dronePositions.at(k).first <= xCurrent))	
-			return 0;
-		//case: another drone is 1 square East of subject drone
-		else if((dronePositions.at(k).first == xCurrent + 1))	
-			return 1;
-		//case: another drone is 2 or more squares East of subject drone
-		else if((dronePositions.at(k).first >= xCurrent + 2))
-			return 2;
-		}
-	}
-}
-
-/**
- * This message allows a client to query the server whether another drone is to the left of the client's drone on the grid.
- * @param droneId The drone ID of the client sending sense request. 
- * @return 0 if no drone is to the left of client drone, 1 if another drone is within one square to the left, 2 if another drone is greater than one square to the left
- */
-int GaTACDroneControl::senseWest(int droneId)
-{
-	int xCurrent = dronePositions.at(droneId).first;
-	int yCurrent = dronePositions.at(droneId).second;
-	
-	//cycles through current drone positions and tests them against querying client position
-	for(int k = 0; k <dronePositions.size(); k++)
-	{
-	if(droneId != k){
-		//case: another drone is not West of subject drone
-		if((dronePositions.at(k).first >= xCurrent))	
-			return 0;
-		//case: another drone is 1 square West of subject drone
-		else if((dronePositions.at(k).first == xCurrent - 1))	
-			return 1;
-		//case: another drone is 2 or more squares West of subject drone
-		else if((dronePositions.at(k).first <= xCurrent - 2))
-			return 2;
+		//cycles through current drone positions and tests them against querying client position
+		for(int k = 0; k <dronePositions.size(); k++)
+		{
+		if(droneId != k){
+			//case: another drone is not West of subject drone
+			if((dronePositions.at(k).first >= xCurrent))	
+				return 0;
+			//case: another drone is 1 square West of subject drone
+			else if((dronePositions.at(k).first == xCurrent - 1))	
+				return 1;
+			//case: another drone is 2 or more squares West of subject drone
+			else if((dronePositions.at(k).first <= xCurrent - 2))
+				return 2;
+			}
 		}
 	}
 }

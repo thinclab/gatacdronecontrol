@@ -119,14 +119,6 @@ public:
 	void move(int, int, int);
 
 	/**
-	 * This method is called by a client to send a sense message in multi-client environments.
-	 * Options -> calls: 0 -> senseNorth, 1 -> senseSouth, 2 -> senseEast, 3 -> senseWest
-	 * @param droneId ID of drone sensing
-	 * @param option Integer denoting which sense method should be called/returned
-	 */
-	void sense(int, int);
-
-	/**
 	 * This method will land the specified drone.
 	 * @param droneId ID of drone to land
 	 */
@@ -224,6 +216,38 @@ public:
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
 	const char* getData(int, int);
+	
+	/**
+ 	 * This method is called by a client to send a senseNorth message to the server.
+	 * @param droneId Integer denoting which drone is calling the method
+	 */
+	void senseNorth(int);
+	
+	/**
+	 * This method is called by a client to send a senseSouth message to the server.
+	 * @param droneId Integer denoting which drone is calling the method
+	 */
+	void senseSouth(int);
+	
+	/**
+	 * This method is called by a client to send a senseEast message to the server.
+	 * @param droneId Integer denoting which drone is calling the method
+	 */
+	void senseEast(int);
+
+	/**
+	 * This method is called by a client to send a senseWest message to the server.
+	 * @param droneId Integer denoting which drone is calling the method
+	 */
+	void senseWest(int);
+
+	/**
+	 * This message allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
+	 * @param droneId The drone ID of the client sending sense request. 
+	 * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
+	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
+	 */
+	int sense(int, int);
 	
 private:
 	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -392,32 +416,5 @@ private:
          */	
 	bool maxDrones();
 
-	/**
-	 * This message allows a client to query the server whether another drone is above the client's drone on the grid.
-	 * @param droneId The drone ID of the client sending sense request. 
-	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
-	 */
-	int senseNorth(int);
-
-	/**
-	 * This message allows a client to query the server whether another drone is below the client's drone on the grid.
-	 * @param droneId The drone ID of the client sending sense request. 
-	 * @return 0 if no drone is below client drone, 1 if another drone is within one square below, 2 if another drone is greater than one square below
-	 */
-	int senseSouth(int);
-	
-	/**
-	 * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
-	 * @param droneId The drone ID of the client sending sense request. 
-	 * @return 0 if no drone is to the right of client drone, 1 if another drone is within one square to the right, 2 if another drone is greater than one square to the right
-	 */
-	int senseEast(int);
-
-	/**
-	 * This message allows a client to query the server whether another drone is to the right of the client's drone on the grid.
-	 * @param droneId The drone ID of the client sending sense request. 
-	 * @return 0 if no drone is to the left of client drone, 1 if another drone is within one square to the left, 2 if another drone is greater than one square to the left
-	 */
-	int senseWest(int);
 };
 #endif
