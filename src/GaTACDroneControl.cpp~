@@ -19,6 +19,9 @@ using namespace std;
 #define DEFAULTCLIENTPORT1 4999
 #define DEFAULTCLIENTPORT2 5999
 #define DEFAULTCLIENTPORT3 6999
+#define DEFAULTDATAPORT1 4998
+#define DEFAULTDATAPORT2 5998
+#define DEFAULTDATAPORT3 6998
 
 /**
  * @file	GaTACDroneControl.cpp
@@ -47,7 +50,7 @@ using namespace std;
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
 GaTACDroneControl::GaTACDroneControl() {
-	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
+	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = true;
 	srv = NULL;
@@ -59,7 +62,7 @@ GaTACDroneControl::GaTACDroneControl() {
  * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
  */
 GaTACDroneControl::GaTACDroneControl(const char* c) {
-	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
+	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = false;
 	srv = NULL;
@@ -74,7 +77,7 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  */
 void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
 	cout << "Main server running." << endl;	
-	for(int i = 0; i < expectedDrones; i++)
+	for(int i = 0; i < expectedDrones*2; i++)
 	{
 	serverThreads++;
 	boost::thread* moveThread;
@@ -84,20 +87,107 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
 	cout<<"starting thread 1"<<endl;
 	}
 	else if(i == 1){
-	const char* remotePort2 = "5999";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort2, serverThreads));	
+	const char* remotePort2 = "4998";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting data thread 1"<<endl;  
+	}
+	else if(i == 2){
+	const char* remotePort3 = "5999";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
 	threads[i] = moveThread;
 	cout<<"starting thread 2"<<endl;
 	}
-	else if(i == 2){
-	const char* remotePort3 = "6999";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
+	else if(i == 3){
+	const char* remotePort4 = "5998";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting data thread 2"<<endl;
+	}
+	else if(i == 4){
+	const char* remotePort5 = "6999";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));	
 	threads[i] = moveThread;
 	cout<<"starting thread 3"<<endl;
-	}   
 	}
+	else if(i == 5){
+	const char* remotePort6 = "6998";
+	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));	
+	threads[i] = moveThread;
+	cout<<"starting data thread 3"<<endl;
+	}
+	
 
 }
+}
+/**
+ * This method sets up data socket servers. It loops continuously, parsing the input
+ * received from the UDP socket and launching the correct ROS services on the machine it's running on.
+ * The machine running this main server must therefore have all necessary ROS packages installed.
+ * @param remoteIP The IP supplied for a client socket
+ * @param remotePort The port number supplied for a client socket
+ * @param threadNo The ID of the thread this method is starting
+ */
+void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort, int threadNo) {
+	char localport[4];
+	int errorCheck, sock;
+	struct addrinfo hints, *srv, *info;
+	struct sockaddr_storage client_addr;
+	socklen_t addr_len = sizeof client_addr;
+	if(threadNo == 2){
+	sprintf(localport, "%d", DEFAULTDATAPORT1);
+	}	
+	if(threadNo == 4){
+	sprintf(localport, "%d", DEFAULTDATAPORT2);
+	}
+	if(threadNo == 6){
+	sprintf(localport, "%d", DEFAULTDATAPORT3);
+	}
+
+	// Specifying socket parameters
+	bzero(&hints, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE; // use my IP
+
+	// Filling 'srv' object with info from 'hints'
+	if ((errorCheck = getaddrinfo(NULL, localport, &hints, &srv)) != 0) {
+		perror("Server: get address info");
+		exit(1);
+	}
+
+	// Creating and binding socket.
+	for (info = srv; info != NULL; info = info->ai_next) {
+		if ((sock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
+			perror("Server: socket");
+			continue;
+		}
+
+		if (bind(sock, info->ai_addr, info->ai_addrlen) == -1) {
+			close(sock);
+			perror("Server: bind");
+			continue;
+		}
+
+		break;
+	}
+
+	// Ensuring valid address info was found
+	if (info == NULL) {
+		perror("Server: no valid address info found.\n");
+		exit(1);
+	}
+
+	// Loop forever. Read commands from socket and perform the action specified.
+	int bytesReceived = 0;
+	while (allReady) {
+	getData(0);
+	getData(1);
+	getData(2);
+	sleep(1);
+	}
+}
+
 
 /**
  * This method sets up the main UDP socket server. It loops continuously, parsing the input
@@ -117,12 +207,13 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 	if(threadNo == 1){
 	sprintf(localport, "%d", DEFAULTCLIENTPORT1);
 	}	
-	if(threadNo == 2){
+	if(threadNo == 3){
 	sprintf(localport, "%d", DEFAULTCLIENTPORT2);
 	}
-	if(threadNo == 3){
+	if(threadNo == 5){
 	sprintf(localport, "%d", DEFAULTCLIENTPORT3);
 	}
+
 	// Specifying socket parameters
 	bzero(&hints, sizeof hints);
 	hints.ai_family = AF_UNSPEC;
@@ -348,6 +439,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		/* If server passes all checks, client message processed */
 			else{
 			moveAndCheck(xInt, yInt, droneNumberInt);
+			this->getData(droneNumberInt);
 			}
 		//end moveAndCheck
 			break;
@@ -484,7 +576,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
-		this->getData(droneInt);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
 		char idChar = (char)(((int)'0')+numberOfDrones-1);
@@ -502,17 +593,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		sleep(sleepCtr);
 		int numSent = 0;
 		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
-		}
-		//If command was nav request, response is a human-readable string describing and displaying the value of navdata requested
-		else if(rawCommand == 'b' || rawCommand == 'v' ||
-			rawCommand == 'f' || rawCommand == 'n' ||
-			rawCommand == 'w' || rawCommand == 'p'  ){
-		strcpy(navBuffer, navDataToSend);
-		int numSent = 0;
-		if ((numSent = sendto(sock, navBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending acknowledgment.");
 			exit(1);
 		}
@@ -541,18 +621,20 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 	close(sock);
 }
 
+
 /**
  * This method sets up the main UDP socket client. Once created, all relevant socket information
  * is then stored in the current instance of GaTACDroneControl for later communication with the server.
  * @param serverIp The IP supplied for the server's socket
  * @param serverPort The port number supplied for the server's socket
  */
-void GaTACDroneControl::launchClient(char *serverIp, char *serverPort) {
+void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dataPort) {
 	char *host = serverIp;
 	char *port = serverPort;
-	int errorCheck, sock;
+	char *dp = dataPort;
+	int errorCheck, sock, datsock;
 
-	struct addrinfo hints, *srv, *info;
+	struct addrinfo hints, *srv, *info, *datsrv, *dat;
 
 	// Specifying socket parameters
 	bzero(&hints, sizeof hints);
@@ -584,6 +666,38 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort) {
 	// Storing server socket data for later
 	serverSocket = sock;
 	this->srv = info;
+
+	
+	// Specifying socket parameters
+	bzero(&hints, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	// Filling 'srv' object with info from 'hints'
+	if ((errorCheck = getaddrinfo(host, dp, &hints, &datsrv)) != 0) {
+		perror("Client: get address info function.");
+		exit(1);
+	}
+
+	// Creating socket
+	for (info = datsrv; info != NULL; info = info->ai_next) {
+		if ((datsock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
+			perror("Client: socket function.");
+			continue;
+		}
+
+		break;
+	}
+
+	// Ensuring valid address info was found
+	if (info == NULL) {
+		perror("Client: no valid address info found.\n");
+		exit(1);
+	}
+
+	// Storing server socket data for later
+	dataSocket = datsock;
+	this->dat = info;
 
 	// Sleep to ensure that the connection is complete before commands are sent
 	sleep(3);
@@ -861,9 +975,25 @@ int GaTACDroneControl::getClientUniqueId()
  * Used to set a client's current battery navdata
  * @param toSet String to set this client's navdata value to
  */
-string GaTACDroneControl::getBattery()
+string GaTACDroneControl::getBattery(int id)
 {
-this->clientCurrentBattery = "this is a test!"
+	string line;
+	ifstream stream0("currentNavdata0.txt");
+	ifstream stream1("currentNavdata1.txt");
+	ifstream stream2("currentNavdata2.txt");
+	//battery
+	if(id == 0){
+		getline(stream0, line);
+		this->setBattery(line);
+	}
+	else if(id == 1){
+		getline(stream1, line);
+		this->setBattery(line);
+	}
+	else if(id == 2){
+		getline(stream2, line);
+		this->setBattery(line);
+	}
  return this->clientCurrentBattery;
 }
 
@@ -874,7 +1004,6 @@ this->clientCurrentBattery = "this is a test!"
 string GaTACDroneControl::getSonar()
 {
  return this->clientCurrentSonar;
- cout << this->clientCurrentSonar << endl;
 }
 
 /**
@@ -884,17 +1013,38 @@ string GaTACDroneControl::getSonar()
 string GaTACDroneControl::getTagsSpotted()
 {
  return this->clientCurrentTagsSpotted;
- cout<< this->clientCurrentTagsSpotted << endl;
 }
 
 /**
  * Used to set a client's current velocity navdata
  * @param toSet String to set this client's navdata value to
  */
-string GaTACDroneControl::getForwardVelocity()
+string GaTACDroneControl::getForwardVelocity(int id)
 {
+string line;
+	ifstream stream0("currentNavdata0.txt");
+	ifstream stream1("currentNavdata1.txt");
+	ifstream stream2("currentNavdata2.txt");
+		//forward velocity
+	if(id == 0){
+		for(int i = 0; i < 1; i++)
+	  		getline(stream0, line);
+		getline(stream0, line);
+		this->setForwardVelocity(line);
+	}
+	else if(id == 1){
+		for(int i = 0; i < 1; i++)
+	  		getline(stream1, line);
+		getline(stream1, line);
+		this->setForwardVelocity(line);
+	}
+	else if(id == 2){
+		for(int i = 0; i < 1; i++)
+	  		getline(stream2, line);
+		getline(stream2, line);
+		this->setForwardVelocity(line);
+	}
  return this->clientCurrentForwardVelocity;
- cout << this->clientCurrentForwardVelocity << endl;
 }
 
 /**
@@ -904,7 +1054,6 @@ string GaTACDroneControl::getForwardVelocity()
 string GaTACDroneControl::getSidewaysVelocity()
 {
  return this->clientCurrentSidewaysVelocity;
- cout << this->clientCurrentSidewaysVelocity << endl;
 }
 
 /**
@@ -914,7 +1063,6 @@ string GaTACDroneControl::getSidewaysVelocity()
 string GaTACDroneControl::getVerticalVelocity()
 {
  return this->clientCurrentVerticalVelocity;
- cout << this->clientCurrentVerticalVelocity << endl;
 }
 
 /**
@@ -1056,7 +1204,7 @@ void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == false */	
 	if(simulatorMode == false){
 	const char *coreMessage = "xterm -e roscore&";
-	const char *launchMessage = "xterm -e roslaunch gatacdronecontrol tagLaunch.launch&";
+	const char *launchMessage = "xterm -e roslaunch launch/tagLaunch.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
@@ -1069,7 +1217,7 @@ void GaTACDroneControl::launchGrid() {
 	// Configure launch file and start core
 	configureLaunchFile();
 	system(coreMessage);
-	system(launchMessage);
+	//system(launchMessage);
 
 	sleep(5);
 
@@ -1085,9 +1233,9 @@ void GaTACDroneControl::launchGrid() {
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
 		if(droneID == 1)
 		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
-		cout << "publishing message: " << ardroneDriverMessage << endl;
-		system(ardroneDriverMessage);                                               */                  
-		sleep(5);
+		cout << "publishing message: " << ardroneDriverMessage << endl;         
+		system(ardroneDriverMessage);                                                  */                                                   
+		sleep(5); 
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
@@ -1115,132 +1263,133 @@ void GaTACDroneControl::configureLaunchFile() {
 	"<launch>\n\t"
 	"<node\n\t\t"
 	"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
-"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
-"/>\n\t";
-const char *genDaeText =
-"<node\n\t\t"
-"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
-"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
-"/>\n\n\t"
-"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
-"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
-"<!-- Spawn simulated quadrotor uav -->\n";
-const char *droneText =
-"\t<group ns=\"drone%d\">\n\t\t"
-"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
-"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
-"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
-"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
-"</include>\n\t"
-"</group>\n\n";
-const char *endingText = "</launch>";
+	"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
+	"/>\n\t";
+	const char *genDaeText =
+	"<node\n\t\t"
+	"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
+	"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
+	"/>\n\n\t"
+	"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
+	"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
+	"<!-- Spawn simulated quadrotor uav -->\n";
+	const char *droneText =
+	"\t<group ns=\"drone%d\">\n\t\t"
+	"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+	"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
+	"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
+	"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
+	"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
+	"</include>\n\t"
+	"</group>\n\n";
+	const char *endingText = "</launch>";
 
-// Open launch file. Check what ROS distribution is currently being used
-char *distro = getenv("ROS_DISTRO");
-if(distro == NULL){
-cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-exit(1);
-}
+	// Open launch file. Check what ROS distribution is currently being used
+	char *distro = getenv("ROS_DISTRO");
+	if(distro == NULL){
+	cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
+	exit(1);
+	}
 
-// Assume launch file is located in default stacks directory for current ROS distribution
-char launchFilePath[100];
-// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
-// Open file stream
-ofstream fileStream(launchFilePath, ios::trunc);
+	// Assume launch file is located in default stacks directory for current ROS distribution
+	char launchFilePath[100];
+	// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
+	sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
+	// Open file stream
+	ofstream fileStream(launchFilePath, ios::trunc);
 
-// Write gen_texture and gen_dae text to file
-char textureBuffer[strlen(genTextureText) + 1];
-char daeBuffer[strlen(genDaeText) + 1];
-sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
-sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
+	// Write gen_texture and gen_dae text to file
+	char textureBuffer[strlen(genTextureText) + 1];
+	char daeBuffer[strlen(genDaeText) + 1];
+	sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
+	sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
 
-if (fileStream.is_open()) {
-fileStream << textureBuffer;
-fileStream << daeBuffer;
-}
+	if (fileStream.is_open()) {
+	fileStream << textureBuffer;
+	fileStream << daeBuffer;
+	}
 
-// Find coordinates of (0,0) in Gazebo terms
-int originX, originY;
-getGazeboOrigin(originX, originY);
+	// Find coordinates of (0,0) in Gazebo terms
+	int originX, originY;
+	getGazeboOrigin(originX, originY);
 
-// Write all drone sub-launch text to file
-int droneID;
-float droneX, droneY;
-char droneBuffer[strlen(droneText)];
-if (fileStream.is_open()) {
-for (int i = 0; i < numberOfDrones; i++) {
-droneID = i;
-droneX = originX + (2 * dronePositions.at(droneID).second);
-droneY = originY - (2 * dronePositions.at(droneID).first);
-sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
-fileStream << droneBuffer;
-}
-fileStream << endingText;
-}
+	// Write all drone sub-launch text to file
+	int droneID;
+	float droneX, droneY;
+	char droneBuffer[strlen(droneText)];
+	if (fileStream.is_open()) {
+	for (int i = 0; i < numberOfDrones; i++) {
+	droneID = i;
+	droneX = originX + (2 * dronePositions.at(droneID).second);
+	droneY = originY - (2 * dronePositions.at(droneID).first);
+	sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+	fileStream << droneBuffer;
+	}
+	fileStream << endingText;
+	}
 
-// Close file stream
-fileStream.close();
-}
+	// Close file stream
+	fileStream.close();
+	}
+
 /* simulatorMode == false */
 if(simulatorMode == false){
-// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
-const char *startingText =
-"<?xml version=\"1.0\"?>\n\n"
-"<launch>\n";
-const char *droneText =
-"\t<group ns=\"drone%d\">\n\t\t"
-"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" />\n\t\t\t"
-"<arg name=\"drone_ip\" value=\"-ip 192.168.1.10\"/>"
-"</group>\n\n";
-const char *endingText = "</launch>";
+		// The following strings match the formatting of the ardrone.launch file found in the ardrone_autonomy ros package (in the launch folder).
+		const char *startingText =
+		"<?xml version=\"1.0\"?>\n\n"
+		"<launch>\n";
+		const char *droneText =
+		"\t<group ns=\"drone%d\">\n\t\t"
+		"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+		"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" />\n\t\t\t"
+		"<arg name=\"drone_ip\" value=\"192.168.1.10\"/>"
+		"</group>\n\n";
+		const char *endingText ="</launch>";
 
-// Open launch file. Check what ROS distribution is currently being used
-char *distro = getenv("ROS_DISTRO");
-if(distro == NULL){
-cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-exit(1);
-}
+		// Open launch file. Check what ROS distribution is currently being used
+		char *distro = getenv("ROS_DISTRO");
+		if(distro == NULL){
+		cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
+		exit(1);
+		}
+	
+		// Assume launch file is located in default stacks directory for current ROS distribution
+		char launchFilePath[100];
+		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
+		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
+		// Open file stream
+		ofstream fileStream(launchFilePath, ios::trunc);
+	
+		// Write gen_texture and gen_dae text to file
+		char startingBuffer[strlen(startingText) + 1];
+		strcpy(startingBuffer, startingText);
+		if (fileStream.is_open()) {
+		fileStream << startingBuffer;
+		}
+	
+		// Find coordinates of (0,0) in Gazebo terms
+			int originX, originY;
+		getGazeboOrigin(originX, originY);
 
-// Assume launch file is located in default stacks directory for current ROS distribution
-char launchFilePath[100];
-// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
-// Open file stream
-ofstream fileStream(launchFilePath, ios::trunc);
+		// Write all drone sub-launch text to file
+		int droneID;
+		float droneX, droneY;
+		char droneBuffer[strlen(droneText)];
+		if (fileStream.is_open()) {
+		for (int i = 0; i < numberOfDrones; i++) {
+			droneID = i;
+			droneX = originX + (2 * dronePositions.at(droneID).second);
+			droneY = originY - (2 * dronePositions.at(droneID).first);
+			sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+			fileStream << droneBuffer;
+		}
+		fileStream << endingText;
 
-// Write gen_texture and gen_dae text to file
-char startingBuffer[strlen(startingText) + 1];
-strcpy(startingBuffer, startingText);
-if (fileStream.is_open()) {
-fileStream << startingBuffer;
-}
-
-// Find coordinates of (0,0) in Gazebo terms
-int originX, originY;
-getGazeboOrigin(originX, originY);
-
-// Write all drone sub-launch text to file
-int droneID;
-float droneX, droneY;
-char droneBuffer[strlen(droneText)];
-if (fileStream.is_open()) {
-for (int i = 0; i < numberOfDrones; i++) {
-droneID = i;
-droneX = originX + (2 * dronePositions.at(droneID).second);
-droneY = originY - (2 * dronePositions.at(droneID).first);
-sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
-fileStream << droneBuffer;
-}
-fileStream << endingText;
-
-}
-// Close file stream
-fileStream.close();
-}
-}
+		}
+		// Close file stream
+		fileStream.close();
+		}
+		}
 
 /**
  * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.
@@ -1476,13 +1625,14 @@ void GaTACDroneControl::getData(int droneId)
 	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
 	int id = droneId;
-	string line;
+	sprintf(printNavMessage, printNavdataCommand, id);
+	system(printNavMessage);
+	string line = "another test";
 	ifstream stream0("currentNavdata0.txt");
 	ifstream stream1("currentNavdata1.txt");
 	ifstream stream2("currentNavdata2.txt");
 	//battery
-		sprintf(printNavMessage, printNavdataCommand, id);
-		system(printNavMessage);
+
 	if(id == 0){
 		getline(stream0, line);
 		this->setBattery(line);
@@ -1497,95 +1647,95 @@ void GaTACDroneControl::getData(int droneId)
 	}
 	//forward velocity
 	if(id == 0){
-		for(int i = 0; i < 1; ++i)
+		for(int i = 0; i < 1; i++)
 	  		getline(stream0, line);
 		getline(stream0, line);
 		this->setForwardVelocity(line);
 	}
 	else if(id == 1){
-		for(int i = 0; i < 1; ++i)
+		for(int i = 0; i < 1; i++)
 	  		getline(stream1, line);
 		getline(stream1, line);
 		this->setForwardVelocity(line);
 	}
 	else if(id == 2){
-		for(int i = 0; i < 1; ++i)
+		for(int i = 0; i < 1; i++)
 	  		getline(stream2, line);
 		getline(stream2, line);
 		this->setForwardVelocity(line);
 	}
 	//sideways velocity
 	if(id == 0){
-		for(int i = 0; i < 2; ++i)
+		for(int i = 0; i < 2; i++)
 	  		getline(stream0, line);
 		getline(stream0, line);
 		this->setSidewaysVelocity(line);
 	}
 	else if(id == 1){
-		for(int i = 0; i < 2; ++i)
+		for(int i = 0; i < 2; i++)
 	  		getline(stream1, line);
 		getline(stream1, line);
 		this->setSidewaysVelocity(line);
 	}
 	else if(id == 2){
-		for(int i = 0; i < 2; ++i)
+		for(int i = 0; i < 2; i++)
 	  		getline(stream2, line);
 		getline(stream2, line);
 		this->setSidewaysVelocity(line);
 	}
 	//vertical velocity
 	if(id == 0){
-		for(int i = 0; i < 3; ++i)
+		for(int i = 0; i < 3; i++)
 	  		getline(stream0, line);
 		getline(stream0, line);
 		this->setVerticalVelocity(line);
 	}
 	else if(id == 1){
-		for(int i = 0; i < 3; ++i)
+		for(int i = 0; i < 3; i++)
 	  		getline(stream1, line);
 		getline(stream1, line);
 		this->setVerticalVelocity(line);
 	}
 	else if(id == 2){
-		for(int i = 0; i < 3; ++i)
+		for(int i = 0; i < 3; i++)
 	  		getline(stream2, line);
 		getline(stream2, line);
 		this->setVerticalVelocity(line);
 	}
 	//sonar 
 	if(id == 0){
-		for(int i = 0; i < 4; ++i)
+		for(int i = 0; i < 4; i++)
 	  		getline(stream0, line);
 		getline(stream0, line);
 		this->setSonar(line);
 	}
 	else if(id == 1){
-		for(int i = 0; i < 4; ++i)
+		for(int i = 0; i < 4; i++)
 	  		getline(stream1, line);
 		getline(stream1, line);
 		this->setSonar(line);
 	}
 	else if(id == 2){
-		for(int i = 0; i < 4; ++i)
+		for(int i = 0; i < 4; i++)
 	  		getline(stream2, line);
 		getline(stream2, line);
 		this->setSonar(line);
 	}
 	//tags spotted data
 	if(id == 0){
-		for(int i = 0; i < 5; ++i)
+		for(int i = 0; i < 5; i++)
  	 		getline(stream0, line);
 		getline(stream0, line);
 		this->setTagsSpotted(line);
 	}
 	else if(id == 1){
-		for(int i = 0; i < 5; ++i)
+		for(int i = 0; i < 5; i++)
  	 		getline(stream1, line);
 		getline(stream1, line);
 		this->setTagsSpotted(line);
 	}
 	else if(id == 2){
-		for(int i = 0; i < 5; ++i)
+		for(int i = 0; i < 5; i++)
  	 		getline(stream2, line);
 		getline(stream2, line);
 		this->setTagsSpotted(line);

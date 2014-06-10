@@ -60,6 +60,8 @@ public:
 	 */
 	void startServer(const char *, const char *, int);
 
+	void dataServer(const char *remoteIp, const char *remotePort, int threadNo);
+
 	/**
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
 	 * received from the UDP socket and launching the correct ROS services on the machine it's running on.
@@ -75,8 +77,9 @@ public:
 	 * is then stored in the current instance of GaTACDroneControl for later communication with the server.
  	 * @param serverIp The IP supplied for the server's socket
 	 * @param serverPort The port number supplied for the server's socket
+	 * @param dataPort The port number supplied for the client's navdata socket
 	 */
-	void launchClient(char *, char *);
+	void launchClient(char *, char *, char*);
 
 	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
@@ -205,13 +208,13 @@ public:
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getBattery();
+	std::string getBattery(int);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getForwardVelocity();
+	std::string getForwardVelocity(int);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
@@ -285,7 +288,7 @@ public:
 	int sense(int, int);
 	
 private:
-	int serverSocket, numberOfColumns, numberOfRows, numberOfDrones;
+	int serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones;
 
 	/**
 	 * @brief Updates at every movement with current position for each drone.
@@ -296,6 +299,11 @@ private:
 	 * @brief Struct containing server socket data.
 	 */
 	struct addrinfo *srv; 
+
+	/**
+	 * @brief Struct containing data socket data.
+	 */
+	struct addrinfo *dat; 
 
 	/**
 	 * @brief Updates to keep track of shared cells.
@@ -311,6 +319,11 @@ private:
 	 * @brief Indicates whether the client-server session is operating on real or simulated drones.
 	 */
 	bool simulatorMode;  
+
+	/**
+	 * @brief Indicates whether the server and clients are ready to send and receive data through data ports
+	 */
+	bool readyForData;  
 	
 	/**
 	 * @brief Indicates to server whether the grid size has been set.
