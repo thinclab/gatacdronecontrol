@@ -221,7 +221,7 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 			break;
 
 		default:
-			cout << "Error parsing raw command - invalid command character received." << endl;
+			cout << "Error parsing nav command - invalid command character received." << endl;
 			break;
 		}
 
@@ -1038,7 +1038,7 @@ int GaTACDroneControl::getClientUniqueId()
 }
 
 /**
- * Used to set a client's current battery navdata
+ * Used to get a client's current battery navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getBattery()
@@ -1048,7 +1048,7 @@ string GaTACDroneControl::getBattery()
 }
 
 /**
- * Used to set a client's current sonar navdata
+ * Used to get a client's current sonar navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getSonar()
@@ -1057,7 +1057,7 @@ string GaTACDroneControl::getSonar()
 }
 
 /**
- * Used to set a client's current tag spotted navdata
+ * Used to get a client's current tag spotted navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getTagsSpotted()
@@ -1066,7 +1066,7 @@ string GaTACDroneControl::getTagsSpotted()
 }
 
 /**
- * Used to set a client's current velocity navdata
+ * Used to get a client's current velocity navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getForwardVelocity()
@@ -1075,7 +1075,7 @@ string GaTACDroneControl::getForwardVelocity()
 }
 
 /**
- * Used to set a client's current velocity navdata
+ * Used to get a client's current velocity navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getSidewaysVelocity()
@@ -1084,7 +1084,7 @@ string GaTACDroneControl::getSidewaysVelocity()
 }
 
 /**
- * Used to set a client's current velocity navdata
+ * Used to get a client's current velocity navdata
  * @param toSet String to set this client's navdata value to
  */
 string GaTACDroneControl::getVerticalVelocity()
@@ -1155,8 +1155,8 @@ void GaTACDroneControl::receiveData(int id)
 		for(int i = 120; i < 150; i++)
 		sons += receiveBuffer[i];
 		for(int i = 150; i < 180; i++)
-		tags += receiveBuffer[i];     
-		
+		tags += receiveBuffer[i];    
+
 		this->setBattery(bats);
 		this->setForwardVelocity(fors);
 		this->setSidewaysVelocity(sides);
