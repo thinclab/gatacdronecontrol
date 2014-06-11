@@ -208,13 +208,13 @@ public:
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getBattery(int);
+	std::string getBattery();
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getForwardVelocity(int);
+	std::string getForwardVelocity();
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
@@ -253,7 +253,7 @@ public:
 	 * @param option Option of which data to receive, calls correct helper method (transparent to user)
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
-	void getData(int);
+	const char* getData(int);
 	
 	/**
  	 * This method is called by a client to send a senseNorth message to the server.
@@ -286,6 +286,8 @@ public:
 	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
 	 */
 	int sense(int, int);
+
+	void receiveData(int);
 	
 private:
 	int serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -299,6 +301,11 @@ private:
 	 * @brief Struct containing server socket data.
 	 */
 	struct addrinfo *srv; 
+
+	/**
+	 * @brief Struct containing data socket data.
+	 */
+	struct addrinfo *datsrv; 
 
 	/**
 	 * @brief Struct containing data socket data.
@@ -319,6 +326,11 @@ private:
 	 * @brief Indicates whether the client-server session is operating on real or simulated drones.
 	 */
 	bool simulatorMode;  
+
+	/**
+	 * @brief Indicates whether the server and clients are ready to send and receive data through data ports
+	 */
+	bool readyForData;  
 	
 	/**
 	 * @brief Indicates to server whether the grid size has been set.
@@ -387,6 +399,8 @@ private:
 	 * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
 	 */
 	bool commandDrone(char, int);
+
+	bool sendData(const char *, int , struct  addrinfo *);
 
 	/**
 	 * This method sends the message specified through the main UDP socket

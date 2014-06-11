@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define BUFLEN 128
+#define BUFLEN 256
 #define DEFAULTCLIENTPORT1 4999
 #define DEFAULTCLIENTPORT2 5999
 #define DEFAULTCLIENTPORT3 6999
@@ -53,8 +53,10 @@ GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = true;
+	datsrv = NULL;
 	srv = NULL;
 	serverThreads = 0;	
+	readyForData = false;
 }
 
 /**
@@ -65,8 +67,10 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = false;
+	datsrv = NULL;
 	srv = NULL;
 	serverThreads = 0;
+	readyForData = false;
 }
 
 /**
@@ -130,8 +134,8 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
  */
 void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort, int threadNo) {
 	char localport[4];
-	int errorCheck, sock;
-	struct addrinfo hints, *srv, *info;
+	int errorCheck, datsock;
+	struct addrinfo dathints, *datsrv, *datinfo;
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof client_addr;
 	if(threadNo == 2){
@@ -145,26 +149,26 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 	}
 
 	// Specifying socket parameters
-	bzero(&hints, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE; // use my IP
+	bzero(&dathints, sizeof dathints);
+	dathints.ai_family = AF_UNSPEC;
+	dathints.ai_socktype = SOCK_DGRAM;
+	dathints.ai_flags = AI_PASSIVE; // use my IP
 
 	// Filling 'srv' object with info from 'hints'
-	if ((errorCheck = getaddrinfo(NULL, localport, &hints, &srv)) != 0) {
+	if ((errorCheck = getaddrinfo(NULL, localport, &dathints, &datsrv)) != 0) {
 		perror("Server: get address info");
 		exit(1);
 	}
 
 	// Creating and binding socket.
-	for (info = srv; info != NULL; info = info->ai_next) {
-		if ((sock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
+	for (datinfo = datsrv; datinfo != NULL; datinfo = datinfo->ai_next) {
+		if ((datsock = socket(datinfo->ai_family, datinfo->ai_socktype, datinfo->ai_protocol)) == -1) {
 			perror("Server: socket");
 			continue;
 		}
 
-		if (bind(sock, info->ai_addr, info->ai_addrlen) == -1) {
-			close(sock);
+		if (bind(datsock, datinfo->ai_addr, datinfo->ai_addrlen) == -1) {
+			close(datsock);
 			perror("Server: bind");
 			continue;
 		}
@@ -173,21 +177,81 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 	}
 
 	// Ensuring valid address info was found
-	if (info == NULL) {
+	if (datinfo == NULL) {
 		perror("Server: no valid address info found.\n");
 		exit(1);
 	}
 
+	
+	//Storing data socket info for later use
+	dataSocket = datsock;
+	this->datsrv = datinfo;
+
+
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
-	while (allReady) {
-	getData(0);
-	getData(1);
-	getData(2);
-	sleep(1);
-	}
-}
+	while (1) {
+		char receiveBuffer[BUFLEN];
+		char publishMessage[BUFLEN];
 
+		if ((bytesReceived = recvfrom(datsock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
+			perror("Error receiving command.");
+			exit(1);
+		}
+		receiveBuffer[bytesReceived] = '\0';
+
+		cout << "Navdata command Received!";
+
+		// Splitting command input into tokens by whitespace
+		string buffer;
+		vector<string> tokens;
+		string stringCommand(receiveBuffer);
+		stringstream ss(stringCommand);
+
+		// Storing tokens in vector
+		while (ss >> buffer) {
+			tokens.push_back(buffer);
+		}
+
+		char rawCommand = receiveBuffer[0];
+		switch (rawCommand) {
+		case 'n':
+						
+			cout << "Server Sending navdata." << endl;
+			break;
+
+		default:
+			cout << "Error parsing raw command - invalid command character received." << endl;
+			break;
+		}
+
+		// Sending acknowledgment message to client
+		int len = BUFLEN;
+		char sendBuffer[len];
+		char navBuffer[BUFLEN];
+		strcpy(sendBuffer, getData(0));
+		//If command received was to spawn a drone, first char of ACK set to id
+		if(rawCommand == 'n'){
+		int numSent = 0;
+		sleep(5);
+		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
+		}
+		}
+		else{
+		int numSent = 0;
+		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending acknowledgment.");
+			exit(1);
+		}
+		}
+	}
+	// Cleaning up socket information
+	freeaddrinfo(datinfo);
+	freeaddrinfo(datsrv);
+	close(datsock);
+}
 
 /**
  * This method sets up the main UDP socket server. It loops continuously, parsing the input
@@ -439,7 +503,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		/* If server passes all checks, client message processed */
 			else{
 			moveAndCheck(xInt, yInt, droneNumberInt);
-			this->getData(droneNumberInt);
 			}
 		//end moveAndCheck
 			break;
@@ -487,6 +550,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			}
 			if(allReady == true){
+			readyForData = true;
 			// If grid size has been set
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			cout << "All clients ready. Starting grid!" << endl;
@@ -634,7 +698,9 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dat
 	char *dp = dataPort;
 	int errorCheck, sock, datsock;
 
-	struct addrinfo hints, *srv, *info, *datsrv, *dat;
+	struct addrinfo hints, *srv, *info;
+	struct addrinfo dathints, *datsrv, *datinfo;
+
 
 	// Specifying socket parameters
 	bzero(&hints, sizeof hints);
@@ -669,19 +735,19 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dat
 
 	
 	// Specifying socket parameters
-	bzero(&hints, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
+	bzero(&dathints, sizeof dathints);
+	dathints.ai_family = AF_UNSPEC;
+	dathints.ai_socktype = SOCK_DGRAM;
 
 	// Filling 'srv' object with info from 'hints'
-	if ((errorCheck = getaddrinfo(host, dp, &hints, &datsrv)) != 0) {
+	if ((errorCheck = getaddrinfo(host, dp, &dathints, &datsrv)) != 0) {
 		perror("Client: get address info function.");
 		exit(1);
 	}
 
 	// Creating socket
-	for (info = datsrv; info != NULL; info = info->ai_next) {
-		if ((datsock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
+	for (datinfo = datsrv; datinfo != NULL; datinfo = datinfo->ai_next) {
+		if ((datsock = socket(datinfo->ai_family, datinfo->ai_socktype, datinfo->ai_protocol)) == -1) {
 			perror("Client: socket function.");
 			continue;
 		}
@@ -690,14 +756,14 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dat
 	}
 
 	// Ensuring valid address info was found
-	if (info == NULL) {
+	if (datinfo == NULL) {
 		perror("Client: no valid address info found.\n");
 		exit(1);
 	}
 
 	// Storing server socket data for later
 	dataSocket = datsock;
-	this->dat = info;
+	this->datsrv = datinfo;
 
 	// Sleep to ensure that the connection is complete before commands are sent
 	sleep(3);
@@ -975,25 +1041,9 @@ int GaTACDroneControl::getClientUniqueId()
  * Used to set a client's current battery navdata
  * @param toSet String to set this client's navdata value to
  */
-string GaTACDroneControl::getBattery(int id)
+string GaTACDroneControl::getBattery()
 {
-	string line;
-	ifstream stream0("currentNavdata0.txt");
-	ifstream stream1("currentNavdata1.txt");
-	ifstream stream2("currentNavdata2.txt");
-	//battery
-	if(id == 0){
-		getline(stream0, line);
-		this->setBattery(line);
-	}
-	else if(id == 1){
-		getline(stream1, line);
-		this->setBattery(line);
-	}
-	else if(id == 2){
-		getline(stream2, line);
-		this->setBattery(line);
-	}
+
  return this->clientCurrentBattery;
 }
 
@@ -1019,31 +1069,8 @@ string GaTACDroneControl::getTagsSpotted()
  * Used to set a client's current velocity navdata
  * @param toSet String to set this client's navdata value to
  */
-string GaTACDroneControl::getForwardVelocity(int id)
+string GaTACDroneControl::getForwardVelocity()
 {
-string line;
-	ifstream stream0("currentNavdata0.txt");
-	ifstream stream1("currentNavdata1.txt");
-	ifstream stream2("currentNavdata2.txt");
-		//forward velocity
-	if(id == 0){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream0, line);
-		getline(stream0, line);
-		this->setForwardVelocity(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream1, line);
-		getline(stream1, line);
-		this->setForwardVelocity(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream2, line);
-		getline(stream2, line);
-		this->setForwardVelocity(line);
-	}
  return this->clientCurrentForwardVelocity;
 }
 
@@ -1086,6 +1113,75 @@ bool GaTACDroneControl::getClientReadyToCommand()
 /*
  * Private Methods
  */
+void GaTACDroneControl::receiveData(int id)
+{
+	char message[3];
+	sprintf(message, "n %d", id);
+	bool success = false;
+	char sendBuffer[BUFLEN];
+	char receiveBuffer[BUFLEN] = { };
+	strcpy(sendBuffer, message);
+	char cmdCheck = sendBuffer[0];
+	string bats = "";
+	string fors = "";
+	string sides = "";
+	string verts = "";
+	string sons = "";
+	string tags = "";
+	while(1){
+	// Sending message
+	int bytesSent = 0;
+	if ((bytesSent = sendto(dataSocket, sendBuffer, BUFLEN, 0, datsrv->ai_addr, datsrv->ai_addrlen)) == -1) {
+		cout << "Error sending message to server with errno: " << errno << endl;
+		success = false;
+	}
+
+	// Waiting for feedback (ensuring that the server received our message)
+	int bytesReceived = 0;
+	if ((bytesReceived = recvfrom(dataSocket, receiveBuffer, BUFLEN, 0, NULL, NULL)) == -1) {
+		cout << "Error receiving feedback from server." << endl;
+		exit(1);
+	} else {
+		success = true;
+		cout << "Server received nav request!" << endl;	
+		for(int i = 0; i < 30; i++)
+		bats += receiveBuffer[i];
+		for(int i = 30; i < 60; i++)
+		fors += receiveBuffer[i];
+		for(int i = 60; i < 90; i++)
+		sides += receiveBuffer[i];
+		for(int i = 90; i < 120; i++)
+		verts += receiveBuffer[i];
+		for(int i = 120; i < 150; i++)
+		sons += receiveBuffer[i];
+		for(int i = 150; i < 180; i++)
+		tags += receiveBuffer[i];     
+		
+		this->setBattery(bats);
+		this->setForwardVelocity(fors);
+		this->setSidewaysVelocity(sides);
+		this->setVerticalVelocity(verts);
+		this->setSonar(sons);
+		this->setTagsSpotted(tags);   
+		
+		cout << bats << endl;
+		cout << fors << endl;
+		cout << sides << endl;
+		cout << verts << endl;
+		cout << sons << endl;
+		cout << tags << endl;
+		
+		bats.clear();
+		fors.clear();
+		sides.clear();
+		verts.clear();
+		sons.clear();
+		tags.clear();
+		}
+	sleep(3);
+	}
+}
+
 
 /**
  * This method sends the message specified through the main UDP socket
@@ -1097,7 +1193,7 @@ bool GaTACDroneControl::getClientReadyToCommand()
  * @return Boolean value true if message successfully sent and echoed, false if there is a miscommunication
  */
 bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *addrInfo) {
-bool success = false;
+	bool success = false;
 	char sendBuffer[BUFLEN];
 	char receiveBuffer[BUFLEN] = { };
 	strcpy(sendBuffer, message);
@@ -1620,126 +1716,199 @@ string GaTACDroneControl::getGridPosition(int droneId)
  * @param option Option of which data to receive, calls correct helper method (transparent to user)
  * @return Human-readable string of characters describing and displaying the value of navdata desired
  */	
-void GaTACDroneControl::getData(int droneId)
+const char* GaTACDroneControl::getData(int droneId)
 {
 	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
 	int id = droneId;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
-	string line = "another test";
+	string line1 = "";
+	string line2 = "";
+	string line3 = "";
+	string line4 = "";
+	string line5 = ""; 
+	string line6 = "";
 	ifstream stream0("currentNavdata0.txt");
 	ifstream stream1("currentNavdata1.txt");
 	ifstream stream2("currentNavdata2.txt");
-	//battery
+	string allDataString = "";
 
 	if(id == 0){
-		getline(stream0, line);
-		this->setBattery(line);
+		//battery
+		getline(stream0, line1);
+		if(line1.size() < 30){
+ 			int whiteSpace = 30 - line1.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line1 += " ";
+			 }
+		}
+		//forward velocity
+		getline(stream0, line2);
+		if(line2.size() < 30){
+ 			int whiteSpace = 30 - line2.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line2 += " ";
+			 }
+		}
+		//sideways velocity
+		getline(stream0, line3);
+		if(line3.size() < 30){
+ 			int whiteSpace = 30 - line3.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line3 += " ";
+			 }
+		}
+		//vert velocity
+		getline(stream0, line4);
+		if(line4.size() < 30){
+ 			int whiteSpace = 30 - line4.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line4 += " ";
+			 }
+		}
+		//sonar
+		getline(stream0, line5);
+		if(line5.size() < 30){
+ 			int whiteSpace = 30 - line5.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line5 += " ";
+			 }
+		}
+		//tags spotted
+		getline(stream0, line6);
+		if(line6.size() < 30){
+ 			int whiteSpace = 30 - line6.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line6 += " ";
+			 }
+		}
+		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
 	}
+
 	else if(id == 1){
-		getline(stream1, line);
-		this->setBattery(line);
+		//battery
+		getline(stream1, line1);
+		if(line1.size() < 30){
+ 			int whiteSpace = 30 - line1.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line1 += " ";
+			 }
+		}
+		//forward velocity
+		getline(stream1, line2);
+		if(line2.size() < 30){
+ 			int whiteSpace = 30 - line2.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line2 += " ";
+			 }
+		}
+		//sideways velocity
+		getline(stream1, line3);
+		if(line3.size() < 30){
+ 			int whiteSpace = 30 - line3.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line3 += " ";
+			 }
+		}
+		//vert velocity
+		getline(stream1, line4);
+		if(line4.size() < 30){
+ 			int whiteSpace = 30 - line4.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line4 += " ";
+			 }
+		}
+		//sonar
+		getline(stream1, line5);
+		if(line5.size() < 30){
+ 			int whiteSpace = 30 - line5.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line5 += " ";
+			 }
+		}
+		//tags spotted
+		getline(stream1, line6);
+		if(line6.size() < 30){
+ 			int whiteSpace = 30 - line6.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line6 += " ";
+			 }
+		}
+		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
 	}
+
 	else if(id == 2){
-		getline(stream2, line);
-		this->setBattery(line);
+		//battery
+		getline(stream2, line1);
+		if(line1.size() < 30){
+ 			int whiteSpace = 30 - line1.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line1 += " ";
+			 }
+		}
+		//forward velocity
+		getline(stream2, line2);
+		if(line2.size() < 30){
+ 			int whiteSpace = 30 - line2.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line2 += " ";
+			 }
+		}
+		//sideways velocity
+		getline(stream2, line3);
+		if(line3.size() < 30){
+ 			int whiteSpace = 30 - line3.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line3 += " ";
+			 }
+		}
+		//vert velocity
+		getline(stream2, line4);
+		if(line4.size() < 30){
+ 			int whiteSpace = 30 - line4.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line4 += " ";
+			 }
+		}
+		//sonar
+		getline(stream2, line5);
+		if(line5.size() < 30){
+ 			int whiteSpace = 30 - line5.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line5 += " ";
+			 }
+		}
+		//tags spotted
+		getline(stream2, line6);
+		if(line6.size() < 30){
+ 			int whiteSpace = 30 - line6.size();
+ 			for(int w = 0 ; w < whiteSpace; w++)
+			 {
+				line6 += " ";
+			 }
+		}
+		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
 	}
-	//forward velocity
-	if(id == 0){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream0, line);
-		getline(stream0, line);
-		this->setForwardVelocity(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream1, line);
-		getline(stream1, line);
-		this->setForwardVelocity(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 1; i++)
-	  		getline(stream2, line);
-		getline(stream2, line);
-		this->setForwardVelocity(line);
-	}
-	//sideways velocity
-	if(id == 0){
-		for(int i = 0; i < 2; i++)
-	  		getline(stream0, line);
-		getline(stream0, line);
-		this->setSidewaysVelocity(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 2; i++)
-	  		getline(stream1, line);
-		getline(stream1, line);
-		this->setSidewaysVelocity(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 2; i++)
-	  		getline(stream2, line);
-		getline(stream2, line);
-		this->setSidewaysVelocity(line);
-	}
-	//vertical velocity
-	if(id == 0){
-		for(int i = 0; i < 3; i++)
-	  		getline(stream0, line);
-		getline(stream0, line);
-		this->setVerticalVelocity(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 3; i++)
-	  		getline(stream1, line);
-		getline(stream1, line);
-		this->setVerticalVelocity(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 3; i++)
-	  		getline(stream2, line);
-		getline(stream2, line);
-		this->setVerticalVelocity(line);
-	}
-	//sonar 
-	if(id == 0){
-		for(int i = 0; i < 4; i++)
-	  		getline(stream0, line);
-		getline(stream0, line);
-		this->setSonar(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 4; i++)
-	  		getline(stream1, line);
-		getline(stream1, line);
-		this->setSonar(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 4; i++)
-	  		getline(stream2, line);
-		getline(stream2, line);
-		this->setSonar(line);
-	}
-	//tags spotted data
-	if(id == 0){
-		for(int i = 0; i < 5; i++)
- 	 		getline(stream0, line);
-		getline(stream0, line);
-		this->setTagsSpotted(line);
-	}
-	else if(id == 1){
-		for(int i = 0; i < 5; i++)
- 	 		getline(stream1, line);
-		getline(stream1, line);
-		this->setTagsSpotted(line);
-	}
-	else if(id == 2){
-		for(int i = 0; i < 5; i++)
- 	 		getline(stream2, line);
-		getline(stream2, line);
-		this->setTagsSpotted(line);
-	}
+						
+	return allDataString.c_str();
 }
 
 /**
