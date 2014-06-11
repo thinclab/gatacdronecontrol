@@ -15,6 +15,7 @@
 
 using std::vector;
 using std::pair;
+using namespace std;
 
 /**
  * @file	GaTACDroneControl.hpp
@@ -172,80 +173,80 @@ public:
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setBattery(std::string);
+	void setBattery(string);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setForwardVelocity(std::string);
+	void setForwardVelocity(string);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setSidewaysVelocity(std::string);
+	void setSidewaysVelocity(string);
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setVerticalVelocity(std::string);
+	void setVerticalVelocity(string);
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setSonar(std::string);
+	void setSonar(string);
 
 	/**
 	 * This method will return and print data related to tag spotting.
 	 * @param droneId ID of drone to return navdata from
          */
-	void setTagsSpotted(std::string);
+	void setTagsSpotted(string);
 
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getBattery();
+	string getBattery();
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getForwardVelocity();
+	string getForwardVelocity();
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getSidewaysVelocity();
+	string getSidewaysVelocity();
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getVerticalVelocity();
+	string getVerticalVelocity();
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getSonar();
+	string getSonar();
 
 	/**
 	 * This method will return and print data related to tag spotting.
 	 * @param droneId ID of drone to return navdata from
          */
-	std::string getTagsSpotted();
+	string getTagsSpotted();
 
 	/**
 	 * This method will return and print the current position of a given drone on the grid.
 	 * @param droneId ID of drone to return navdata from
 	 * @return human-readable string denoting the drone's current location on the grid
          */
-	std::string getGridPosition(int);
+	string getGridPosition(int);
 
 	/**
 	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
@@ -355,32 +356,32 @@ private:
 	/**
 	 * @brief Current string representation of client's battery navdata
 	 */
-	std::string clientCurrentBattery;
+	string clientCurrentBattery;
 
 	/**
 	 * @brief Current string representation of client's sonar navdata
 	 */
-	std::string clientCurrentSonar;
+	string clientCurrentSonar;
 
 	/**
 	 * @brief Current string representation of client's forward velocity navdata
 	 */
-	std::string clientCurrentForwardVelocity;
+	string clientCurrentForwardVelocity;
 
 	/**
 	 * @brief Current string representation of client's sideways velocity navdata
 	 */
-	std::string clientCurrentSidewaysVelocity;
+	string clientCurrentSidewaysVelocity;
 
 	/**
 	 * @brief Current string representation of client's vertical velocity navdata
 	 */
-	std::string clientCurrentVerticalVelocity;
+	string clientCurrentVerticalVelocity;
 
 	/**
 	 * @brief Current string representation of client's tags spotted navdata
 	 */
-	std::string clientCurrentTagsSpotted;
+	string clientCurrentTagsSpotted;
 	
 	/**
 	 * @brief Indicates to server whether everything is ready before sending out commands.
