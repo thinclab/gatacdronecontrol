@@ -61,6 +61,13 @@ public:
 	 */
 	void startServer(const char *, const char *, int);
 
+	/**
+	 * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
+	 * @param remoteIP The IP supplied for a client socket
+	 * @param remotePort The port number supplied for a client socket
+	 * @param threadNo The ID of the thread this method is starting
+	 */
+
 	void dataServer(const char *remoteIp, const char *remotePort, int threadNo);
 
 	/**
@@ -171,67 +178,67 @@ public:
 	void setClientReadyToCommand(bool);
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set battery to
          */
 	void setBattery(string);
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set forward velocity to
          */
 	void setForwardVelocity(string);
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set sideways velocity to
          */
 	void setSidewaysVelocity(string);
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set vertical velocity to
          */
 	void setVerticalVelocity(string);
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set sonar to
          */
 	void setSonar(string);
 
 	/**
 	 * This method will return and print data related to tag spotting.
-	 * @param droneId ID of drone to return navdata from
+	 * @param toSet string to set tags spotted data to
          */
 	void setTagsSpotted(string);
 
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Returns the current battery value in a human readable string
          */
 	string getBattery();
 
 	/**
 	 * This method will return and print the current forward velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Returns the current forward velocity value in a human readable string
          */
 	string getForwardVelocity();
 
 	/**
 	 * This method will return and print the current sideways velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Returns the current sideways velocity value in a human readable string
          */
 	string getSidewaysVelocity();
 
 	/**
 	 * This method will return and print the current vertical velocity to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Returns the current vertical velocity value in a human readable string
          */
 	string getVerticalVelocity();
 
 	/**
 	 * This method will return and print the current sonar reading to the client's display.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Returns the current sonar value in a human readable string
          */
 	string getSonar();
 
@@ -244,7 +251,7 @@ public:
 	/**
 	 * This method will return and print the current position of a given drone on the grid.
 	 * @param droneId ID of drone to return navdata from
-	 * @return human-readable string denoting the drone's current location on the grid
+	 * @return Human-readable string denoting the drone's current location on the grid
          */
 	string getGridPosition(int);
 
@@ -281,14 +288,19 @@ public:
 	void senseWest(int);
 
 	/**
-	 * This message allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
+	 * This method allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
 	 * @param droneId The drone ID of the client sending sense request. 
 	 * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
 	 * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
 	 */
 	int sense(int, int);
 
-	void receiveData(int);
+	/**
+	 * This method allows a client to "opt in" to a continuous stream of navdata to update its data members. Using bosot threads, navdata can be accessed concurrently with 	 * drone commands.
+	 * @param id The ID of the drone requesting navdata.
+	 * @return Boolean confirming the success of request being sent and received.
+	 */
+	bool receiveData(int);
 	
 private:
 	int serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones;
@@ -324,36 +336,6 @@ private:
 	vector<bool> clientsReady; 
 
 	/**
-	 * @brief Indicates whether the client-server session is operating on real or simulated drones.
-	 */
-	bool simulatorMode;  
-
-	/**
-	 * @brief Indicates whether the server and clients are ready to send and receive data through data ports
-	 */
-	bool readyForData;  
-	
-	/**
-	 * @brief Indicates to server whether the grid size has been set.
-	 */
-	bool gridSizeSet;
-	
-	/**
-	 * @brief Indicates to server whether the grid has been started and ROS nodes for each drone have been initialized.
-	 */
-	bool gridStarted;
-
-	/**
-	 * @brief Indicates to server the number of threads currently running to process client requests.
-	 */
-	int serverThreads; 
-
-	/**
-	 * @brief ID unique to this client's drone.
-	 */
-	int clientUniqueId; 
-
-	/**
 	 * @brief Current string representation of client's battery navdata
 	 */
 	string clientCurrentBattery;
@@ -382,6 +364,36 @@ private:
 	 * @brief Current string representation of client's tags spotted navdata
 	 */
 	string clientCurrentTagsSpotted;
+
+	/**
+	 * @brief Indicates whether the client-server session is operating on real or simulated drones.
+	 */
+	bool simulatorMode;  
+
+	/**
+	 * @brief Indicates whether the server and clients are ready to send and receive data through data ports
+	 */
+	bool readyForData;  
+	
+	/**
+	 * @brief Indicates to server whether the grid size has been set.
+	 */
+	bool gridSizeSet;
+	
+	/**
+	 * @brief Indicates to server whether the grid has been started and ROS nodes for each drone have been initialized.
+	 */
+	bool gridStarted;
+
+	/**
+	 * @brief Indicates to server the number of threads currently running to process client requests.
+	 */
+	int serverThreads; 
+
+	/**
+	 * @brief ID unique to this client's drone.
+	 */
+	int clientUniqueId; 
 	
 	/**
 	 * @brief Indicates to server whether everything is ready before sending out commands.

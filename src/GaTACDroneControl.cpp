@@ -1113,7 +1113,7 @@ bool GaTACDroneControl::getClientReadyToCommand()
 /*
  * Private Methods
  */
-void GaTACDroneControl::receiveData(int id)
+bool GaTACDroneControl::receiveData(int id)
 {
 	char message[3];
 	sprintf(message, "n %d", id);
@@ -1157,12 +1157,15 @@ void GaTACDroneControl::receiveData(int id)
 		for(int i = 150; i < 180; i++)
 		tags += receiveBuffer[i];    
 
+		
 		this->setBattery(bats);
 		this->setForwardVelocity(fors);
 		this->setSidewaysVelocity(sides);
 		this->setVerticalVelocity(verts);
 		this->setSonar(sons);
 		this->setTagsSpotted(tags);   
+		
+		cout << this->getBattery() << endl;
 		
 		bats.clear();
 		fors.clear();
@@ -1173,6 +1176,7 @@ void GaTACDroneControl::receiveData(int id)
 		}
 	sleep(1);
 	}
+return success;
 }
 
 
