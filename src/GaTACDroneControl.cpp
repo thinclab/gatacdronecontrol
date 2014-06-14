@@ -1300,10 +1300,11 @@ void GaTACDroneControl::launchGrid() {
 	}
 	/* simulatorMode == false */	
 	if(simulatorMode == false){
+
 	const char *coreMessage = "xterm -e roscore&";
-	const char *launchMessage = "xterm -e roslaunch launch/tagLaunch.launch&";
+	const char *launchMessage = "xterm -e roslaunch /home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
-	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_autonomy ardrone_driver %s&";
+	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
 	char thincSmartMessage[100];
@@ -1314,7 +1315,7 @@ void GaTACDroneControl::launchGrid() {
 	// Configure launch file and start core
 	configureLaunchFile();
 	system(coreMessage);
-	//system(launchMessage);
+	system(launchMessage);
 
 	sleep(5);
 
@@ -1326,20 +1327,20 @@ void GaTACDroneControl::launchGrid() {
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 		sleep(3);
-/*		if(droneID == 0)
-		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
-		if(droneID == 1)
-		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
-		cout << "publishing message: " << ardroneDriverMessage << endl;         
-		system(ardroneDriverMessage);                                                  */                                                   
-		sleep(5); 
+//		if(droneID == 0)
+//		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
+//		if(droneID == 1)
+//		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.11");
+//		cout << "publishing message: " << ardroneDriverMessage << endl;         
+//		system(ardroneDriverMessage);                                                                                                    
+		sleep(5);                                                          
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
 		cout << "Toggled cam for drone " << droneID << endl;
 		sleep(5);
-		sprintf(toggleCamMessage, toggleCam, droneID, droneID);
-		system(toggleCamMessage);   
+	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
+		system(toggleCamMessage);   */   
 	}
 	}
 }
@@ -1453,7 +1454,7 @@ if(simulatorMode == false){
 		// Assume launch file is located in default stacks directory for current ROS distribution
 		char launchFilePath[100];
 		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/gatacdronecontrol/src/launch/tagLaunch.launch", distro);
+		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch", distro);
 		// Open file stream
 		ofstream fileStream(launchFilePath, ios::trunc);
 	
@@ -1486,7 +1487,7 @@ if(simulatorMode == false){
 		// Close file stream
 		fileStream.close();
 		}
-		}
+}
 
 /**
  * Gazebo places the grid at different locations within its own coordinate system depending on the size of the grid.
