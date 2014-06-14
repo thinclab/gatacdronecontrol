@@ -15,8 +15,8 @@ using namespace std;
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
-	char *port = "4999"; //command port
-	char *dp = "4998"; //data port
+	char *port = "5999";
+	char *dp = "5998";
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
@@ -28,7 +28,7 @@ int main() {
 	gatac.setGridSize(5, 8);
 	
 	//set up drone
-	gatac.setupDrone(0, 0); // Spawn drone at (2, 2)
+	gatac.setupDrone(3, 0); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
@@ -40,7 +40,7 @@ int main() {
 	while(gatac.getClientReadyToCommand() == true){
 	boost::thread *dataThread;
 	dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, gatac, id));
-	gatac.move(id, 0, 7);
+	gatac.move(id, 3, 7);
 	cout << gatac.getBattery() << endl;
 	cout << gatac.getForwardVelocity() << endl;
 	boost::thread *moveThread;

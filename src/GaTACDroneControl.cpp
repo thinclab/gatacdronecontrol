@@ -49,6 +49,15 @@ using namespace std;
  * Default constructor. Initializes all member variables.
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
+
+//defining static data members for navdata, unique per client
+string GaTACDroneControl::clientCurrentBattery;
+string GaTACDroneControl::clientCurrentSonar;
+string GaTACDroneControl::clientCurrentForwardVelocity;
+string GaTACDroneControl::clientCurrentSidewaysVelocity;
+string GaTACDroneControl::clientCurrentVerticalVelocity;
+string GaTACDroneControl::clientCurrentTagsSpotted;
+
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
@@ -57,6 +66,8 @@ GaTACDroneControl::GaTACDroneControl() {
 	srv = NULL;
 	serverThreads = 0;	
 	readyForData = false;
+	
+
 }
 
 /**
@@ -71,6 +82,7 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	srv = NULL;
 	serverThreads = 0;
 	readyForData = false;
+
 }
 
 /**
@@ -200,8 +212,6 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 		}
 		receiveBuffer[bytesReceived] = '\0';
 
-		cout << "Navdata command Received!";
-
 		// Splitting command input into tokens by whitespace
 		string buffer;
 		vector<string> tokens;
@@ -216,8 +226,6 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 		char rawCommand = receiveBuffer[0];
 		switch (rawCommand) {
 		case 'n':
-						
-			cout << "Server Sending navdata." << endl;
 			break;
 
 		default:
@@ -1043,7 +1051,6 @@ int GaTACDroneControl::getClientUniqueId()
  */
 string GaTACDroneControl::getBattery()
 {
-
  return this->clientCurrentBattery;
 }
 
@@ -1143,7 +1150,6 @@ bool GaTACDroneControl::receiveData(int id)
 		exit(1);
 	} else {
 		success = true;
-		cout << "Server received nav request!" << endl;	
 		for(int i = 0; i < 30; i++)
 		bats += receiveBuffer[i];
 		for(int i = 30; i < 60; i++)
@@ -1163,9 +1169,7 @@ bool GaTACDroneControl::receiveData(int id)
 		this->setSidewaysVelocity(sides);
 		this->setVerticalVelocity(verts);
 		this->setSonar(sons);
-		this->setTagsSpotted(tags);   
-		
-		cout << this->getBattery() << endl;
+		this->setTagsSpotted(tags);  
 		
 		bats.clear();
 		fors.clear();
@@ -1174,7 +1178,7 @@ bool GaTACDroneControl::receiveData(int id)
 		sons.clear();
 		tags.clear();
 		}
-	sleep(1);
+	sleep(0.25);
 	}
 return success;
 }
@@ -2001,3 +2005,4 @@ int GaTACDroneControl::sense(int droneId, int option)
 		}
 	}
 }
+

@@ -244,7 +244,7 @@ public:
 
 	/**
 	 * This method will return and print data related to tag spotting.
-	 * @param droneId ID of drone to return navdata from
+	 * @return Human-readable value of current tag data
          */
 	string getTagsSpotted();
 
@@ -261,8 +261,8 @@ public:
 	 * @param option Option of which data to receive, calls correct helper method (transparent to user)
 	 * @return Human-readable string of characters describing and displaying the value of navdata desired
          */
-	const char* getData(int);
 	
+	const char* getData(int);	
 	/**
  	 * This method is called by a client to send a senseNorth message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
@@ -338,32 +338,32 @@ private:
 	/**
 	 * @brief Current string representation of client's battery navdata
 	 */
-	string clientCurrentBattery;
+	static string clientCurrentBattery;
 
 	/**
 	 * @brief Current string representation of client's sonar navdata
 	 */
-	string clientCurrentSonar;
+	static string clientCurrentSonar;
 
 	/**
 	 * @brief Current string representation of client's forward velocity navdata
 	 */
-	string clientCurrentForwardVelocity;
+	static string clientCurrentForwardVelocity;
 
 	/**
 	 * @brief Current string representation of client's sideways velocity navdata
 	 */
-	string clientCurrentSidewaysVelocity;
+	static string clientCurrentSidewaysVelocity;
 
 	/**
 	 * @brief Current string representation of client's vertical velocity navdata
 	 */
-	string clientCurrentVerticalVelocity;
+	static string clientCurrentVerticalVelocity;
 
 	/**
 	 * @brief Current string representation of client's tags spotted navdata
 	 */
-	string clientCurrentTagsSpotted;
+	static string clientCurrentTagsSpotted;
 
 	/**
 	 * @brief Indicates whether the client-server session is operating on real or simulated drones.
