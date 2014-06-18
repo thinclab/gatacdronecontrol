@@ -1443,6 +1443,12 @@ if(simulatorMode == false){
 		"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" />\n\t\t\t"
 		"<arg name=\"drone_ip\" value=\"192.168.1.10\"/>"
 		"</group>\n\n";
+		const char *droneText2 =
+		"\t<group ns=\"drone%d\">\n\t\t"
+		"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
+		"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" />\n\t\t\t"
+		"<arg name=\"drone_ip\" value=\"192.168.1.11\"/>"
+		"</group>\n\n";
 		const char *endingText ="</launch>";
 
 		// Open launch file. Check what ROS distribution is currently being used
@@ -1479,7 +1485,10 @@ if(simulatorMode == false){
 			droneID = i;
 			droneX = originX + (2 * dronePositions.at(droneID).second);
 			droneY = originY - (2 * dronePositions.at(droneID).first);
+			if(i == 0)
 			sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+			if(i == 1)
+			sprintf(droneBuffer, droneText2, droneID, droneID, droneID, droneID, droneX, droneY);
 			fileStream << droneBuffer;
 		}
 		fileStream << endingText;
