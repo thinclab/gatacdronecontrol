@@ -28,6 +28,9 @@ using namespace std;
  * @author  	Vince Capparell, Casey Hetzler
  * @version	1.0
  *
+ * @section BRIEF A program designed to allow one server to control 1-3 quadcopter clients 
+ * in a grid-based environment, providing various functions such as movement, communication of navdata, and the spotting of other drones.
+ *
  * @section LICENSE
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License version 3 as
@@ -45,11 +48,6 @@ using namespace std;
  * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
  */
 
-/**
- * Default constructor. Initializes all member variables.
- * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
- */
-
 //defining static data members for navdata, unique per client
 string GaTACDroneControl::clientCurrentBattery;
 string GaTACDroneControl::clientCurrentSonar;
@@ -58,6 +56,10 @@ string GaTACDroneControl::clientCurrentSidewaysVelocity;
 string GaTACDroneControl::clientCurrentVerticalVelocity;
 string GaTACDroneControl::clientCurrentTagsSpotted;
 
+/**
+ * Default constructor. Initializes all member variables.
+ * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
+ */
 GaTACDroneControl::GaTACDroneControl() {
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
@@ -82,13 +84,12 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	srv = NULL;
 	serverThreads = 0;
 	readyForData = false;
-
 }
 
 /**
  * This method is called by the GaTAC server. It begins a new server thread for each drone started.
- * @param remoteIP The IP supplied for a client socket
- * @param remotePort The port number supplied for a client socket
+ * @param remoteIP The IP supplied for a client command socket
+ * @param remotePort The port number supplied for a client command socket, by default 4999, 5999, and 6999
  * @param expectedDrones The number of drones expected for this flight/server session
  */
 void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
@@ -96,52 +97,48 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
 	for(int i = 0; i < expectedDrones*2; i++)
 	{
 	serverThreads++;
-	boost::thread* moveThread;
+	boost::thread* thread;
 	if(i == 0){
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting thread 1"<<endl;
 	}
 	else if(i == 1){
 	const char* remotePort2 = "4998";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting data thread 1"<<endl;  
 	}
 	else if(i == 2){
 	const char* remotePort3 = "5999";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting thread 2"<<endl;
 	}
 	else if(i == 3){
 	const char* remotePort4 = "5998";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting data thread 2"<<endl;
 	}
 	else if(i == 4){
 	const char* remotePort5 = "6999";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting thread 3"<<endl;
 	}
 	else if(i == 5){
 	const char* remotePort6 = "6998";
-	moveThread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));	
-	threads[i] = moveThread;
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));	
+	threads[i] = thread;
 	cout<<"starting data thread 3"<<endl;
 	}
-	
-
 }
 }
 /**
- * This method sets up data socket servers. It loops continuously, parsing the input
- * received from the UDP socket and launching the correct ROS services on the machine it's running on.
- * The machine running this main server must therefore have all necessary ROS packages installed.
- * @param remoteIP The IP supplied for a client socket
- * @param remotePort The port number supplied for a client socket
+ * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
+ * @param remoteIP The IP supplied for a client data socket
+ * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
  * @param threadNo The ID of the thread this method is starting
  */
 void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort, int threadNo) {
@@ -699,6 +696,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
  * is then stored in the current instance of GaTACDroneControl for later communication with the server.
  * @param serverIp The IP supplied for the server's socket
  * @param serverPort The port number supplied for the server's socket
+ * @param dataPort The port number supplied for the client's navdata socket
  */
 void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dataPort) {
 	char *host = serverIp;
@@ -876,7 +874,7 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 }
 
 /**
- * This method will move the specified drone to the desired (x, y) position.
+ * This method is called by the client and will move the specified drone to the desired (x, y) position.
  * @param droneId ID of drone to move
  * @param x Drone's desired position, X-axis
  * @param y Drone's desired position, Y-axis
@@ -891,7 +889,7 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 }
 
 /**
- * This method allows a drone to hover.
+ * This method is called by the client and allows a drone to hover.
  * @param droneId ID of drone to hover
  */
 void GaTACDroneControl::hover(int droneId) {
@@ -905,7 +903,7 @@ void GaTACDroneControl::hover(int droneId) {
 }
 
 /**
- * This method will land the specified drone.
+ * This method is called by the client and will land the specified drone.
  * @param droneId ID of drone to land
  */
 void GaTACDroneControl::land(int droneId) {
@@ -920,7 +918,7 @@ void GaTACDroneControl::land(int droneId) {
 }
 
 /**
- * This method will make the specified drone take off.
+ * This method is called by the client and will make the specified drone take off.
  * @param droneId ID of drone to takeoff
  */
 void GaTACDroneControl::takeoff(int droneId) {
@@ -935,7 +933,7 @@ void GaTACDroneControl::takeoff(int droneId) {
 }
 
 /**
- * This method will trigger the reset mode for the specified drone.
+ * This method is called by the client and will trigger the reset mode for the specified drone.
  * @param droneId ID of drone to reset
  */
 void GaTACDroneControl::reset(int droneId) {
@@ -965,10 +963,11 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 }
 
 /**
- * This method closes the UDP client socket.
+ * This method closes the UDP client socket, as well as the navdata socket, and sets the client's readyToCommand boolean to false.
  */
 void GaTACDroneControl::closeClient() {
 	close(serverSocket);
+	close(dataSocket);
 	this->setClientReadyToCommand(false);
 	freeaddrinfo(srv);
 }
@@ -983,8 +982,8 @@ void GaTACDroneControl::setClientUniqueId(int toSet)
 }
 
 /**
- * Used to set a client's current battery navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentBattery data member to the correct navdata value.
+ * @param toSet string to set battery to
  */
 void GaTACDroneControl::setBattery(string toSet)
 {
@@ -992,8 +991,8 @@ void GaTACDroneControl::setBattery(string toSet)
 }
 
 /**
- * Used to set a client's current sonar navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentSonar data member to the correct navdata value..
+ * @param toSet string to set sonar to
  */
 void GaTACDroneControl::setSonar(string toSet)
 {
@@ -1001,8 +1000,8 @@ void GaTACDroneControl::setSonar(string toSet)
 }
 
 /**
- * Used to set a client's current tag spotted navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentTagsSpotted data member to the correct navdata value.
+ * @param toSet string to set tags spotted data to
  */
 void GaTACDroneControl::setTagsSpotted(string toSet)
 {
@@ -1010,8 +1009,8 @@ void GaTACDroneControl::setTagsSpotted(string toSet)
 }
 
 /**
- * Used to set a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentForwardVelocity data member to the correct navdata value.
+ * @param toSet string to set forward velocity to
  */
 void GaTACDroneControl::setForwardVelocity(string toSet)
 {
@@ -1019,8 +1018,8 @@ void GaTACDroneControl::setForwardVelocity(string toSet)
 }
 
 /**
- * Used to set a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentSidewaysVelocity data member to the correct navdata value.
+ * @param toSet string to set sideways velocity to
  */
 void GaTACDroneControl::setSidewaysVelocity(string toSet)
 {
@@ -1028,8 +1027,8 @@ void GaTACDroneControl::setSidewaysVelocity(string toSet)
 }
 
 /**
- * Used to set a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will set the GaTAC clientCurrentVerticalVelocity data member to the correct navdata value.
+ * @param toSet string to set vertical velocity to
  */
 void GaTACDroneControl::setVerticalVelocity(string toSet)
 {
@@ -1046,8 +1045,8 @@ int GaTACDroneControl::getClientUniqueId()
 }
 
 /**
- * Used to get a client's current battery navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current battery percentage to the client's display.
+ * @return Returns the current battery value in a human-readable string
  */
 string GaTACDroneControl::getBattery()
 {
@@ -1055,8 +1054,8 @@ string GaTACDroneControl::getBattery()
 }
 
 /**
- * Used to get a client's current sonar navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current sonar reading to the client's display.
+ * @return Returns the current sonar value in a human-readable string
  */
 string GaTACDroneControl::getSonar()
 {
@@ -1064,8 +1063,8 @@ string GaTACDroneControl::getSonar()
 }
 
 /**
- * Used to get a client's current tag spotted navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current number of tags spotted to the client's display.
+ * @return Human-readable string of current tag data
  */
 string GaTACDroneControl::getTagsSpotted()
 {
@@ -1073,8 +1072,8 @@ string GaTACDroneControl::getTagsSpotted()
 }
 
 /**
- * Used to get a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current forward velocity to the client's display.
+ * @return Returns the current forward velocity value in a human-readable string
  */
 string GaTACDroneControl::getForwardVelocity()
 {
@@ -1082,8 +1081,8 @@ string GaTACDroneControl::getForwardVelocity()
 }
 
 /**
- * Used to get a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current sideways velocity to the client's display.
+ * @return Returns the current sideways velocity value in a human-readable string
  */
 string GaTACDroneControl::getSidewaysVelocity()
 {
@@ -1091,8 +1090,8 @@ string GaTACDroneControl::getSidewaysVelocity()
 }
 
 /**
- * Used to get a client's current velocity navdata
- * @param toSet String to set this client's navdata value to
+ * This method will return and print the current vertical velocity to the client's display.
+ * @return Returns the current vertical velocity value in a human-readable string
  */
 string GaTACDroneControl::getVerticalVelocity()
 {
@@ -1272,7 +1271,7 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
  * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,
  * and with any drones that have been set up via the setUpDrone method.
  * 
- * ***NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone.***
+ * *** NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone. ***
  */
 void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == true */	
@@ -1346,10 +1345,12 @@ void GaTACDroneControl::launchGrid() {
 }
 
 /**
- * This method modifies the grid_flight.launch file used by Gazebo to start the simulator.
+ * In simulation, this method modifies the grid_flight.launch file used by Gazebo to start the simulator.
  * It specifies the grid size and number/starting position of all drones.
+ *
+ * With actual drones, this method uses a modification of ardrone_autonomy's ardrone.launch file, to allow tag spotting and specify other parameters.
  * 
- * ***NOTE: Directory to create launch file in can be specified here.***
+ * *** NOTE: Directory in which to create launch file can be specified here. ***
  */
 void GaTACDroneControl::configureLaunchFile() {
 	cout << "Configuring launch file." << endl;
@@ -1693,7 +1694,7 @@ bool GaTACDroneControl::validGridSize(int x, int y)
 /**
  * This method will return and print the current position of a given drone on the grid.
  * @param droneId ID of drone to return navdata from
- * @return human-readable string denoting the drone's current location on the grid
+ * @return Human-readable string denoting the drone's current location on the grid
  */
 string GaTACDroneControl::getGridPosition(int droneId)
 {
@@ -1715,8 +1716,7 @@ string GaTACDroneControl::getGridPosition(int droneId)
 /**
  * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
  * @param droneId ID of drone to return navdata from
- * @param option Option of which data to receive, calls correct helper method (transparent to user)
- * @return Human-readable string of characters describing and displaying the value of navdata desired
+ * @return Character array of all navdata values, to be sent over a socket to the client, broken up into strings of thirty characters, and used to set navdata members
  */	
 const char* GaTACDroneControl::getData(int droneId)
 {
@@ -1917,7 +1917,7 @@ const char* GaTACDroneControl::getData(int droneId)
  * This method allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
  * @param droneId The drone ID of the client sending sense request. 
  * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
- * @return 0 if no drone is above client drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
+ * @return 0 if no drone is on that side of subject drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
  */
 int GaTACDroneControl::sense(int droneId, int option)
 {
