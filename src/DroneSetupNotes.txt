@@ -1,0 +1,36 @@
+This document contains information on setting up the THINC Lab quadcopters to run using the GaTAC API.
+
+To configure a drone to a specific IP and make it connect to the USB dongle, ThincAccessPoint:
+	In /bin/, make a new file wifi.sh that will run when battery is connected.
+		(example file of /bin/wifi.sh, to set a drone to IP 192.168.1.10:)
+			killall udhcpd
+			ifconfig ath0 down
+			iwconfig ath0 mode managed essid ThincAccessPoint
+			ifconfig ath0 192.168.1.10 netmask 255.255.255.0 up
+
+		ArDrone 1.0 is currently set to 192.168.1.11
+		ArDrone 2.0 is currently set to 192.168.1.10
+		ArDrone Power Edition is currently set to 192.168.1.12
+	
+	In /etc/init.d/rcS
+		Where "wifi_setup.sh" is cllaed, make sure there is no "&" at the end of the line
+
+		Just before "echo" at end of file, add a line that calls the "wifi".sh" script above
+		/bin/wifi.sh
+		(wifi.sh must have permissions changed, set to executable)
+
+
+If drones are already configured (they probably are), you must set up an access point using the small USB dongle.
+	This dongle is configured to use IP address 192.168.1.1 on 128.192.76.247 (computer near the door)
+	On small gray Dell, it is configured to use IP address 192.168.1.110.
+	If you need to reconfigure the IP address or SSID on one of these or a new computer, see below instructions.
+
+	To set up the Access Point to run the drones:
+		In a new terminal enter "sudo ifdown wlan0". The interface is probably not set up, this is just to make sure. Enter password on prompt.
+		Then enter "sudo ifup wlan0", enter password on prompt, you will see the interface start up.
+
+		In another terminal, change directory to /home/wifi_config. This holds a few config files which are used for hostapd, the process that will let the dongle host 		its own access point.
+		
+		Once in wifi_config, enter "sudo hostapd ./hostapd.conf". Enter password on prompt. This will start the access point using the specified configuration. You will 			know if it started correctly.
+
+	Because of how the drones are configured, if the Access Point is running, when the drone batteries are connected they will automatically seek out this access point. You 	will see info about each drone's connection as it connects, followed shortly by the drones' start-up beeps and a twitching of each propellor. 

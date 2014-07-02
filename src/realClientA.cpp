@@ -8,12 +8,12 @@
 
 int main() {
 	// Specifying the IP and port of server machine
-	char *ip = "128.192.76.247";
+	char *ip = "192.168.1.1";
 	char *port = "4999";
 
 	// Instantiate GaTACDroneControl object
-	const char* c = "r";
- 	GaTACDroneControl gatac(c);
+	GaTACDroneControl gatac;
+
 	// Launch Drone Client
 	gatac.launchClient(ip, port);
 
@@ -22,14 +22,35 @@ int main() {
 	
 	//set up drone
 	gatac.setupDrone(2, 2); // Spawn drone at (2, 2)
-	sleep(35);
-	// Launch Gazebo Simulator
 
+	// Sending ready message
+	gatac.readyUp();
+	
+	//Setting id of drone to client's unique id
+	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
+	while(gatac.getClientReadyToCommand() == true){
+	gatac.takeoff(id);
+	sleep(5);
+	gatac.getBattery(id);
+	sleep(3);
+	gatac.getBattery(id);
+	sleep(3);
+	gatac.move(id, 2, 3);
+	gatac.getForwardVelocity(id);
+	sleep(3);
+	gatac.getSidewaysVelocity(id);
+	sleep(3);
+	gatac.getVerticalVelocity(id);
+	sleep(3);
+	gatac.getSonar(id);	
+	sleep(3);
+	gatac.getTagSpotted(id);	
+	sleep(3);
 
 	//Drones land
-	gatac.land(0);
+	gatac.land(id);
 	
 	//Uncomment to check errors: invalid drone ID and invalid location
 /*
@@ -47,6 +68,6 @@ int main() {
 
 	// Close client socket connection.
 	gatac.closeClient();
-
+	}
 	return 0;
 }

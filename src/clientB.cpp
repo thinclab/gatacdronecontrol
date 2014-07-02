@@ -10,18 +10,19 @@ int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
 	char *port = "5999";
+	char *dp = "5998";
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 
 	// Launch Drone Client
-	gatac.launchClient(ip, port);
+	gatac.launchClient(ip, port, dp);
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
 	
 	//set up drone
-	gatac.setupDrone(1, 1); // Spawn drone at (2, 2)
+	gatac.setupDrone(3,0); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
@@ -31,21 +32,11 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-	gatac.move(id, 1, 4);
-	gatac.move(id, 2, 4);
-	gatac.getBattery(id);
-	gatac.move(id, 2, 2);
-	gatac.getBattery(id);
-	gatac.getForwardVelocity(id);
-	gatac.move(id, 1, 2);
-	gatac.getSidewaysVelocity(id);
-	gatac.move(id, 1, 4);
-	gatac.getVerticalVelocity(id);
-	gatac.move(id, 2, 4);
-	gatac.getSonar(id);	
-	gatac.move(id, 2, 2);
-	gatac.getTagSpotted(id);	
-	gatac.move(id, 1, 2);
+	gatac.move(id, 3, 7);
+	gatac.getBattery();
+	gatac.move(id, 3, 0);
+	gatac.getBattery();
+	
 	//Drones land
 	gatac.land(id);
 	

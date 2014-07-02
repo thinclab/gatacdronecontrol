@@ -2,7 +2,6 @@
 #include <unistd.h>
 #include "GaTACDroneControl.hpp"
 
-
 /*
  * Sample client code to demonstrate usage of the GaTACDroneControl API.
  */
@@ -10,8 +9,8 @@
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
-	char *port = "4999";
-	
+	char *port = "5999";
+
 	// Instantiate GaTACDroneControl object
 	const char* c = "r";
  	GaTACDroneControl gatac(c);
@@ -19,18 +18,26 @@ int main() {
 	gatac.launchClient(ip, port);
 
 	// Set grid size to [5 x 8]
-	//gatac.setGridSize(5, 8);
+	gatac.setGridSize(5, 8);
 	
 	//set up drone
-	gatac.setupDrone(1, 2); // Spawn drone at (2, 2)
+	gatac.setupDrone(1, 1); // Spawn drone at (1, 1)
 
-	// Launch Gazebo Simulator
-	gatac.startGrid();
+	// Sending ready message
+	gatac.readyUp();
+
+	//Setting id of drone to client's unique id
+	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
+	while(gatac.getClientReadyToCommand() == true){
+	gatac.takeoff(id);
+	gatac.move(id, 1, 2);
+	gatac.move(id, 2, 3);
+	gatac.move(id, 1, 1);
 
 	//Drones land
-	gatac.land(1);
+	gatac.land(id);
 	
 	//Uncomment to check errors: invalid drone ID and invalid location
 /*
@@ -48,6 +55,6 @@ int main() {
 
 	// Close client socket connection.
 	gatac.closeClient();
-
+	}
 	return 0;
 }
