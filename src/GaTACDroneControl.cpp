@@ -409,8 +409,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
 			system(publishMessage);
 			sleep(3); // Wait for takeoff to complete
-			if(simulatorMode == false)
-			varyHeights(droneInt);
 			}
 			break;
 
@@ -562,10 +560,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			cout << "Waiting a few seconds before server will receive commands..." << endl;
 			launchGrid();
 			gridStarted = true;
-			if(simulatorMode == true){
-			for(int i = 0; i < numberOfDrones; i++)
-				varyHeights(i);
-			}
+
 			}
 			// If grid has already been started
 			else if(this->gridStartCheck() == true) {
@@ -586,10 +581,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			launchGrid();
 			gridStarted = true;
-			if(simulatorMode == true){
-			for(int i = 0; i < numberOfDrones; i++)
-				varyHeights(i);
-			}
 			}
 			// If grid has already been started
 			else if(this->gridStartCheck() == true) {
@@ -1277,7 +1268,7 @@ void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == true */
 	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %d s&";
+	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
 	char thincSmartMessage[100];
 
 	// Configure launch file and start gazebo
@@ -1302,7 +1293,7 @@ void GaTACDroneControl::launchGrid() {
 
 	const char *coreMessage = "xterm -e roscore&";
 	const char *launchMessage = "xterm -e roslaunch /home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %d r&";
+	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
@@ -1516,33 +1507,6 @@ void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
 	y = numberOfColumns - 1;
 }
 
-/**
- * This method varies the altitude of each drone as a function of their ID
- * (Larger ID = higher flight)
- * @param droneNumber ID of the drone being elevated
- */
-void GaTACDroneControl::varyHeights(int droneNumber)
-{
-	/* simulatorMode == true and false */
-	string temp;
-	std::stringstream strID;
-	char publishMessage[BUFLEN];
-	const char *variableHeightTakeoff1 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,%.2f]' '[0,0,0]'"; //%.2f = speed of altitude increase
-	const char *variableHeightTakeoff2 = "rostopic pub -1 /drone%s/cmd_vel geometry_msgs/Twist '[0,0,0]' '[0,0,0]'&"; //stops lifting
-
-		double kDub = (double) droneNumber;
-		float vHt = (float) (kDub+0.5)/10;
-		strID << droneNumber;
-		temp = strID.str();
-		sprintf(publishMessage, variableHeightTakeoff1, temp.c_str(), vHt);
-		system(publishMessage);
-		sprintf(publishMessage, variableHeightTakeoff2, temp.c_str());
-		system(publishMessage);
-		strID.str("");
-		dronesSharingSpace.push_back(false);
-
-	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;
-}
 
 /**
  * This method takes movement parameters and sends waypoint messages one cell at a time.

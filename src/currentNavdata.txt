@@ -1,6 +1,0 @@
-Battery percent: 93.06
-Forward velocity: 0.879513
-Sideways velocity: -6.84135
-Vertical velocity: 0.0178758
-Sonar reading: 1479
-Tags spotted, count: 0
