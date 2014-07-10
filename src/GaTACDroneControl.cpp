@@ -28,7 +28,7 @@ using namespace std;
  * @author  	Vince Capparell, Casey Hetzler
  * @version	1.0
  *
- * @section BRIEF A program designed to allow one server to control 1-3 quadcopter clients 
+ * @section BRIEF A program designed to allow one server to control 1-3 quadcopter clients
  * in a grid-based environment, providing various functions such as movement, communication of navdata, and the spotting of other drones.
  *
  * @section LICENSE
@@ -43,7 +43,7 @@ using namespace std;
  * http://www.gnu.org/licenses/quick-guide-gplv3.html
  *
  * @section DESCRIPTION
- * GaTACDroneControl allows grid-based movement, facilitated with client-server communication, for up to three (3) "Parrot AR.Drone" drone clients and one (1) multi-threaded     
+ * GaTACDroneControl allows grid-based movement, facilitated with client-server communication, for up to three (3) "Parrot AR.Drone" drone clients and one (1) multi-threaded
  * server process.
  * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
  */
@@ -66,9 +66,9 @@ GaTACDroneControl::GaTACDroneControl() {
 	simulatorMode = true;
 	datsrv = NULL;
 	srv = NULL;
-	serverThreads = 0;	
+	serverThreads = 0;
 	readyForData = false;
-	
+
 
 }
 
@@ -93,43 +93,43 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  * @param expectedDrones The number of drones expected for this flight/server session
  */
 void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
-	cout << "Main server running." << endl;	
+	cout << "Main server running." << endl;
 	for(int i = 0; i < expectedDrones*2; i++)
 	{
 	serverThreads++;
 	boost::thread* thread;
 	if(i == 0){
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));
 	threads[i] = thread;
 	cout<<"starting thread 1"<<endl;
 	}
 	else if(i == 1){
 	const char* remotePort2 = "4998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));
 	threads[i] = thread;
-	cout<<"starting data thread 1"<<endl;  
+	cout<<"starting data thread 1"<<endl;
 	}
 	else if(i == 2){
 	const char* remotePort3 = "5999";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));
 	threads[i] = thread;
 	cout<<"starting thread 2"<<endl;
 	}
 	else if(i == 3){
 	const char* remotePort4 = "5998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));
 	threads[i] = thread;
 	cout<<"starting data thread 2"<<endl;
 	}
 	else if(i == 4){
 	const char* remotePort5 = "6999";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));
 	threads[i] = thread;
 	cout<<"starting thread 3"<<endl;
 	}
 	else if(i == 5){
 	const char* remotePort6 = "6998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));	
+	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));
 	threads[i] = thread;
 	cout<<"starting data thread 3"<<endl;
 	}
@@ -149,7 +149,7 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 	socklen_t addr_len = sizeof client_addr;
 	if(threadNo == 2){
 	sprintf(localport, "%d", DEFAULTDATAPORT1);
-	}	
+	}
 	if(threadNo == 4){
 	sprintf(localport, "%d", DEFAULTDATAPORT2);
 	}
@@ -191,7 +191,7 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
 		exit(1);
 	}
 
-	
+
 	//Storing data socket info for later use
 	dataSocket = datsock;
 	this->datsrv = datinfo;
@@ -275,7 +275,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 	socklen_t addr_len = sizeof client_addr;
 	if(threadNo == 1){
 	sprintf(localport, "%d", DEFAULTCLIENTPORT1);
-	}	
+	}
 	if(threadNo == 3){
 	sprintf(localport, "%d", DEFAULTCLIENTPORT2);
 	}
@@ -317,7 +317,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		exit(1);
 	}
 
-	
+
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
@@ -326,7 +326,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		string temp;
 		string errorMessage = "none";
 		string invalidDroneId = "No drone with ID has been spawned. Please specify a valid drone ID.";
-       		string invalidLocation = "Location entered is beyond the grid parameters."; 
+       		string invalidLocation = "Location entered is beyond the grid parameters.";
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 		int initialColumn, initialRow;
@@ -340,7 +340,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		std::stringstream strX;
 		std::stringstream strY;
 		std::stringstream strID;
-		
+
 
 		cout << "Waiting for a command..." << endl;
 		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
@@ -365,7 +365,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		char rawCommand = receiveBuffer[0];
 		switch (rawCommand) {
 		case 's':
-						
+
 			cout << "Spawn drone." << endl;
 			initialColumn = atoi((tokens.at(1)).c_str());
 			initialRow = atoi((tokens.at(2)).c_str());
@@ -432,7 +432,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 				remove("currentNavdata0.txt");
 			else if(droneInt == 1)
 				remove("currentNavdata1.txt");
-			else if(droneInt == 2)	  
+			else if(droneInt == 2)
 				remove("currentNavdata2.txt");
 			}
 			break;
@@ -446,7 +446,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			// If grid hasn't been started
 			if (gridStartCheck() == false) {
 			errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
-			}	
+			}
 			// If drone ID isn't valid
 			else if (validDroneId(droneNumberInt) == false) {
 			errorMessage = invalidDroneId;
@@ -480,9 +480,9 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			cout << "Move." << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			x = (tokens.at(2)).c_str();
-			y = (tokens.at(3)).c_str();	
+			y = (tokens.at(3)).c_str();
 		//Desired coordinates & drone ID sent to moveAndCheck, where movement messages are sent one move at a time and positions are checked after each move using the
-		//sharedSpace method	
+		//sharedSpace method
 			strX << x;
 			strX >> xInt;
 			strY << y;
@@ -493,7 +493,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			// If grid hasn't been started
 			if (gridStartCheck() == false) {
 			errorMessage = "The grid has not yet been started. Grid must be started before sending commands to a drone.";
-			}	
+			}
 			// If drone ID isn't valid
 			else if (validDroneId(droneNumberInt) == false) {
 			errorMessage = invalidDroneId;
@@ -519,7 +519,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			// If size has already been set
 			if (gridSizeCheck() == true) {
 			cout << "Error: The grid size has already been set to ["<<numberOfColumns<<" x "<<numberOfRows<<"]. Specify grid size only once." << endl;
-			} 
+			}
 			// If size isn't valid
 			 if (validGridSize(numberOfRows, numberOfColumns) == false) {
 			cout << "Error: The grid size specified was too large. The maximum grid size is 10x10." << endl;
@@ -534,7 +534,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			break;
 
 			//When running multi clients, have each use readyUp() to start the grid
-		case 'y': 
+		case 'y':
 			for(int i=0; i < clientsReady.size(); i++)
 			{
 			if(clientsReady.at(i) == false){
@@ -570,16 +570,16 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			// If grid has already been started
 			else if(this->gridStartCheck() == true) {
 			cout << "Error: Grid already started." << endl;
-			}	
+			}
 			//If grid size has not been set
 			else if(this->gridSizeCheck() == false) {
 			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
 			exit(1);
-			}	
-			}			
+			}
+			}
 			break;
 
-			//Kind of deprecated, usable only for single client start				
+			//Kind of deprecated, usable only for single client start
 		case 'i':
 			cout << "Start gazebo." << endl;
 			// If grid size has been set
@@ -594,15 +594,15 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			// If grid has already been started
 			else if(this->gridStartCheck() == true) {
 			cout << "Error: Grid already started." << endl;
-			}	
+			}
 			//If grid size has not been set
 			else if(this->gridSizeCheck() == false) {
 			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
 			exit(1);
-			}	
+			}
 			break;
 
-		case 'u': 
+		case 'u':
 			cout << "Sense North" << endl;
 			droneNumber = (tokens.at(1)).c_str();
 			droneInt = atoi(droneNumber);
@@ -668,7 +668,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		}
 		//If command received was a sense command, first char of ACK set to sense return integer
 		else if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
-		char senseChar = (char)(((int)'0')+senseResult);	
+		char senseChar = (char)(((int)'0')+senseResult);
 		sendBuffer[0] = senseChar;
 		int numSent = 0;
 			if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
@@ -739,7 +739,7 @@ void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dat
 	serverSocket = sock;
 	this->srv = info;
 
-	
+
 	// Specifying socket parameters
 	bzero(&dathints, sizeof dathints);
 	dathints.ai_family = AF_UNSPEC;
@@ -801,7 +801,7 @@ void GaTACDroneControl::readyUp() {
  * This method is called by a client to send a senseNorth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseNorth(int droneId) {	
+void GaTACDroneControl::senseNorth(int droneId) {
 	printf("Sending sense north command, drone #%d.\n", droneId);
 	// Send command to server
 	bool worked = commandDrone('u', droneId);
@@ -815,7 +815,7 @@ void GaTACDroneControl::senseNorth(int droneId) {
  * This method is called by a client to send a senseSouth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseSouth(int droneId) {	
+void GaTACDroneControl::senseSouth(int droneId) {
 	printf("Sending sense south command, drone #%d.\n", droneId);
 	// Send command to server
 	bool worked = commandDrone('d', droneId);
@@ -829,7 +829,7 @@ void GaTACDroneControl::senseSouth(int droneId) {
  * This method is called by a client to send a senseEast message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseEast(int droneId) {	
+void GaTACDroneControl::senseEast(int droneId) {
 	printf("Sending sense east command, drone #%d.\n", droneId);
 	// Send command to server
 	bool worked = commandDrone('k', droneId);
@@ -843,7 +843,7 @@ void GaTACDroneControl::senseEast(int droneId) {
  * This method is called by a client to send a senseWest message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseWest(int droneId) {	
+void GaTACDroneControl::senseWest(int droneId) {
 	printf("Sending sense west command, drone #%d.\n", droneId);
 	// Send command to server
 	bool worked = commandDrone('j', droneId);
@@ -881,7 +881,7 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
  */
 void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
-	// Send command to server, checks for valid ID and location done server-side	
+	// Send command to server, checks for valid ID and location done server-side
 		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
 		char message[10];
 		sprintf(message, "m %d %d %d", droneId, x, y);
@@ -1160,16 +1160,16 @@ bool GaTACDroneControl::receiveData(int id)
 		for(int i = 120; i < 150; i++)
 		sons += receiveBuffer[i];
 		for(int i = 150; i < 180; i++)
-		tags += receiveBuffer[i];    
+		tags += receiveBuffer[i];
 
-		
+
 		this->setBattery(bats);
 		this->setForwardVelocity(fors);
 		this->setSidewaysVelocity(sides);
 		this->setVerticalVelocity(verts);
 		this->setSonar(sons);
-		this->setTagsSpotted(tags);  
-		
+		this->setTagsSpotted(tags);
+
 		bats.clear();
 		fors.clear();
 		sides.clear();
@@ -1217,13 +1217,13 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 		// If message we sent and message returned from server are the same, success
 		if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck != 'y') {
 			success = true;
-			cout << "Server received the command!" << endl;	
+			cout << "Server received the command!" << endl;
 		//Special case: if message was a spawn command, server sends back the ID to the client
 		} else if (strcmp(sendBuffer, receiveBuffer) != 0 && cmdCheck == 's') {
 			success = true;
 			this->setClientUniqueId(idInt);
  			cout << "Server received the spawn command!" << endl;
-			cout << "This client is controlling drone #" << this->getClientUniqueId()<< "" <<endl;	
+			cout << "This client is controlling drone #" << this->getClientUniqueId()<< "" <<endl;
 		//Special case: if message was a ready up command, client sets readyToCommand boolean to true
 		} else if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck =='y'){
 			success = true;
@@ -1234,14 +1234,14 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 				cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
 			success = true;
 			for(int i = 0; i < strlen(receiveBuffer); i++){
-			cout << receiveBuffer[i]; 
+			cout << receiveBuffer[i];
 			}
 			cout << endl;
 		//Special case: if message was a sense command, client receives an int to interpret
 		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
 				cmdCheck == 'k' || cmdCheck == 'j')) {
 			success = true;
-			cout << idInt <<endl; 
+			cout << idInt <<endl;
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;
@@ -1270,14 +1270,14 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 /**
  * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,
  * and with any drones that have been set up via the setUpDrone method.
- * 
+ *
  * *** NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone. ***
  */
 void GaTACDroneControl::launchGrid() {
-	/* simulatorMode == true */	
+	/* simulatorMode == true */
 	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d s&";
+	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %d s&";
 	char thincSmartMessage[100];
 
 	// Configure launch file and start gazebo
@@ -1291,18 +1291,18 @@ void GaTACDroneControl::launchGrid() {
 	int droneID;
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, droneID, dronePositions.at(droneID).first, dronePositions.at(droneID).second);
+		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) / 2.0);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 		sleep(3);
 	}
 	}
-	/* simulatorMode == false */	
+	/* simulatorMode == false */
 	if(simulatorMode == false){
 
 	const char *coreMessage = "xterm -e roscore&";
 	const char *launchMessage = "xterm -e roslaunch /home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d r&";
+	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %d r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
@@ -1322,7 +1322,7 @@ void GaTACDroneControl::launchGrid() {
 	int droneID;
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, droneID, dronePositions.at(droneID).first, dronePositions.at(droneID).second);
+		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) / 2.0);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 		sleep(3);
@@ -1330,16 +1330,16 @@ void GaTACDroneControl::launchGrid() {
 //		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
 //		if(droneID == 1)
 //		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.12");
-//		cout << "publishing message: " << ardroneDriverMessage << endl;         
-//		system(ardroneDriverMessage);                                                                                                    
-		sleep(5);                                                          
+//		cout << "publishing message: " << ardroneDriverMessage << endl;
+//		system(ardroneDriverMessage);
+		sleep(5);
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
 		cout << "Toggled cam for drone " << droneID << endl;
 		sleep(5);
 	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
-		system(toggleCamMessage);   */   
+		system(toggleCamMessage);   */
 	}
 	}
 }
@@ -1349,7 +1349,7 @@ void GaTACDroneControl::launchGrid() {
  * It specifies the grid size and number/starting position of all drones.
  *
  * With actual drones, this method uses a modification of ardrone_autonomy's ardrone.launch file, to allow tag spotting and specify other parameters.
- * 
+ *
  * *** NOTE: Directory in which to create launch file can be specified here. ***
  */
 void GaTACDroneControl::configureLaunchFile() {
@@ -1402,7 +1402,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		char daeBuffer[strlen(genDaeText) + 1];
 		sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
 		sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
-	
+
 		if (fileStream.is_open()) {
 			fileStream << textureBuffer;
 			fileStream << daeBuffer;
@@ -1459,21 +1459,21 @@ void GaTACDroneControl::configureLaunchFile() {
 				cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
 				exit(1);
 			}
-	
+
 		// Assume launch file is located in default stacks directory for current ROS distribution
 		char launchFilePath[100];
 		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
 		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch", distro);
 		// Open file stream
 		ofstream fileStream(launchFilePath, ios::trunc);
-	
+
 		// Write gen_texture and gen_dae text to file
 		char startingBuffer[strlen(startingText) + 1];
 		strcpy(startingBuffer, startingText);
 		if (fileStream.is_open()) {
 			fileStream << startingBuffer;
 		}
-	
+
 		// Find coordinates of (0,0) in Gazebo terms
 		int originX, originY;
 		getGazeboOrigin(originX, originY);
@@ -1533,15 +1533,15 @@ void GaTACDroneControl::varyHeights(int droneNumber)
 		double kDub = (double) droneNumber;
 		float vHt = (float) (kDub+0.5)/10;
 		strID << droneNumber;
-		temp = strID.str();		
+		temp = strID.str();
 		sprintf(publishMessage, variableHeightTakeoff1, temp.c_str(), vHt);
 		system(publishMessage);
 		sprintf(publishMessage, variableHeightTakeoff2, temp.c_str());
 		system(publishMessage);
 		strID.str("");
 		dronesSharingSpace.push_back(false);
-		
-	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;          
+
+	cout<< "Drone "<< droneNumber<< " increased altitude successfully"<<endl;
 }
 
 /**
@@ -1553,15 +1553,15 @@ void GaTACDroneControl::varyHeights(int droneNumber)
  * @param Id ID of the drone being moved
  */
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
-{	
+{
 	char publishMessage[BUFLEN];
-	const char *moveCommand = "rosservice call /drone%d/waypoint %d %d 0 %d"; //id...  x y z id
+	const char *moveCommand = "rosservice call /drone%d/waypoint -- %d %d -1"; //id...  x y z id
 	int droneId = Id;
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
 	//Using same logic as ardrone_thinc.cpp file, send messages for movement one cell at a time
 	/* simulatorMode == true and false */
-	if(!(dx == 0 && dy == 0)){	
+	if(!(dx == 0 && dy == 0)){
 	do
 	{
 	if(dx > 0){
@@ -1571,34 +1571,34 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	else if(dx < 0){
 	dronePositions.at(droneId).first += 1;
 	dx++;
-	}	
+	}
 	else if(dy < 0){
 	dronePositions.at(droneId).second += 1;
 	dy++;
 	}
 	else if(dy > 0){
 	dronePositions.at(droneId).second -= 1;
-	dy--;	
+	dy--;
 	}
 	int xSend = dronePositions.at(droneId).first;
 	int ySend = dronePositions.at(droneId).second;
-	sprintf(publishMessage, moveCommand, droneId, xSend, ySend, droneId);
-	system(publishMessage);                                     
+	sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
+	system(publishMessage);
 	if(sharedSpace() == true){
-		cout<<"Drones sharing a cell: " << endl; 		
+		cout<<"Drones sharing a cell: " << endl;
 		for(int i = 0; i < dronesSharingSpace.size(); i++)
-		{		
+		{
 		if(dronesSharingSpace.at(i) == true)
 		cout<<"==> drone "<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
 		}
-	}		
+	}
 	}while ((dx != 0) || (dy != 0));
 	cout << this->getGridPosition(droneId) << endl;
 	}
 	else if(dx == 0 && dy == 0)
 	{
-	sprintf(publishMessage, moveCommand, droneId, x, y, droneId);
-	system(publishMessage);   
+	sprintf(publishMessage, moveCommand, droneId, x, y);
+	system(publishMessage);
 	cout << "Drone " << droneId << "hovering." << endl;
 	}
 }
@@ -1610,24 +1610,24 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
  * @return Boolean indicating whether a cell on the grid is occupied by two or more drones; true indicates a shared cell is detected
  */
 bool GaTACDroneControl::sharedSpace()
-{	
+{
 	/* simulatorMode == true and false */
 	bool sharing = false;
 	for(int r = 0; r < dronesSharingSpace.size(); r++)
 		dronesSharingSpace.at(r) = false;
 	//cycles through current positions, if two/three drones have a matching position their dronesSharingSpace index is set to true
-	for(int i = 0; i < dronePositions.size(); i++)	
+	for(int i = 0; i < dronePositions.size(); i++)
 	{
 		for(int k = 0; k <dronePositions.size(); k++)
-		{	
+		{
 			if(i != k)
 			{
-			if((dronePositions.at(i).first == dronePositions.at(k).first) 
-			   && (dronePositions.at(i).second == dronePositions.at(k).second))	
+			if((dronePositions.at(i).first == dronePositions.at(k).first)
+			   && (dronePositions.at(i).second == dronePositions.at(k).second))
 			{
 				sharing = true;
 				dronesSharingSpace.at(i) = true;
-				dronesSharingSpace.at(k) = true;	
+				dronesSharingSpace.at(k) = true;
 			}
 			}
 		}
@@ -1640,7 +1640,7 @@ bool GaTACDroneControl::sharedSpace()
  * @return Boolean indicating whether 3 drones are already on the grid, true if this is the case
  */
 bool GaTACDroneControl::maxDrones()
-{	
+{
 	if(numberOfDrones == 3)
 	return true;
 	else
@@ -1651,9 +1651,9 @@ bool GaTACDroneControl::maxDrones()
  * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
  * @param id Drone ID to be verified
  * @return Boolean indicating whether the given drone ID is currently on the grid, true if the ID is in use and drone is present
- */	
+ */
 bool GaTACDroneControl::validDroneId(int id)
-{	
+{
 	if(id < 0 || id > (numberOfDrones))
 	return false;
 	else
@@ -1663,9 +1663,9 @@ bool GaTACDroneControl::validDroneId(int id)
 /**
  * This method returns the value of boolean gridSizeSet, which lets the server check if the grid size has been set.
  * @return Boolean indicating whether the grid size has been set, true if the size has already been set
- */	
+ */
 bool GaTACDroneControl::gridSizeCheck()
-{	
+{
 	return gridSizeSet;
 }
 
@@ -1683,9 +1683,9 @@ bool GaTACDroneControl::gridStartCheck()
  * @param x X-axis value to be verified
  * @param y Y-axis value to be verified
  * @return Boolean indicating the given location is on the grid, true if the location is valid
- */	
+ */
 bool GaTACDroneControl::validLocation(int x, int y)
-{	
+{
 	if(x < 0 || y < 0 || x >= numberOfColumns || y >= numberOfRows)
 	return false;
 	else
@@ -1697,9 +1697,9 @@ bool GaTACDroneControl::validLocation(int x, int y)
  * @param x X-axis dimension to be verified
  * @param y Y-axis dimension to be verified
  * @return Boolean indicating whether the specified grid dimensions are valid, true if valid
- */	
+ */
 bool GaTACDroneControl::validGridSize(int x, int y)
-{	
+{
 	if(x < 1 || y < 1 || x > 10 || y > 10)
 	return false;
 	else
@@ -1732,7 +1732,7 @@ string GaTACDroneControl::getGridPosition(int droneId)
  * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
  * @param droneId ID of drone to return navdata from
  * @return Character array of all navdata values, to be sent over a socket to the client, broken up into strings of thirty characters, and used to set navdata members
- */	
+ */
 const char* GaTACDroneControl::getData(int droneId)
 {
 	char printNavMessage[BUFLEN];
@@ -1744,7 +1744,7 @@ const char* GaTACDroneControl::getData(int droneId)
 	string line2 = "";
 	string line3 = "";
 	string line4 = "";
-	string line5 = ""; 
+	string line5 = "";
 	string line6 = "";
 	ifstream stream0("currentNavdata0.txt");
 	ifstream stream1("currentNavdata1.txt");
@@ -1924,13 +1924,13 @@ const char* GaTACDroneControl::getData(int droneId)
 		}
 		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
 	}
-						
+
 	return allDataString.c_str();
 }
 
 /**
  * This method allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
- * @param droneId The drone ID of the client sending sense request. 
+ * @param droneId The drone ID of the client sending sense request.
  * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
  * @return 0 if no drone is on that side of subject drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
  */
@@ -1940,37 +1940,37 @@ int GaTACDroneControl::sense(int droneId, int option)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
-	
+
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
 		{
 		if(droneId != k){
 			//case: another drone is not North of subject drone
-			if((dronePositions.at(k).second <= yCurrent))	
+			if((dronePositions.at(k).second <= yCurrent))
 				return 0;
 			//case: another drone is 1 square North of subject drone
-			else if((dronePositions.at(k).second == yCurrent + 1))	
+			else if((dronePositions.at(k).second == yCurrent + 1))
 				return 1;
 			//case: another drone is 2 or more squares North of subject drone
 			else if((dronePositions.at(k).second >= yCurrent + 2))
 				return 2;
 			}
 		}
-	}	
+	}
 	else if(option == 1)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
-	
+
 	//cycles through current drone positions and tests them against querying client position
 	for(int k = 0; k <dronePositions.size(); k++)
 		{
 		if(droneId != k){
 			//case: another drone is not South of subject drone
-			if((dronePositions.at(k).second >= yCurrent))	
+			if((dronePositions.at(k).second >= yCurrent))
 				return 0;
 			//case: another drone is 1 square South of subject drone
-			else if((dronePositions.at(k).second == yCurrent - 1))	
+			else if((dronePositions.at(k).second == yCurrent - 1))
 				return 1;
 			//case: another drone is 2 or more squares South of subject drone
 			else if((dronePositions.at(k).second <= yCurrent - 2))
@@ -1982,16 +1982,16 @@ int GaTACDroneControl::sense(int droneId, int option)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
-	
+
 		//cycles through current drone positions and tests them against querying client position
 		for(int k = 0; k <dronePositions.size(); k++)
 		{
 		if(droneId != k){
 			//case: another drone is not East of subject drone
-			if((dronePositions.at(k).first <= xCurrent))	
+			if((dronePositions.at(k).first <= xCurrent))
 				return 0;
 			//case: another drone is 1 square East of subject drone
-			else if((dronePositions.at(k).first == xCurrent + 1))	
+			else if((dronePositions.at(k).first == xCurrent + 1))
 				return 1;
 			//case: another drone is 2 or more squares East of subject drone
 			else if((dronePositions.at(k).first >= xCurrent + 2))
@@ -2003,16 +2003,16 @@ int GaTACDroneControl::sense(int droneId, int option)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
-	
+
 		//cycles through current drone positions and tests them against querying client position
 		for(int k = 0; k <dronePositions.size(); k++)
 		{
 		if(droneId != k){
 			//case: another drone is not West of subject drone
-			if((dronePositions.at(k).first >= xCurrent))	
+			if((dronePositions.at(k).first >= xCurrent))
 				return 0;
 			//case: another drone is 1 square West of subject drone
-			else if((dronePositions.at(k).first == xCurrent - 1))	
+			else if((dronePositions.at(k).first == xCurrent - 1))
 				return 1;
 			//case: another drone is 2 or more squares West of subject drone
 			else if((dronePositions.at(k).first <= xCurrent - 2))
