@@ -94,6 +94,12 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  */
 void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
 	cout << "Main server running." << endl;
+
+	for (int i = 0; i < expectedDrones; i ++) {
+        clientsReady.push_back(false);
+        dronesSharingSpace.push_back(false);
+	}
+
 	for(int i = 0; i < expectedDrones*2; i++)
 	{
 	serverThreads++;
@@ -321,6 +327,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
+	int myDroneId = -1;
 	while (1) {
 		const char *droneNumber, *x, *y;
 		string temp;
@@ -389,8 +396,8 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			else{
 			/* If server passes all checks, client message processed */
 			dronePositions.push_back(make_pair(initialColumn, initialRow));
-			clientsReady.push_back(false);
 			printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
+			myDroneId = numberOfDrones;
 			numberOfDrones++;
 			}
 			break;
@@ -533,44 +540,35 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 
 			//When running multi clients, have each use readyUp() to start the grid
 		case 'y':
-			for(int i=0; i < clientsReady.size(); i++)
-			{
-			if(clientsReady.at(i) == false){
-			cout << "Client ready: Drone" << i << endl;
-			if(i < clientsReady.size())
-			sleepCtr = 35;
-			if(i == clientsReady.size()-1)
-			sleepCtr = 7;
-			clientsReady.at(i) = true;
-			break;
-			}
-			}
+
+            clientsReady.at(myDroneId) = true;
+
 			allReady = true;
 			for(int i=0; i < clientsReady.size(); i++)
 			{
-			if(clientsReady.at(i) == false){
-			allReady = false;
-			}
+                if(clientsReady.at(i) == false){
+                    allReady = false;
+                }
 			}
 			if(allReady == true){
-			readyForData = true;
-			// If grid size has been set
-			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
-			cout << "All clients ready. Starting grid!" << endl;
-			cout << "Waiting a few seconds before server will receive commands..." << endl;
-			launchGrid();
-			gridStarted = true;
+                readyForData = true;
+                // If grid size has been set
+                if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
+                    cout << "All clients ready. Starting grid!" << endl;
+                    cout << "Waiting a few seconds before server will receive commands..." << endl;
+                    launchGrid();
+                    gridStarted = true;
 
-			}
-			// If grid has already been started
-			else if(this->gridStartCheck() == true) {
-			cout << "Error: Grid already started." << endl;
-			}
-			//If grid size has not been set
-			else if(this->gridSizeCheck() == false) {
-			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
-			exit(1);
-			}
+                }
+                // If grid has already been started
+                else if(this->gridStartCheck() == true) {
+                    cout << "Error: Grid already started." << endl;
+                }
+                //If grid size has not been set
+                else if(this->gridSizeCheck() == false) {
+                    cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
+                    exit(1);
+                }
 			}
 			break;
 
@@ -638,7 +636,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		strcpy(sendBuffer, receiveBuffer);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
-		char idChar = (char)(((int)'0')+numberOfDrones-1);
+		char idChar = (char)(((int)'0')+myDroneId);
 		sendBuffer[0] = idChar;
 		int numSent = 0;
 		sleep(5);
@@ -649,13 +647,18 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		}
 		//If command received was ready up command, server waits for other drones or starts grid
 		else if(rawCommand == 'y'){
-		cout<<"Waiting for other drones..." <<endl;
-		sleep(sleepCtr);
-		int numSent = 0;
-		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
+            cout<<"Waiting for other drones..." <<endl;
+
+            while (! this->gridStartCheck() ) {
+                sleep(0.5);
+            }
+            int numSent = 0;
+            if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+                perror("Server: error sending acknowledgment.");
+                exit(1);
+            }
+            cout<<"All clients ready, sending reply to " << myDroneId << endl;
+
 		}
 		//If command received was a sense command, first char of ACK set to sense return integer
 		else if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
@@ -1267,7 +1270,7 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 void GaTACDroneControl::launchGrid() {
 	/* simulatorMode == true */
 	if(simulatorMode == true){
-	const char *gazeboMessage = "xterm -e roslaunch thinc_sim_gazebo grid_flight.launch&";
+	const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
 	char thincSmartMessage[100];
 
@@ -1276,7 +1279,7 @@ void GaTACDroneControl::launchGrid() {
 	system(gazeboMessage);
 
 	// Wait for gazebo to finish loading. This takes a while.
-	sleep(5);
+	sleep(10);
 
 	// Starting a thinc_smart ROS node for each drone
 	int droneID;
@@ -1285,14 +1288,14 @@ void GaTACDroneControl::launchGrid() {
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) / 2.0);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
-		sleep(3);
 	}
+	sleep(3);
 	}
 	/* simulatorMode == false */
 	if(simulatorMode == false){
 
 	const char *coreMessage = "xterm -e roscore&";
-	const char *launchMessage = "xterm -e roslaunch /home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch&";
+	const char *launchMessage = "xterm -e roslaunch /tmp/tagLaunch.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f r&";
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
@@ -1307,7 +1310,7 @@ void GaTACDroneControl::launchGrid() {
 	system(coreMessage);
 	system(launchMessage);
 
-	sleep(5);
+	sleep(10);
 
 	// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
 	int droneID;
@@ -1384,7 +1387,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Assume launch file is located in default stacks directory for current ROS distribution
 		char launchFilePath[100];
 		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/thinc_simulator/thinc_sim_gazebo/launch/grid_flight.launch", distro);
+		sprintf(launchFilePath, "/tmp/grid_flight.launch", distro);
 		// Open file stream
 		ofstream fileStream(launchFilePath, ios::trunc);
 
@@ -1454,7 +1457,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Assume launch file is located in default stacks directory for current ROS distribution
 		char launchFilePath[100];
 		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-		sprintf(launchFilePath, "/home/caseyhetzler/fuerte_workspace/sandbox/ardrone_autonomy/launch/tagLaunch.launch", distro);
+		sprintf(launchFilePath, "/tmp/tagLaunch.launch", distro);
 		// Open file stream
 		ofstream fileStream(launchFilePath, ios::trunc);
 
