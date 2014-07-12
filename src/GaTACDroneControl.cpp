@@ -414,10 +414,16 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
 			exit(1);
 			}
+			else if (dronesReady.at(myDroneId)) {
+                printf("Error: Drone ID %s is already flying.\n", droneNumber);
+			}
 			else{
 			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, serviceCall, droneInt, "takeoff_thinc_smart");
 			system(publishMessage);
+
+			dronesReady.at(myDroneId) = true;
+
 			}
 			break;
 
@@ -429,10 +435,15 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
 			exit(1);
 			}
+			else if (!dronesReady.at(myDroneId)) {
+                printf("Error: Drone ID %s is not flying.\n", droneNumber);
+			}
 			else{
 			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, serviceCall, droneInt, "land_at_home");
 			system(publishMessage);
+
+			dronesReady.at(myDroneId) = false;
 
 			// Delete drone's navdata file
 			if(droneInt == 0)
