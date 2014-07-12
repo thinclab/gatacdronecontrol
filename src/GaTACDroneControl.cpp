@@ -1470,6 +1470,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
 			"<arg name=\"drone_ip\" value=\"192.168.1.10\"/>\n\t\t"
 			"</include>\n\t"
+			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
 			"</group>\n\n";
 		const char *droneText2 =
 			"\t<group ns=\"drone%d\">\n\t\t"
@@ -1477,6 +1478,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
 			"<arg name=\"drone_ip\" value=\"192.168.1.12\"/>\n\t\t"
 			"</include>\n\t"
+			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
 			"</group>\n\n";
 		const char *endingText ="</launch>";
 
