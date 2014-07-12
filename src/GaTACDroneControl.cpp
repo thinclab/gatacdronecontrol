@@ -97,6 +97,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
 
 	for (int i = 0; i < expectedDrones; i ++) {
         clientsReady.push_back(false);
+        dronesReady.push_back(false);
         dronesSharingSpace.push_back(false);
 	}
 
@@ -274,6 +275,8 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
  */
 void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
+	const char *serviceCall = "rosservice call /drone%d/%s";
+
 	char localport[4];
 	int errorCheck, sock;
 	struct addrinfo hints, *srv, *info;
@@ -413,9 +416,8 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			else{
 			/* If server passes all checks, client message processed */
-			sprintf(publishMessage, publishCommand, droneNumber, "takeoff");
+			sprintf(publishMessage, serviceCall, droneInt, "takeoff_thinc_smart");
 			system(publishMessage);
-			sleep(3); // Wait for takeoff to complete
 			}
 			break;
 
@@ -429,9 +431,9 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			else{
 			/* If server passes all checks, client message processed */
-			sprintf(publishMessage, publishCommand, droneNumber, "land");
+			sprintf(publishMessage, serviceCall, droneInt, "land_at_home");
 			system(publishMessage);
-			sleep(3); // Wait for drone to land completely
+
 			// Delete drone's navdata file
 			if(droneInt == 0)
 				remove("currentNavdata0.txt");
@@ -475,7 +477,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			}
 			else{
 			/* If server passes all checks, client message processed */
-			sprintf(publishMessage, publishCommand, droneNumber, "reset");
+			sprintf(publishMessage, publishCommand, droneInt, "reset");
 			system(publishMessage);
 			sleep(3); // Wait for drone to reset
 			}
@@ -636,14 +638,13 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		strcpy(sendBuffer, receiveBuffer);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
-		char idChar = (char)(((int)'0')+myDroneId);
-		sendBuffer[0] = idChar;
-		int numSent = 0;
-		sleep(5);
-		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
+            char idChar = (char)(((int)'0')+myDroneId);
+            sendBuffer[0] = idChar;
+            int numSent = 0;
+            if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+                perror("Server: error sending acknowledgment.");
+                exit(1);
+            }
 		}
 		//If command received was ready up command, server waits for other drones or starts grid
 		else if(rawCommand == 'y'){
@@ -652,6 +653,15 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
             while (! this->gridStartCheck() ) {
                 sleep(0.5);
             }
+
+			sprintf(publishMessage, serviceCall, myDroneId, "takeoff_thinc_smart");
+			system(publishMessage);
+			dronesReady.at(myDroneId) = true;
+
+            while (! this->droneStartCheck() ) {
+                sleep(0.25);
+            }
+
             int numSent = 0;
             if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
                 perror("Server: error sending acknowledgment.");
@@ -684,6 +694,17 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 	close(sock);
 }
 
+
+bool GaTACDroneControl::droneStartCheck() {
+    for(int i=0; i < dronesReady.size(); i++)
+    {
+        if(dronesReady.at(i) == false){
+            return false;
+        }
+    }
+
+    return true;
+}
 
 /**
  * This method sets up the main UDP socket client. Once created, all relevant socket information
@@ -1289,7 +1310,7 @@ void GaTACDroneControl::launchGrid() {
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 	}
-	sleep(3);
+	sleep(2);
 	}
 	/* simulatorMode == false */
 	if(simulatorMode == false){
@@ -1319,22 +1340,23 @@ void GaTACDroneControl::launchGrid() {
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) / 2.0);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
-		sleep(3);
 //		if(droneID == 0)
 //		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
 //		if(droneID == 1)
 //		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.12");
 //		cout << "publishing message: " << ardroneDriverMessage << endl;
 //		system(ardroneDriverMessage);
-		sleep(5);
+/*		sleep(5);
 		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
 		system(flatTrimMessage);
 		cout << "Flattened trim for drone " << droneID << endl;
 		cout << "Toggled cam for drone " << droneID << endl;
-		sleep(5);
+		sleep(5);*/
 	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
 		system(toggleCamMessage);   */
 	}
+	sleep(2);
+
 	}
 }
 

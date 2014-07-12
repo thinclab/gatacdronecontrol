@@ -356,6 +356,11 @@ private:
 	vector<bool> clientsReady;
 
 	/**
+	 * @brief Indicates which drones are flying and ready to move
+	 */
+	vector<bool> dronesReady;
+
+	/**
 	 * @brief Current string representation of client's battery navdata
 	 */
 	static string clientCurrentBattery;
@@ -506,6 +511,12 @@ private:
 	 * @return Boolean indicating whether the grid has started and ROS nodes have been initialized, true if the size has already been set
          */
 	bool gridStartCheck();
+
+	/**
+	 * This method returns whether all requested drones are flying or not
+	 * @return Boolean indicating whether all drones have successfully launched
+         */
+	bool droneStartCheck();
 
 	/**
 	 * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
