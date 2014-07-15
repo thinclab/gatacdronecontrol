@@ -1317,7 +1317,7 @@ void GaTACDroneControl::launchGrid() {
 	int droneID;
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) / 2.0);
+		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) * 0.4);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 	}
@@ -1348,7 +1348,7 @@ void GaTACDroneControl::launchGrid() {
 	int droneID;
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) / 2.0);
+		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 //		if(droneID == 0)
