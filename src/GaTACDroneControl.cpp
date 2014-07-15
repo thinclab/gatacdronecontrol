@@ -1469,16 +1469,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"\t<group ns=\"drone%d\">\n\t\t"
 			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
 			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
-			"<arg name=\"drone_ip\" value=\"192.168.1.10\"/>\n\t\t"
-			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
-			"</include>\n\t"
-			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
-			"</group>\n\n";
-		const char *droneText2 =
-			"\t<group ns=\"drone%d\">\n\t\t"
-			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
-			"<arg name=\"drone_ip\" value=\"192.168.1.12\"/>\n\t\t"
+			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>\n\t\t"
 			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
 			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
@@ -1514,20 +1505,13 @@ void GaTACDroneControl::configureLaunchFile() {
 		int droneID;
 		float droneX, droneY;
 		char droneBuffer1[strlen(droneText)];
-		char droneBuffer2[strlen(droneText2)];
 		if (fileStream.is_open()) {
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
 			droneX = originX + (2 * dronePositions.at(droneID).second);
 			droneY = originY - (2 * dronePositions.at(droneID).first);
-			if(i == 0) {
-				sprintf(droneBuffer1, droneText, droneID, droneID, droneID);
-				fileStream << droneBuffer1;
-			}
-			if(i == 1) {
-				sprintf(droneBuffer2, droneText2, droneID, droneID, droneID);
-				fileStream << droneBuffer2;
-			}
+            sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID);
+            fileStream << droneBuffer1;
 		}
 		fileStream << endingText;
 
