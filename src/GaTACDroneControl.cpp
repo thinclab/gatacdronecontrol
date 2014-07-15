@@ -1388,24 +1388,25 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<?xml version=\"1.0\"?>\n\n"
 			"<launch>\n\t"
 			"<node\n\t\t"
-			"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
-			"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/Media/models/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
+			"name=\"gen_texture\" pkg=\"cvg_sim_gazebo\" type=\"gen_texture\"\n\t\t"
+			"args=\"%d %d 1 1 $(find cvg_sim_gazebo)/meshes/grid.png $(find cvg_sim_gazebo)/worlds/grid.world\"\n\t"
 			"/>\n\t";
 		const char *genDaeText =
 			"<node\n\t\t"
-			"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
-			"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/Media/models/grid.dae\"\n\t"
+			"name=\"gen_dae\" pkg=\"cvg_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
+			"args=\"%d %d 2 2 $(find cvg_sim_gazebo)/meshes/grid.dae\"\n\t"
 			"/>\n\n\t"
 			"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
-			"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
+			"<include file=\"$(find cvg_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
 			"<!-- Spawn simulated quadrotor uav -->\n";
 		const char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-			"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
-			"<arg name=\"model\" value=\"$(find thinc_sim_gazebo)/urdf/quadrotor_sensors%d.urdf\"/>\n\t\t\t"
-			"<arg name=\"modelname\" value=\"drone%d\"/>\n\t\t\t"
-			"<arg name=\"spawncoords\" value=\"-x %.2f -y %.2f -z 0.7 \"/>\n\t\t"
+			"<include file=\"$(find cvg_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
+			"<arg name=\"robot_namespace\" value=\"drone%d\"/>\n\t\t\t"
+			"<arg name=\"x\" value=\"%.2f\"/>\n\t\t\t"
+			"<arg name=\"y\" value=\"%.2f\"/>\n\t\t\t"
+			"<arg name=\"z\" value=\"0.70\"/>\n\t\t"
 			"</include>\n\t"
 			"</group>\n\n";
 		const char *endingText = "</launch>";
@@ -1469,6 +1470,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
 			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
 			"<arg name=\"drone_ip\" value=\"192.168.1.10\"/>\n\t\t"
+			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
 			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
 			"</group>\n\n";
@@ -1477,6 +1479,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
 			"<include file=\"$(find ardrone_autonomy)/launch/vanilla.launch\" >\n\t\t\t"
 			"<arg name=\"drone_ip\" value=\"192.168.1.12\"/>\n\t\t"
+			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
 			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
 			"</group>\n\n";
@@ -1518,11 +1521,11 @@ void GaTACDroneControl::configureLaunchFile() {
 			droneX = originX + (2 * dronePositions.at(droneID).second);
 			droneY = originY - (2 * dronePositions.at(droneID).first);
 			if(i == 0) {
-				sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
+				sprintf(droneBuffer1, droneText, droneID, droneID, droneID);
 				fileStream << droneBuffer1;
 			}
 			if(i == 1) {
-				sprintf(droneBuffer2, droneText2, droneID, droneID, droneID, droneID, droneX, droneY);
+				sprintf(droneBuffer2, droneText2, droneID, droneID, droneID);
 				fileStream << droneBuffer2;
 			}
 		}
