@@ -6,7 +6,7 @@
  */
 int main() {
 	// IP and port of client machine
-	const char *ip = "128.192.76.247";
+	const char *ip = "127.0.0.1";
 	const int port = 4999;
        
         //cout message
@@ -17,7 +17,7 @@ int main() {
 	GaTACDroneControl gatac;
 
 	// Run drone server
-	gatac.startServer(ip, port, 3);
+	gatac.startServer(ip, port, 12);
         
 	sleep(300);
        

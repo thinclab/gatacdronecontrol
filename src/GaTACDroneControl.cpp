@@ -92,55 +92,32 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  * @param remotePort The port number supplied for a client command socket, by default 4999, 5999, and 6999
  * @param expectedDrones The number of drones expected for this flight/server session
  */
-void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort, int expectedDrones){
+void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePort, int expectedDrones){
 	cout << "Main server running." << endl;
 
+	this->expectedDrones = expectedDrones;
 	for (int i = 0; i < expectedDrones; i ++) {
         clientsReady.push_back(false);
         dronesReady.push_back(false);
         dronesSharingSpace.push_back(false);
 	}
 
-	for(int i = 0; i < expectedDrones*2; i++)
+	for(int i = 0; i < expectedDrones; i++)
 	{
-	serverThreads++;
-	boost::thread* thread;
-	if(i == 0){
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));
-	threads[i] = thread;
-	cout<<"starting thread 1"<<endl;
+		serverThreads++;
+		boost::thread* thread;
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));
+		threads[2*i] = thread;
+		cout<<"starting thread "<<serverThreads <<endl;
+
+		serverThreads++;
+		remotePort ++;
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort, serverThreads));
+		threads[2*i + 1] = thread;
+		cout<<"starting data thread "<<serverThreads<<endl;
+		remotePort ++;
 	}
-	else if(i == 1){
-	const char* remotePort2 = "4998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort2, serverThreads));
-	threads[i] = thread;
-	cout<<"starting data thread 1"<<endl;
-	}
-	else if(i == 2){
-	const char* remotePort3 = "5999";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort3, serverThreads));
-	threads[i] = thread;
-	cout<<"starting thread 2"<<endl;
-	}
-	else if(i == 3){
-	const char* remotePort4 = "5998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort4, serverThreads));
-	threads[i] = thread;
-	cout<<"starting data thread 2"<<endl;
-	}
-	else if(i == 4){
-	const char* remotePort5 = "6999";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort5, serverThreads));
-	threads[i] = thread;
-	cout<<"starting thread 3"<<endl;
-	}
-	else if(i == 5){
-	const char* remotePort6 = "6998";
-	thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort6, serverThreads));
-	threads[i] = thread;
-	cout<<"starting data thread 3"<<endl;
-	}
-}
+
 }
 /**
  * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
@@ -148,21 +125,14 @@ void GaTACDroneControl::startServer(const char *remoteIP, const char *remotePort
  * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort, int threadNo) {
-	char localport[4];
+void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
+	char localport[5];
 	int errorCheck, datsock;
 	struct addrinfo dathints, *datsrv, *datinfo;
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof client_addr;
-	if(threadNo == 2){
-	sprintf(localport, "%d", DEFAULTDATAPORT1);
-	}
-	if(threadNo == 4){
-	sprintf(localport, "%d", DEFAULTDATAPORT2);
-	}
-	if(threadNo == 6){
-	sprintf(localport, "%d", DEFAULTDATAPORT3);
-	}
+
+	sprintf(localport, "%d", remotePort);
 
 	// Specifying socket parameters
 	bzero(&dathints, sizeof dathints);
@@ -273,24 +243,17 @@ void GaTACDroneControl::dataServer(const char *remoteIp, const char *remotePort,
  * @param remotePort The port number supplied for a client socket
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, int threadNo) {
+void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	const char *serviceCall = "rosservice call /drone%d/%s";
 
-	char localport[4];
+	char localport[5];
 	int errorCheck, sock;
 	struct addrinfo hints, *srv, *info;
 	struct sockaddr_storage client_addr;
 	socklen_t addr_len = sizeof client_addr;
-	if(threadNo == 1){
-	sprintf(localport, "%d", DEFAULTCLIENTPORT1);
-	}
-	if(threadNo == 3){
-	sprintf(localport, "%d", DEFAULTCLIENTPORT2);
-	}
-	if(threadNo == 5){
-	sprintf(localport, "%d", DEFAULTCLIENTPORT3);
-	}
+
+	sprintf(localport, "%d", remotePort);
 
 	// Specifying socket parameters
 	bzero(&hints, sizeof hints);
@@ -363,14 +326,14 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 
 		// Splitting command input into tokens by whitespace
 		string buffer;
-		vector<string> tokens;
 		string stringCommand(receiveBuffer);
 		stringstream ss(stringCommand);
 
+		std::istream_iterator<std::string> begin(ss);
+		std::istream_iterator<std::string> end;
+
 		// Storing tokens in vector
-		while (ss >> buffer) {
-			tokens.push_back(buffer);
-		}
+		vector<string> tokens(begin, end);
 
 		char rawCommand = receiveBuffer[0];
 		switch (rawCommand) {
@@ -383,9 +346,8 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 			if (gridSizeCheck() == false) {
 			errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
 			}
-			// If 3 drones already exist
-			 if (maxDrones() == true) {
-			errorMessage = "You have already spawned the maximum number of drones (3).";
+			else if (maxDrones()) {
+			errorMessage = "The requested number of drones has already been spawned";
 			}
 			// If start position isn't valid
 			else if (validLocation(initialRow, initialColumn) == false) {
@@ -649,8 +611,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, const char *remotePort, 
 		strcpy(sendBuffer, receiveBuffer);
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 's'){
-            char idChar = (char)(((int)'0')+myDroneId);
-            sendBuffer[0] = idChar;
+			sprintf(sendBuffer, "%d %s", myDroneId, receiveBuffer);
             int numSent = 0;
             if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
                 perror("Server: error sending acknowledgment.");
@@ -724,10 +685,14 @@ bool GaTACDroneControl::droneStartCheck() {
  * @param serverPort The port number supplied for the server's socket
  * @param dataPort The port number supplied for the client's navdata socket
  */
-void GaTACDroneControl::launchClient(char *serverIp, char *serverPort, char *dataPort) {
+void GaTACDroneControl::launchClient(char *serverIp, unsigned int serverPort, unsigned int dataPort) {
 	char *host = serverIp;
-	char *port = serverPort;
-	char *dp = dataPort;
+	char port[5];
+	char dp[5];
+
+        sprintf(port, "%d", serverPort);
+        sprintf(dp, "%d", dataPort);
+
 	int errorCheck, sock, datsock;
 
 	struct addrinfo hints, *srv, *info;
@@ -889,7 +854,7 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 	// Send command to server
 		printf("Sending command to set grid size to %dx%d.\n", numberOfColumns, numberOfRows);
 
-		char message[10];
+		char message[32];
 		sprintf(message, "g %d %d", numberOfColumns, numberOfRows);
 		worked = sendMessage(message, serverSocket, srv);
 
@@ -909,7 +874,7 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
 	// Send command to server, checks for valid ID and location done server-side
 		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
-		char message[10];
+		char message[32];
 		sprintf(message, "m %d %d %d", droneId, x, y);
 		worked = sendMessage(message, serverSocket, srv);
 }
@@ -923,7 +888,7 @@ void GaTACDroneControl::hover(int droneId) {
 	// Send command to server
 	bool worked = commandDrone('h', droneId);
 	printf("Sending command to make drone hover.\n", droneId);
-		char message[3];
+		char message[32];
 		sprintf(message, "h %d", droneId);
 		worked = sendMessage(message, serverSocket, srv);
 }
@@ -1238,8 +1203,8 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {
-			char* idCheck = &receiveBuffer[0];
-			int idInt = atoi(idCheck);
+			int idInt;
+			sscanf(receiveBuffer, "%d, %*s",&idInt);
 		// If message we sent and message returned from server are the same, success
 		if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck != 'y') {
 			success = true;
@@ -1286,7 +1251,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	bool success = false;
 	// Send command to server
-		char message[3];
+		char message[32];
 		sprintf(message, "%c %d", command, droneId);
 		success = sendMessage(message, serverSocket, srv);
 
@@ -1304,7 +1269,7 @@ void GaTACDroneControl::launchGrid() {
 	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
-	char thincSmartMessage[100];
+	char thincSmartMessage[256];
 
 	// Configure launch file and start gazebo
 	configureLaunchFile();
@@ -1332,10 +1297,10 @@ void GaTACDroneControl::launchGrid() {
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
-	char thincSmartMessage[100];
-	char ardroneDriverMessage[100];
-	char flatTrimMessage[100];
-	char toggleCamMessage[100];
+	char thincSmartMessage[256];
+	char ardroneDriverMessage[256];
+	char flatTrimMessage[256];
+	char toggleCamMessage[256];
 
 	// Configure launch file and start core
 	configureLaunchFile();
@@ -1630,7 +1595,7 @@ bool GaTACDroneControl::sharedSpace()
  */
 bool GaTACDroneControl::maxDrones()
 {
-	if(numberOfDrones == 3)
+	if(numberOfDrones >= expectedDrones)
 	return true;
 	else
 	return false;

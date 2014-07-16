@@ -9,8 +9,8 @@
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "192.168.1.1";
-	char *port = "4999";
-	char *dp = "4998";
+	unsigned int port = 4999;
+	unsigned int dp = 4998;
 
 	// Instantiate GaTACDroneControl object
 	const char* c = "r";

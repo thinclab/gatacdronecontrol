@@ -1,17 +1,23 @@
 #include <iostream>
 #include <unistd.h>
 #include "GaTACDroneControl.hpp"
+#include <stdlib.h>
+#include <time.h>
 
 /*
  * Sample client code to demonstrate usage of the GaTACDroneControl API.
  */
 
-int main() {
+int main(int argc, char * argv[]) {
 	// Specifying the IP and port of server machine
-	char *ip = "128.192.76.247";
-	unsigned int port = 4999;
-	unsigned int dp = 4998;
+	char *ip = "127.0.0.1";
+	int startport = 4999;
+	int dronenum = 0;
+	sscanf(argv[1], "%d", &dronenum);
 
+	unsigned int port = startport + dronenum * 2;
+	unsigned int dp = startport + dronenum * 2 + 1;
+	
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 
@@ -22,7 +28,7 @@ int main() {
 	gatac.setGridSize(5, 8);
 
 	//set up drone
-	gatac.setupDrone(0, 4); // Spawn drone at (0, 0)
+	gatac.setupDrone(dronenum % 5, dronenum / 5); // Spawn drone at (0, 0)
 
 	// Sending ready message
 	gatac.readyUp();
@@ -30,27 +36,19 @@ int main() {
 	//Setting id of drone to client's unique id
 	int id = gatac.getClientUniqueId();
 
+	srand (time(NULL) * dronenum);
+
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-        gatac.senseNorth(id); //should return 0
-        sleep(3);
-        gatac.senseSouth(id); //should return 2
-        boost::thread *moveThread;
-        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, gatac,id, 0, 1));
-        sleep(5);
-        gatac.senseNorth(id); //should return 0
-        sleep(3);
-        gatac.senseSouth(id); //should return 1
-        sleep(3);
-        gatac.senseEast(id); //should return 1 or 2
-        sleep(3);
-        gatac.senseWest(id); //should return 0
+
+	     gatac.move(id, rand() % 5, rand() % 8);
+
+	}
 
         //Drones land
         gatac.land(id);
 
         // Close client socket connection.
         gatac.closeClient();
-	}
 	return 0;
 }

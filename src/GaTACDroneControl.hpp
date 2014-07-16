@@ -62,7 +62,7 @@ public:
 	 * @param remotePort The port number supplied for a client command socket, by default 4999, 5999, and 6999
 	 * @param expectedDrones The number of drones expected for this flight/server session
 	 */
-	void startServer(const char *, const char *, int);
+	void startServer(const char *, unsigned int, int);
 
 	/**
 	 * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
@@ -70,7 +70,7 @@ public:
 	 * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
 	 * @param threadNo The ID of the thread this method is starting
 	 */
-	void dataServer(const char *remoteIp, const char *remotePort, int threadNo);
+	void dataServer(const char *remoteIp, unsigned int, int threadNo);
 
 	/**
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
@@ -80,7 +80,7 @@ public:
 	 * @param remotePort The port number supplied for a client socket
 	 * @param threadNo The ID of the thread this method is starting
 	 */
-	void runServer(const char *, const char *, int);
+	void runServer(const char *, unsigned int, int);
 
 	/**
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
@@ -89,7 +89,7 @@ public:
 	 * @param serverPort The port number supplied for the server's socket
 	 * @param dataPort The port number supplied for the client's navdata socket
 	 */
-	void launchClient(char *, char *, char*);
+	void launchClient(char *, unsigned int, unsigned int);
 
 	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
@@ -546,6 +546,8 @@ private:
          * @return Boolean indicating whether 3 drones are already on the grid, true if this is the case
          */
 	bool maxDrones();
+
+	int expectedDrones;
 
 };
 #endif
