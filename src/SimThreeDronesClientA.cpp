@@ -8,9 +8,9 @@
 
 int main() {
 	// Specifying the IP and port of server machine
-	char *ip = "128.192.76.247";
+	char *ip = "127.0.0.1";
 	unsigned int port = 4999;
-	unsigned int dp = 4998;
+	unsigned int dp = 5000;
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;

@@ -14,9 +14,9 @@ using namespace std;
 
 int main() {
 	// Specifying the IP and port of server machine
-	char *ip = "128.192.76.247";
-	unsigned int port = 5999; //command port
-	unsigned int dp = 5998; //data port
+	char *ip = "127.0.0.1";
+	unsigned int port = 5001; //command port
+	unsigned int dp = 5002; //data port
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;

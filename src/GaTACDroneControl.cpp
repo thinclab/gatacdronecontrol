@@ -549,7 +549,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 
 			//Kind of deprecated, usable only for single client start
 		case 'i':
-			cout << "Start gazebo." << endl;
+			/*cout << "Start gazebo." << endl;
 			// If grid size has been set
 			if (this->gridSizeCheck() == true && this->gridStartCheck() == false) {
 			launchGrid();
@@ -563,7 +563,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 			else if(this->gridSizeCheck() == false) {
 			cout << "Error: No grid size set. You must specify a grid size before starting the grid." << endl;
 			exit(1);
-			}
+			}*/
 			break;
 
 		case 'u':
@@ -1265,73 +1265,60 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
  * *** NOTE: When using real drones, this method instead creates/initializes the ROS nodes for each drone. ***
  */
 void GaTACDroneControl::launchGrid() {
+	cout << "Launching Grid "<<endl;
 	/* simulatorMode == true */
 	if(simulatorMode == true){
-	const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
-	char thincSmartMessage[256];
+		const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
+		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
+		char thincSmartMessage[256];
 
-	// Configure launch file and start gazebo
-	configureLaunchFile();
-	system(gazeboMessage);
+		// Configure launch file and start gazebo
+		configureLaunchFile();
+		system(gazeboMessage);
 
-	// Wait for gazebo to finish loading. This takes a while.
-	sleep(10);
+		// Wait for gazebo to finish loading. This takes a while.
+		sleep(10);
 
-	// Starting a thinc_smart ROS node for each drone
-	int droneID;
-	for (int i = 0; i < numberOfDrones; i++) {
-		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) * 0.4);
-		cout << "publishing message: " << thincSmartMessage << endl;
-		system(thincSmartMessage);
-	}
-	sleep(2);
+		// Starting a thinc_smart ROS node for each drone
+		int droneID;
+		for (int i = 0; i < numberOfDrones; i++) {
+			droneID = i;
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) * 0.4);
+			cout << "publishing message: " << thincSmartMessage << endl;
+			system(thincSmartMessage);
+		}
+		sleep(2);
 	}
 	/* simulatorMode == false */
 	if(simulatorMode == false){
 
-	const char *coreMessage = "xterm -e roscore&";
-	const char *launchMessage = "xterm -e roslaunch /tmp/tagLaunch.launch&";
-	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f r&";
-	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
-	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
-	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
-	char thincSmartMessage[256];
-	char ardroneDriverMessage[256];
-	char flatTrimMessage[256];
-	char toggleCamMessage[256];
+		const char *coreMessage = "xterm -e roscore&";
+		const char *launchMessage = "xterm -e roslaunch /tmp/tagLaunch.launch&";
+		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f r&";
+		const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
+		const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
+		const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
+		char thincSmartMessage[256];
+		char ardroneDriverMessage[256];
+		char flatTrimMessage[256];
+		char toggleCamMessage[256];
 
-	// Configure launch file and start core
-	configureLaunchFile();
-	system(coreMessage);
-	system(launchMessage);
+		// Configure launch file and start core
+		configureLaunchFile();
+//		system(coreMessage);
+		system(launchMessage);
 
-	sleep(10);
+		sleep(10);
 
-	// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
-	int droneID;
-	for (int i = 0; i < numberOfDrones; i++) {
-		droneID = i;
-		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
-		cout << "publishing message: " << thincSmartMessage << endl;
-		system(thincSmartMessage);
-//		if(droneID == 0)
-//		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.10");
-//		if(droneID == 1)
-//		sprintf(ardroneDriverMessage, ardroneDriverCommand, droneID, "-ip 192.168.1.12");
-//		cout << "publishing message: " << ardroneDriverMessage << endl;
-//		system(ardroneDriverMessage);
-/*		sleep(5);
-		sprintf(flatTrimMessage, flattenTrim, droneID, droneID);
-		system(flatTrimMessage);
-		cout << "Flattened trim for drone " << droneID << endl;
-		cout << "Toggled cam for drone " << droneID << endl;
-		sleep(5);*/
-	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
-		system(toggleCamMessage);   */
-	}
-	sleep(2);
+		// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
+		int droneID;
+		for (int i = 0; i < numberOfDrones; i++) {
+			droneID = i;
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
+			cout << "publishing message: " << thincSmartMessage << endl;
+			system(thincSmartMessage);
+		}
+		sleep(2);
 
 	}
 }
@@ -1408,7 +1395,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Write all drone sub-launch text to file
 		int droneID;
 		float droneX, droneY;
-		char droneBuffer[strlen(droneText)];
+		char droneBuffer[strlen(droneText) + 256];
 		if (fileStream.is_open()) {
 			for (int i = 0; i < numberOfDrones; i++) {
 				droneID = i;
@@ -1437,9 +1424,10 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>\n\t\t"
 			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
-			"<include file=\"$(find tum_ardrone)/tum_ardrone.launch\" >\n"
+			"<include file=\"$(find tum_ardrone)/launch/tum_ardrone.launch\" />\n"
 			"</group>\n\n";
-		const char *endingText ="</launch>";
+
+		const char *endingText = "</launch>";
 
 		// Open launch file. Check what ROS distribution is currently being used
 		char *distro = getenv("ROS_DISTRO");
@@ -1453,7 +1441,8 @@ void GaTACDroneControl::configureLaunchFile() {
 		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
 		sprintf(launchFilePath, "/tmp/tagLaunch.launch", distro);
 		// Open file stream
-		ofstream fileStream(launchFilePath, ios::trunc);
+		ofstream fileStream;
+		fileStream.open(launchFilePath, ios::out);
 
 		// Write gen_texture and gen_dae text to file
 		char startingBuffer[strlen(startingText) + 1];
@@ -1469,18 +1458,19 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Write all drone sub-launch text to file
 		int droneID;
 		float droneX, droneY;
-		char droneBuffer1[strlen(droneText)];
+		char droneBuffer1[strlen(droneText) + 256];
 		if (fileStream.is_open()) {
-		for (int i = 0; i < numberOfDrones; i++) {
-			droneID = i;
-			droneX = originX + (2 * dronePositions.at(droneID).second);
-			droneY = originY - (2 * dronePositions.at(droneID).first);
-            sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID);
-            fileStream << droneBuffer1;
-		}
-		fileStream << endingText;
+			for (int i = 0; i < numberOfDrones; i++) {
+				droneID = i;
+				droneX = originX + (2 * dronePositions.at(droneID).second);
+				droneY = originY - (2 * dronePositions.at(droneID).first);
+            			sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID);
+            			fileStream << droneBuffer1;
+			}
+			fileStream << endingText;
 
 		}
+
 		// Close file stream
 		fileStream.close();
 	}
