@@ -1,5 +1,5 @@
 
-all: simServerThree simServer tagServer tagClientA simThreeA simThreeB simThreeC SWARMSERVER SWARMCLIENT
+all: simServerThree simServer tagServer tagClientA tagClientB simThreeA simThreeB simThreeC SWARMSERVER SWARMCLIENT
 
 # servers
 
@@ -26,6 +26,9 @@ SWARMCLIENT: GaTACDroneControl.cpp SWARMCLIENT.cpp  GaTACDroneControl.hpp
 
 tagClientA: GaTACDroneControl.hpp GaTACDroneControl.cpp tagTestClient.cpp
 	g++ GaTACDroneControl.cpp tagTestClient.cpp -lboost_thread -std=c++0x -o tagClientA
+
+tagClientB: GaTACDroneControl.hpp GaTACDroneControl.cpp tagTestClient2.cpp
+	g++ GaTACDroneControl.cpp tagTestClient.cpp -lboost_thread -std=c++0x -o tagClientB
 
 simThreeA: GaTACDroneControl.hpp GaTACDroneControl.cpp SimThreeDronesClientA.cpp
 	g++ GaTACDroneControl.cpp SimThreeDronesClientA.cpp -lboost_thread -std=c++0x -o simThreeA
