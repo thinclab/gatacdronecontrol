@@ -36,7 +36,7 @@ int main() {
         sleep(3);
         gatac.senseSouth(id); //should return 2
         boost::thread *moveThread;
-        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, gatac,id, 0, 1));
+        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,id, 0, 1));
         sleep(5);
         gatac.senseNorth(id); //should return 0
         sleep(3);

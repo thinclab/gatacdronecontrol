@@ -19,8 +19,6 @@ int main() {
 	// Run drone server
 	gatac.startServer(ip, port, 12);
         
-	sleep(300);
-       
 	return 0;
 }
 

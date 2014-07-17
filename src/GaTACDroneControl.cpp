@@ -13,7 +13,13 @@
 // GaTACDroneControl header
 #include "GaTACDroneControl.hpp"
 
-using namespace std;
+using std::cout;
+using std::endl;
+using std::stringstream;
+using std::make_pair;
+using std::ofstream;
+using std::ifstream;
+using std::ios;
 
 #define BUFLEN 256
 #define DEFAULTCLIENTPORT1 4999
@@ -55,6 +61,35 @@ string GaTACDroneControl::clientCurrentForwardVelocity;
 string GaTACDroneControl::clientCurrentSidewaysVelocity;
 string GaTACDroneControl::clientCurrentVerticalVelocity;
 string GaTACDroneControl::clientCurrentTagsSpotted;
+
+class Locker {
+public:
+	Locker(std::mutex * l) {
+		theLock = l;
+		isLocked = false;
+		lock();
+	}
+
+	~Locker() {
+		unlock();
+	}
+
+	void lock() {
+		if (! isLocked)
+			theLock->lock();
+		isLocked = true;
+	}
+
+	void unlock() {
+		if (isLocked)
+			theLock->unlock();
+		isLocked = false;
+	}
+private:
+	bool isLocked;
+	std::mutex * theLock;
+};
+
 
 /**
  * Default constructor. Initializes all member variables.
@@ -99,7 +134,6 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 	for (int i = 0; i < expectedDrones; i ++) {
         clientsReady.push_back(false);
         dronesReady.push_back(false);
-        dronesSharingSpace.push_back(false);
 	}
 
 	for(int i = 0; i < expectedDrones; i++)
@@ -118,6 +152,9 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 		remotePort ++;
 	}
 
+	for (int i = 0; i < 2 * expectedDrones + 1; i ++) {
+		threads[i]->join();
+	}
 }
 /**
  * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
@@ -153,7 +190,7 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
 			continue;
 		}
 
-		if (bind(datsock, datinfo->ai_addr, datinfo->ai_addrlen) == -1) {
+		if (bind(datsock, datinfo->ai_addr, datinfo->ai_addrlen)) {
 			close(datsock);
 			perror("Server: bind");
 			continue;
@@ -246,6 +283,8 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
 void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	const char *serviceCall = "rosservice call /drone%d/%s";
+	Locker lock(&dronePositionMtx);
+	lock.unlock();
 
 	char localport[5];
 	int errorCheck, sock;
@@ -360,7 +399,9 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 			}
 			else{
 			/* If server passes all checks, client message processed */
+			lock.lock();
 			dronePositions.push_back(make_pair(initialColumn, initialRow));
+			lock.unlock();
 			printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
 			myDroneId = numberOfDrones;
 			numberOfDrones++;
@@ -433,8 +474,10 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 			}
 		/* If server passes checks, client message processed */
 			else{
+			lock.lock();
 			int x = dronePositions.at(droneNumberInt).first;
 			int y = dronePositions.at(droneNumberInt).second;
+			lock.unlock();
 			moveAndCheck(x, y, droneNumberInt);
 			}
 		//end moveAndCheck
@@ -1280,12 +1323,14 @@ void GaTACDroneControl::launchGrid() {
 
 	// Starting a thinc_smart ROS node for each drone
 	int droneID;
+	Locker lock(&dronePositionMtx);
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2, 2, (droneID + 1.0) * 0.4);
 		cout << "publishing message: " << thincSmartMessage << endl;
 		system(thincSmartMessage);
 	}
+	lock.unlock();
 	sleep(2);
 	}
 	/* simulatorMode == false */
@@ -1311,6 +1356,8 @@ void GaTACDroneControl::launchGrid() {
 
 	// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
 	int droneID;
+	Locker lock(&dronePositionMtx);
+
 	for (int i = 0; i < numberOfDrones; i++) {
 		droneID = i;
 		sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
@@ -1331,6 +1378,7 @@ void GaTACDroneControl::launchGrid() {
 	/*	sprintf(toggleCamMessage, toggleCam, droneID, droneID);
 		system(toggleCamMessage);   */
 	}
+	lock.unlock();
 	sleep(2);
 
 	}
@@ -1410,6 +1458,8 @@ void GaTACDroneControl::configureLaunchFile() {
 		float droneX, droneY;
 		char droneBuffer[strlen(droneText)];
 		if (fileStream.is_open()) {
+			Locker lock(&dronePositionMtx);
+
 			for (int i = 0; i < numberOfDrones; i++) {
 				droneID = i;
 				droneX = originX + (2 * dronePositions.at(droneID).second);
@@ -1417,6 +1467,7 @@ void GaTACDroneControl::configureLaunchFile() {
 				sprintf(droneBuffer, droneText, droneID, droneID, droneID, droneID, droneX, droneY);
 				fileStream << droneBuffer;
 			}
+			lock.unlock();
 			fileStream << endingText;
 		}
 
@@ -1471,6 +1522,8 @@ void GaTACDroneControl::configureLaunchFile() {
 		float droneX, droneY;
 		char droneBuffer1[strlen(droneText)];
 		if (fileStream.is_open()) {
+			Locker lock(&dronePositionMtx);
+
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
 			droneX = originX + (2 * dronePositions.at(droneID).second);
@@ -1479,7 +1532,7 @@ void GaTACDroneControl::configureLaunchFile() {
             fileStream << droneBuffer1;
 		}
 		fileStream << endingText;
-
+			lock.unlock();
 		}
 		// Close file stream
 		fileStream.close();
@@ -1511,6 +1564,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	char publishMessage[BUFLEN];
 	const char *moveCommand = "rosservice call /drone%d/waypoint -- %d %d -1"; //id...  x y z id
 	int droneId = Id;
+	Locker lock(&dronePositionMtx);
 	int dx = dronePositions.at(droneId).first - x;
 	int dy = dronePositions.at(droneId).second - y;
 	//Using same logic as ardrone_thinc.cpp file, send messages for movement one cell at a time
@@ -1536,15 +1590,20 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	}
 	int xSend = dronePositions.at(droneId).first;
 	int ySend = dronePositions.at(droneId).second;
+	lock.unlock();
 	sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
 	system(publishMessage);
-	if(sharedSpace() == true){
+	vector<bool> dronesSharingSpace;
+
+	if(sharedSpace(&dronesSharingSpace) == true){
+		lock.lock();
 		cout<<"Drones sharing a cell: " << endl;
 		for(int i = 0; i < dronesSharingSpace.size(); i++)
 		{
 		if(dronesSharingSpace.at(i) == true)
 		cout<<"==> drone "<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
 		}
+		lock.unlock();
 	}
 	}while ((dx != 0) || (dy != 0));
 	cout << this->getGridPosition(droneId) << endl;
@@ -1563,12 +1622,14 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
  * If a shared cell is detected, the coordinates and drone ID's are printed to server terminal.
  * @return Boolean indicating whether a cell on the grid is occupied by two or more drones; true indicates a shared cell is detected
  */
-bool GaTACDroneControl::sharedSpace()
+bool GaTACDroneControl::sharedSpace(vector<bool> * dronesSharingSpace)
 {
+	Locker lock(&dronePositionMtx);
 	/* simulatorMode == true and false */
 	bool sharing = false;
-	for(int r = 0; r < dronesSharingSpace.size(); r++)
-		dronesSharingSpace.at(r) = false;
+	while (dronesSharingSpace->size() < dronePositions.size()) {
+		dronesSharingSpace->push_back(false);
+	}
 	//cycles through current positions, if two/three drones have a matching position their dronesSharingSpace index is set to true
 	for(int i = 0; i < dronePositions.size(); i++)
 	{
@@ -1580,8 +1641,8 @@ bool GaTACDroneControl::sharedSpace()
 			   && (dronePositions.at(i).second == dronePositions.at(k).second))
 			{
 				sharing = true;
-				dronesSharingSpace.at(i) = true;
-				dronesSharingSpace.at(k) = true;
+				dronesSharingSpace->at(i) = true;
+				dronesSharingSpace->at(k) = true;
 			}
 			}
 		}
@@ -1670,8 +1731,10 @@ string GaTACDroneControl::getGridPosition(int droneId)
 	std::stringstream strID;
 	std::stringstream strX;
 	std::stringstream strY;
+	Locker lock(&dronePositionMtx);
 	int xPos = dronePositions.at(droneId).first;
 	int yPos = dronePositions.at(droneId).second;
+	lock.unlock();
 	strID << droneId;
 	strX << xPos;
 	strY << yPos;
@@ -1890,6 +1953,8 @@ const char* GaTACDroneControl::getData(int droneId)
  */
 int GaTACDroneControl::sense(int droneId, int option)
 {
+	Locker lock(&dronePositionMtx);
+
 	if(option == 0)
 	{
 	int xCurrent = dronePositions.at(droneId).first;
