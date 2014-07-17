@@ -163,7 +163,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  * @param threadNo The ID of the thread this method is starting
  */
 void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
-	char localport[5];
+	char localport[256];
 	int errorCheck, datsock;
 	struct addrinfo dathints, *datsrv, *datinfo;
 	struct sockaddr_storage client_addr;
@@ -286,7 +286,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 	Locker lock(&dronePositionMtx);
 	lock.unlock();
 
-	char localport[5];
+	char localport[256];
 	int errorCheck, sock;
 	struct addrinfo hints, *srv, *info;
 	struct sockaddr_storage client_addr;
@@ -340,7 +340,7 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 		string invalidDroneId = "No drone with ID has been spawned. Please specify a valid drone ID.";
        		string invalidLocation = "Location entered is beyond the grid parameters.";
 		char receiveBuffer[BUFLEN];
-		char publishMessage[BUFLEN];
+		char publishMessage[BUFLEN * 5];
 		int initialColumn, initialRow;
 		int droneInt;
 		int sleepCtr; // to ensure drones don't send commands before server can process, and drones begin in sync
@@ -730,8 +730,8 @@ bool GaTACDroneControl::droneStartCheck() {
  */
 void GaTACDroneControl::launchClient(char *serverIp, unsigned int serverPort, unsigned int dataPort) {
 	char *host = serverIp;
-	char port[5];
-	char dp[5];
+	char port[256];
+	char dp[256];
 
         sprintf(port, "%d", serverPort);
         sprintf(dp, "%d", dataPort);
@@ -897,7 +897,7 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 	// Send command to server
 		printf("Sending command to set grid size to %dx%d.\n", numberOfColumns, numberOfRows);
 
-		char message[32];
+		char message[BUFLEN];
 		sprintf(message, "g %d %d", numberOfColumns, numberOfRows);
 		worked = sendMessage(message, serverSocket, srv);
 
@@ -917,7 +917,7 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
 	bool worked = false;
 	// Send command to server, checks for valid ID and location done server-side
 		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
-		char message[32];
+		char message[BUFLEN];
 		sprintf(message, "m %d %d %d", droneId, x, y);
 		worked = sendMessage(message, serverSocket, srv);
 }
@@ -931,7 +931,7 @@ void GaTACDroneControl::hover(int droneId) {
 	// Send command to server
 	bool worked = commandDrone('h', droneId);
 	printf("Sending command to make drone hover.\n", droneId);
-		char message[32];
+		char message[BUFLEN];
 		sprintf(message, "h %d", droneId);
 		worked = sendMessage(message, serverSocket, srv);
 }
@@ -991,7 +991,7 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	bool worked = false;
 	// Send command to server
 		printf("Sending command to spawn drone at (%d, %d).\n", droneCol, droneRow);
-		char msg[10];
+		char msg[BUFLEN];
 		sprintf(msg, "s %d %d", droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
 }
@@ -1155,7 +1155,7 @@ bool GaTACDroneControl::getClientReadyToCommand()
  */
 bool GaTACDroneControl::receiveData(int id)
 {
-	char message[3];
+	char message[BUFLEN];
 	sprintf(message, "n %d", id);
 	bool success = false;
 	char sendBuffer[BUFLEN];
@@ -1294,7 +1294,7 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	bool success = false;
 	// Send command to server
-		char message[32];
+		char message[BUFLEN];
 		sprintf(message, "%c %d", command, droneId);
 		success = sendMessage(message, serverSocket, srv);
 
@@ -1312,7 +1312,7 @@ void GaTACDroneControl::launchGrid() {
 	if(simulatorMode == true){
 	const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
 	const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %d %d %f s&";
-	char thincSmartMessage[256];
+	char thincSmartMessage[strlen(thincSmartCommand) + BUFLEN];
 
 	// Configure launch file and start gazebo
 	configureLaunchFile();
@@ -1342,7 +1342,7 @@ void GaTACDroneControl::launchGrid() {
 	const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 	const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 	const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
-	char thincSmartMessage[256];
+	char thincSmartMessage[strlen(thincSmartCommand) + BUFLEN];
 	char ardroneDriverMessage[256];
 	char flatTrimMessage[256];
 	char toggleCamMessage[256];
@@ -1439,8 +1439,8 @@ void GaTACDroneControl::configureLaunchFile() {
 		ofstream fileStream(launchFilePath, ios::trunc);
 
 		// Write gen_texture and gen_dae text to file
-		char textureBuffer[strlen(genTextureText) + 1];
-		char daeBuffer[strlen(genDaeText) + 1];
+		char textureBuffer[strlen(genTextureText) + 256];
+		char daeBuffer[strlen(genDaeText) + 256];
 		sprintf(textureBuffer, genTextureText, numberOfRows, numberOfColumns);
 		sprintf(daeBuffer, genDaeText, numberOfColumns, numberOfRows);
 
@@ -1456,7 +1456,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Write all drone sub-launch text to file
 		int droneID;
 		float droneX, droneY;
-		char droneBuffer[strlen(droneText)];
+		char droneBuffer[strlen(droneText) + 256];
 		if (fileStream.is_open()) {
 			Locker lock(&dronePositionMtx);
 
@@ -1520,7 +1520,7 @@ void GaTACDroneControl::configureLaunchFile() {
 		// Write all drone sub-launch text to file
 		int droneID;
 		float droneX, droneY;
-		char droneBuffer1[strlen(droneText)];
+		char droneBuffer1[strlen(droneText) + 256];
 		if (fileStream.is_open()) {
 			Locker lock(&dronePositionMtx);
 
@@ -1561,8 +1561,8 @@ void GaTACDroneControl::getGazeboOrigin(int& x, int& y) {
  */
 void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 {
-	char publishMessage[BUFLEN];
 	const char *moveCommand = "rosservice call /drone%d/waypoint -- %d %d -1"; //id...  x y z id
+	char publishMessage[strlen(moveCommand) + BUFLEN];
 	int droneId = Id;
 	Locker lock(&dronePositionMtx);
 	int dx = dronePositions.at(droneId).first - x;
@@ -1752,8 +1752,8 @@ string GaTACDroneControl::getGridPosition(int droneId)
  */
 const char* GaTACDroneControl::getData(int droneId)
 {
-	char printNavMessage[BUFLEN];
 	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
+	char printNavMessage[strlen(printNavdataCommand) + BUFLEN];
 	int id = droneId;
 	sprintf(printNavMessage, printNavdataCommand, id);
 	system(printNavMessage);
