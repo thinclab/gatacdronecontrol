@@ -39,16 +39,16 @@ int main() {
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
         boost::thread *dataThread;
-        dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, gatac, id));
+        dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, &gatac, id));
         gatac.move(id, 4, 7);
         boost::thread *moveThread;
-        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, gatac,id, 4, 0));
+        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,id, 4, 0));
         for(int i = 1; i < 6; i++){
             cout << gatac.getBattery() << endl;
             sleep(i);
         }
         boost::thread *moveThread2;
-        moveThread2 = new boost::thread(boost::bind(&GaTACDroneControl::move, gatac,id, 3, 6));
+        moveThread2 = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,id, 3, 6));
         cout << gatac.getBattery() << endl;
 
         //Drones land

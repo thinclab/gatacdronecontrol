@@ -12,10 +12,11 @@
 #include <utility>
 #include <boost/thread.hpp> // For concurrent flight
 #include <boost/date_time.hpp>
+#include <mutex>
 
 using std::vector;
 using std::pair;
-using namespace std;
+using std::string;
 
 /**
  * @file	GaTACDroneControl.cpp
@@ -334,6 +335,7 @@ private:
 	 * @brief Updates at every movement with current position for each drone.
 	 */
 	vector<pair<int, int> > dronePositions;
+	std::mutex dronePositionMtx;
 
 	/**
 	 * @brief Struct containing server socket data.
@@ -344,11 +346,6 @@ private:
 	 * @brief Struct containing data socket data.
 	 */
 	struct addrinfo *datsrv;
-
-	/**
-	 * @brief Updates to keep track of shared cells.
-	 */
-	vector<bool> dronesSharingSpace;
 
 	/**
 	 * @brief Indicates which clients are ready to receive commands.
@@ -428,7 +425,7 @@ private:
 	/**
 	 * @brief Used to keep track of currently operating threads.
 	 */
-	boost::thread* threads[5];
+	boost::thread* threads[256];
 
 	/**
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.
@@ -498,7 +495,7 @@ private:
    	 * If a shared cell is detected, the coordinates and drone ID's are printed to server terminal.
 	 * @return Boolean indicating whether a cell on the grid is occupied by two or more drones; true indicates a shared cell is detected
 	 */
-	bool sharedSpace();
+	bool sharedSpace(vector<bool> * dronesSharingSpace);
 
 	/**
 	 * This method returns the value of boolean gridSizeSet, which lets the server check if the grid size has been set.
