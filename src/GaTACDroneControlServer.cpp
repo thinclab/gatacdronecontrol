@@ -89,11 +89,9 @@ private:
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
 GaTACDroneControl::GaTACDroneControl() {
-	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
+	numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = true;
-	datsrv = NULL;
-	srv = NULL;
 	serverThreads = 0;
 	readyForData = false;
 
@@ -105,11 +103,9 @@ GaTACDroneControl::GaTACDroneControl() {
  * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
  */
 GaTACDroneControl::GaTACDroneControl(const char* c) {
-	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
+	numberOfColumns, numberOfRows, numberOfDrones = 0;
 	gridSizeSet, gridStarted = false;
 	simulatorMode = false;
-	datsrv = NULL;
-	srv = NULL;
 	serverThreads = 0;
 	readyForData = false;
 }
@@ -197,11 +193,6 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
 		perror("Server: no valid address info found.\n");
 		exit(1);
 	}
-
-
-	//Storing data socket info for later use
-	dataSocket = datsock;
-	this->datsrv = datinfo;
 
 
 	// Loop forever. Read commands from socket and perform the action specified.

@@ -108,16 +108,6 @@ public:
 
 private:
 	/**
-	 * @brief Used to keep track of command socket info.
-	 */
-	int serverSocket;
-
-	/**
-	 * @brief Used to keep track of data socket info.
-	 */
-	int dataSocket;
-
-	/**
 	 * @brief Used to store grid dimensions.
 	 */
 	int numberOfColumns;
@@ -137,16 +127,6 @@ private:
 	 */
 	vector<pair<int, int> > dronePositions;
 	std::mutex dronePositionMtx;
-
-	/**
-	 * @brief Struct containing server socket data.
-	 */
-	struct addrinfo *srv;
-
-	/**
-	 * @brief Struct containing data socket data.
-	 */
-	struct addrinfo *datsrv;
 
 	/**
 	 * @brief Indicates which clients are ready to receive commands.
