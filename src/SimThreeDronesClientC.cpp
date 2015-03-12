@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "GaTACDroneControl.hpp"
+#include "GaTACDroneControlClient.hpp"
 #include <boost/thread.hpp> // For concurrent commands and data reads
 #include <boost/date_time.hpp>
 

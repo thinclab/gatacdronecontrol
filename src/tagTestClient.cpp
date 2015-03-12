@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unistd.h>
-#include "GaTACDroneControl.hpp"
+#include "GaTACDroneControlClient.hpp"
 
 /*
  * Sample client code to demonstrate usage of the GaTACDroneControl API.
@@ -21,13 +21,13 @@ int main() {
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
-	
+
 	//set up drone
 	gatac.setupDrone(0, 0); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
-	
+
 	//Setting id of drone to client's unique id
 	int id = gatac.getClientUniqueId();
 

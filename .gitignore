@@ -14,3 +14,7 @@
 
 #Temp files
 *~
+
+bin/*
+obj/*
+lib/*

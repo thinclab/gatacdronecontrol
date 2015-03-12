@@ -1,6 +1,6 @@
 #include <iostream>
 #include <unistd.h>
-#include "GaTACDroneControl.hpp"
+#include "GaTACDroneControlClient.hpp"
 #include <stdlib.h>
 #include <time.h>
 
@@ -17,7 +17,7 @@ int main(int argc, char * argv[]) {
 
 	unsigned int port = startport + dronenum * 2;
 	unsigned int dp = startport + dronenum * 2 + 1;
-	
+
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 

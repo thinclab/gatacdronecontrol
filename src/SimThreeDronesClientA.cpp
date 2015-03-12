@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unistd.h>
-#include "GaTACDroneControl.hpp"
-
+#include "GaTACDroneControlClient.hpp"
+#include <boost/thread.hpp>
 /*
  * Sample client code to demonstrate usage of the GaTACDroneControl API.
  */
