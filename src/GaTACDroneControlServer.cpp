@@ -964,49 +964,50 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	//Using same logic as ardrone_thinc.cpp file, send messages for movement one cell at a time
 	/* simulatorMode == true and false */
 	if(!(dx == 0 && dy == 0)){
-	do
-	{
-	if(dx > 0){
-	dronePositions.at(droneId).first -= 1;
-	dx--;
-	}
-	else if(dx < 0){
-	dronePositions.at(droneId).first += 1;
-	dx++;
-	}
-	else if(dy < 0){
-	dronePositions.at(droneId).second += 1;
-	dy++;
-	}
-	else if(dy > 0){
-	dronePositions.at(droneId).second -= 1;
-	dy--;
-	}
-	int xSend = dronePositions.at(droneId).first;
-	int ySend = dronePositions.at(droneId).second;
-	lock.unlock();
-	sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
-	system(publishMessage);
-	vector<bool> dronesSharingSpace;
+        do
+        {
+            lock.lock();
+            if(dx > 0){
+                dronePositions.at(droneId).first -= 1;
+                dx--;
+            }
+            else if(dx < 0){
+                dronePositions.at(droneId).first += 1;
+                dx++;
+            }
+            else if(dy < 0){
+                dronePositions.at(droneId).second += 1;
+                dy++;
+            }
+            else if(dy > 0){
+                dronePositions.at(droneId).second -= 1;
+                dy--;
+            }
+            int xSend = dronePositions.at(droneId).first;
+            int ySend = dronePositions.at(droneId).second;
+            lock.unlock();
+            sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
+            system(publishMessage);
+            vector<bool> dronesSharingSpace;
 
-	if(sharedSpace(&dronesSharingSpace) == true){
-		lock.lock();
-		cout<<"Drones sharing a cell: " << endl;
-		for(int i = 0; i < dronesSharingSpace.size(); i++)
-		{
-		if(dronesSharingSpace.at(i) == true)
-		cout<<"==> drone "<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
-		}
-		lock.unlock();
-	}
-	}while ((dx != 0) || (dy != 0));
-	cout << this->getGridPosition(droneId) << endl;
+            if(sharedSpace(&dronesSharingSpace) == true){
+                lock.lock();
+                cout<<"Drones sharing a cell: " << endl;
+                for(int i = 0; i < dronesSharingSpace.size(); i++)
+                {
+                    if(dronesSharingSpace.at(i) == true)
+                    cout<<"==> drone "<<i<<" @ ("<<dronePositions.at(i).first<<", "<<dronePositions.at(i).second<<")"<<endl;
+                }
+                lock.unlock();
+            }
+        }while ((dx != 0) || (dy != 0));
+        cout << this->getGridPosition(droneId) << endl;
 	}
 	else if(dx == 0 && dy == 0)
 	{
-	sprintf(publishMessage, moveCommand, droneId, x, y);
-	system(publishMessage);
-	cout << "Drone " << droneId << "hovering." << endl;
+        sprintf(publishMessage, moveCommand, droneId, x, y);
+        system(publishMessage);
+        cout << "Drone " << droneId << "hovering." << endl;
 	}
 }
 
