@@ -71,7 +71,7 @@ public:
 	 * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
 	 * @param threadNo The ID of the thread this method is starting
 	 */
-	void dataServer(const char *remoteIp, unsigned int, int threadNo);
+	void dataServer(int, struct sockaddr_storage *, socklen_t, int, const int);
 
 	/**
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
@@ -81,7 +81,7 @@ public:
 	 * @param remotePort The port number supplied for a client socket
 	 * @param threadNo The ID of the thread this method is starting
 	 */
-	void runServer(const char *, unsigned int, int);
+	void runServer(int, struct sockaddr_storage *, socklen_t, int, const int);
 
 	/**
 	 * This method will return and print the current position of a given drone on the grid.

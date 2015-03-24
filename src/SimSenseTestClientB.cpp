@@ -9,18 +9,17 @@
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
-	char *port = "5999";
-	char *dp = "5998";
+	char *port = "4999";
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 
 	// Launch Drone Client
-	gatac.launchClient(ip, port, dp);
+	gatac.launchClient(ip, port);
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
-	
+
 	//set up drone
 	gatac.setupDrone(0, 4); // Spawn drone at (0, 0)
 
@@ -45,7 +44,7 @@ int main() {
 	gatac.senseEast(id); //should return 1 or 2
 	sleep(3);
 	gatac.senseWest(id); //should return 0
-	
+
 	//Drones land
 	gatac.land(id);
 

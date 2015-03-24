@@ -16,23 +16,22 @@ int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
 	char *port = "4999"; //command port
-	char *dp = "4998"; //data port
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 
 	// Launch Drone Client
-	gatac.launchClient(ip, port, dp);
+	gatac.launchClient(ip, port);
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
-	
+
 	//set up drone
 	gatac.setupDrone(0, 0); // Spawn drone at (2, 2)
 
 	// Sending ready message
 	gatac.readyUp();
-	
+
 	//Setting id of drone to client's unique id
 	int id = gatac.getClientUniqueId();
 
@@ -55,16 +54,16 @@ int main() {
 
 	//Drones land
 	gatac.land(id);
-	
+
 	//Uncomment to check errors: invalid drone ID and invalid location
 /*
-	//Out-of-bounds test	
+	//Out-of-bounds test
 	gatac.takeoff(1);
-	std::cout << "Client test: passing out-of-bounds waypoint..." << std::endl;	
+	std::cout << "Client test: passing out-of-bounds waypoint..." << std::endl;
 	gatac.move(1, 5, 6);
-	
+
 	//Incorrect ID Test
-	gatac.takeoff(1);	
+	gatac.takeoff(1);
 	std::cout << "Client test: passing incorrect drone ID..." << std::endl;
 	gatac.move(3, 1, 6);
 */

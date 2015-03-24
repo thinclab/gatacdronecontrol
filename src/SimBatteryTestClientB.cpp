@@ -15,24 +15,23 @@ using namespace std;
 int main() {
 	// Specifying the IP and port of server machine
 	char *ip = "128.192.76.247";
-	char *port = "5999"; //command port
-	char *dp = "5998"; //data port
+	char *port = "4999"; //command port
 
 	// Instantiate GaTACDroneControl object
 	GaTACDroneControl gatac;
 
 	// Launch Drone Client
-	gatac.launchClient(ip, port, dp);
+	gatac.launchClient(ip, port);
 
 	// Set grid size to [5 x 8]
 	gatac.setGridSize(5, 8);
-	
+
 	//set up drone
 	gatac.setupDrone(4, 0); // Spawn drone at (0, 0)
 
 	// Sending ready message
 	gatac.readyUp();
-	
+
 	//Setting id of drone to client's unique id
 	int id = gatac.getClientUniqueId();
 
@@ -53,7 +52,7 @@ int main() {
 
 	//Drones land
 	gatac.land(id);
-	
+
 	gatac.closeClient();
 	}
 	return 0;

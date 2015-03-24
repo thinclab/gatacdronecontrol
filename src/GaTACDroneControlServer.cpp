@@ -22,12 +22,7 @@ using std::ifstream;
 using std::ios;
 
 #define BUFLEN 256
-#define DEFAULTCLIENTPORT1 4999
-#define DEFAULTCLIENTPORT2 5999
-#define DEFAULTCLIENTPORT3 6999
-#define DEFAULTDATAPORT1 4998
-#define DEFAULTDATAPORT2 5998
-#define DEFAULTDATAPORT3 6998
+#define DEFAULTRONDPORT 4999
 
 /**
  * @file	GaTACDroneControl.cpp
@@ -83,6 +78,52 @@ private:
 	std::mutex * theLock;
 };
 
+int open_udp_port(unsigned int portnum, int * sockout) {
+    char localPort[256];
+    sprintf(localPort, "%u", portnum);
+
+	int errorCheck, rondsock;
+	struct addrinfo rondhints, *rondsrv, *rondinfo;
+
+	// Specifying socket parameters
+	bzero(&rondhints, sizeof rondhints);
+	rondhints.ai_family = AF_UNSPEC;
+	rondhints.ai_socktype = SOCK_DGRAM;
+	rondhints.ai_flags = AI_PASSIVE; // use my IP
+
+	// Filling 'srv' object with info from 'hints'
+	if ((errorCheck = getaddrinfo(NULL, localPort, &rondhints, &rondsrv)) != 0) {
+		perror("Server: get address info");
+		return errorCheck;
+	}
+
+	// Creating and binding socket.
+	for (rondinfo = rondsrv; rondinfo != NULL; rondinfo = rondinfo->ai_next) {
+		if ((rondsock = socket(rondinfo->ai_family, rondinfo->ai_socktype, rondinfo->ai_protocol)) == -1) {
+			perror("Server: socket");
+			continue;
+		}
+
+		if (bind(rondsock, rondinfo->ai_addr, rondinfo->ai_addrlen)) {
+			close(rondsock);
+			perror("Server: bind");
+			continue;
+		}
+
+		break;
+	}
+
+	// Ensuring valid address info was found
+	if (rondinfo == NULL) {
+		perror("Server: no valid address info found.\n");
+		return -1;
+	}
+
+	*sockout = rondsock;
+	freeaddrinfo(rondsrv);
+	return 0;
+}
+
 
 /**
  * Default constructor. Initializes all member variables.
@@ -124,26 +165,103 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
         clientsReady.push_back(false);
         dronesReady.push_back(false);
 	}
+	dronePositions.resize(expectedDrones);
 
+    // open rondevous port
+
+    int rondsock;
+   	struct sockaddr_storage client_addr;
+	socklen_t addr_len = sizeof client_addr;
+
+
+    if (open_udp_port(remotePort, &rondsock) != 0) {
+        exit(1);
+    }
+
+    size_t bytesReceived;
 	for(int i = 0; i < expectedDrones; i++)
 	{
+
+        // wait for a connect message from a client
+
+        do {
+            char receiveBuffer[BUFLEN];
+
+            if ((bytesReceived = recvfrom(rondsock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
+                perror("Rondevous: Error receiving command.");
+                exit(1);
+            }
+            receiveBuffer[bytesReceived] = '\0';
+
+            if (strcmp("CONNECT", receiveBuffer) == 0) {
+                break;
+            }
+            perror("Rondevous: Invalid Command received.");
+
+        } while (true);
+
+        // open control and data ports
+
+
+        int controlsock, datsock;
+        unsigned int controlport, datport;
+        struct sockaddr_in adr_inet;
+        socklen_t len_inet = sizeof adr_inet;
+
+        if (open_udp_port(0, &controlsock) != 0) {
+            exit(1);
+        }
+
+        if (getsockname(controlsock, (struct sockaddr *)&adr_inet, &len_inet) != 0) {
+            perror("Rondevous: getsockname");
+            exit(1);
+        }
+        controlport = ntohs(adr_inet.sin_port);
+
+        if (open_udp_port(0, &datsock) != 0) {
+            exit(1);
+        }
+
+        if (getsockname(datsock, (struct sockaddr *)&adr_inet, &len_inet) != 0) {
+            perror("Rondevous: getsockname");
+            exit(1);
+        }
+        datport = ntohs(adr_inet.sin_port);
+
+        // start threads
+
 		serverThreads++;
 		boost::thread* thread;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,remoteIP,remotePort, serverThreads));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,controlsock, &client_addr, addr_len, serverThreads, i));
 		threads[2*i] = thread;
 		cout<<"starting thread "<<serverThreads <<endl;
 
 		serverThreads++;
-		remotePort ++;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,remoteIP,remotePort, serverThreads));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, &client_addr, addr_len, serverThreads, i));
 		threads[2*i + 1] = thread;
 		cout<<"starting data thread "<<serverThreads<<endl;
-		remotePort ++;
+
+
+        // inform client of ready state
+        char sendBuffer[BUFLEN];
+
+        sprintf(sendBuffer, "%u %u %u", i, controlport, datport);
+        int numSent;
+		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+			perror("Server: error sending client initialization.");
+			exit(1);
+		}
+
 	}
+
+    cout << "All clients connected" << endl;
+
+	close(rondsock);
 
 	for (int i = 0; i < 2 * expectedDrones + 1; i ++) {
 		threads[i]->join();
 	}
+
 }
 /**
  * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
@@ -151,49 +269,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
-	char localport[256];
-	int errorCheck, datsock;
-	struct addrinfo dathints, *datsrv, *datinfo;
-	struct sockaddr_storage client_addr;
-	socklen_t addr_len = sizeof client_addr;
-
-	sprintf(localport, "%d", remotePort);
-
-	// Specifying socket parameters
-	bzero(&dathints, sizeof dathints);
-	dathints.ai_family = AF_UNSPEC;
-	dathints.ai_socktype = SOCK_DGRAM;
-	dathints.ai_flags = AI_PASSIVE; // use my IP
-
-	// Filling 'srv' object with info from 'hints'
-	if ((errorCheck = getaddrinfo(NULL, localport, &dathints, &datsrv)) != 0) {
-		perror("Server: get address info");
-		exit(1);
-	}
-
-	// Creating and binding socket.
-	for (datinfo = datsrv; datinfo != NULL; datinfo = datinfo->ai_next) {
-		if ((datsock = socket(datinfo->ai_family, datinfo->ai_socktype, datinfo->ai_protocol)) == -1) {
-			perror("Server: socket");
-			continue;
-		}
-
-		if (bind(datsock, datinfo->ai_addr, datinfo->ai_addrlen)) {
-			close(datsock);
-			perror("Server: bind");
-			continue;
-		}
-
-		break;
-	}
-
-	// Ensuring valid address info was found
-	if (datinfo == NULL) {
-		perror("Server: no valid address info found.\n");
-		exit(1);
-	}
-
+void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
@@ -232,7 +308,7 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
 		int len = BUFLEN;
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
-		strcpy(sendBuffer, getData(0));
+		strcpy(sendBuffer, getData(myDroneId));
 		//If command received was to spawn a drone, first char of ACK set to id
 		if(rawCommand == 'n'){
 		int numSent = 0;
@@ -251,8 +327,6 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
 		}
 	}
 	// Cleaning up socket information
-	freeaddrinfo(datinfo);
-	freeaddrinfo(datsrv);
 	close(datsock);
 }
 
@@ -264,59 +338,15 @@ void GaTACDroneControl::dataServer(const char *remoteIp, unsigned int remotePort
  * @param remotePort The port number supplied for a client socket
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort, int threadNo) {
+void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	const char *serviceCall = "rosservice call /drone%d/%s";
 	Locker lock(&dronePositionMtx);
 	lock.unlock();
 
-	char localport[256];
-	int errorCheck, sock;
-	struct addrinfo hints, *srv, *info;
-	struct sockaddr_storage client_addr;
-	socklen_t addr_len = sizeof client_addr;
-
-	sprintf(localport, "%d", remotePort);
-
-	// Specifying socket parameters
-	bzero(&hints, sizeof hints);
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE; // use my IP
-
-	// Filling 'srv' object with info from 'hints'
-	if ((errorCheck = getaddrinfo(NULL, localport, &hints, &srv)) != 0) {
-		perror("Server: get address info");
-		exit(1);
-	}
-
-	// Creating and binding socket.
-	for (info = srv; info != NULL; info = info->ai_next) {
-		if ((sock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
-			perror("Server: socket");
-			continue;
-		}
-
-		if (bind(sock, info->ai_addr, info->ai_addrlen) == -1) {
-			close(sock);
-			perror("Server: bind");
-			continue;
-		}
-
-		break;
-	}
-
-	// Ensuring valid address info was found
-	if (info == NULL) {
-		perror("Server: no valid address info found.\n");
-		exit(1);
-	}
-
-
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
-	int myDroneId = -1;
 	while (1) {
 		const char *droneNumber, *x, *y;
 		string temp;
@@ -384,10 +414,9 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 			else{
 			/* If server passes all checks, client message processed */
                 lock.lock();
-                dronePositions.push_back(make_pair(initialColumn, initialRow));
+                dronePositions.at(myDroneId) = make_pair(initialColumn, initialRow);
                 lock.unlock();
                 printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
-                myDroneId = numberOfDrones;
                 numberOfDrones++;
 			}
 			break;
@@ -688,8 +717,6 @@ void GaTACDroneControl::runServer(const char *remoteIp, unsigned int remotePort,
 		}
 	}
 	// Cleaning up socket information
-	freeaddrinfo(info);
-	freeaddrinfo(srv);
 	close(sock);
 }
 

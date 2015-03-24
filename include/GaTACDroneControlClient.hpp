@@ -60,7 +60,7 @@ public:
 	 * @param serverPort The port number supplied for the server's socket
 	 * @param dataPort The port number supplied for the client's navdata socket
 	 */
-	void launchClient(char *, unsigned int, unsigned int);
+	void launchClient(char *, unsigned int);
 
 	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.

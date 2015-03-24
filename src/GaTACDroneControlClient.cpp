@@ -22,12 +22,7 @@ using std::ifstream;
 using std::ios;
 
 #define BUFLEN 256
-#define DEFAULTCLIENTPORT1 4999
-#define DEFAULTCLIENTPORT2 5999
-#define DEFAULTCLIENTPORT3 6999
-#define DEFAULTDATAPORT1 4998
-#define DEFAULTDATAPORT2 5998
-#define DEFAULTDATAPORT3 6998
+#define DEFAULTRONDPORT 4999
 
 /**
  * @file	GaTACDroneControl.cpp
@@ -93,18 +88,20 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  * @param serverPort The port number supplied for the server's socket
  * @param dataPort The port number supplied for the client's navdata socket
  */
-void GaTACDroneControl::launchClient(char *serverIp, unsigned int serverPort, unsigned int dataPort) {
+void GaTACDroneControl::launchClient(char *serverIp, unsigned int rondPort) {
 	char *host = serverIp;
 	char port[256];
 	char dp[256];
 
-        sprintf(port, "%d", serverPort);
-        sprintf(dp, "%d", dataPort);
+    sprintf(port, "%u", rondPort);
 
 	int errorCheck, sock, datsock;
 
 	struct addrinfo hints, *srv, *info;
 	struct addrinfo dathints, *datsrv, *datinfo;
+
+    // Connect to the server and get our connection info
+
 
 
 	// Specifying socket parameters
@@ -133,6 +130,59 @@ void GaTACDroneControl::launchClient(char *serverIp, unsigned int serverPort, un
 		perror("Client: no valid address info found.\n");
 		exit(1);
 	}
+
+	char buffer[BUFLEN];
+	sprintf(buffer, "CONNECT");
+
+    int bytesSent = 0;
+	if ((bytesSent = sendto(sock, buffer, BUFLEN, 0, info->ai_addr, info->ai_addrlen)) == -1) {
+		cout << "Error sending message to server with errno: " << errno << endl;
+		exit(1);
+	}
+
+	int bytesReceived = 0;
+	if ((bytesReceived = recvfrom(sock, buffer, BUFLEN, 0, NULL, NULL)) == -1) {
+		cout << "Error receiving feedback from server." << endl;
+		exit(1);
+	}
+
+    unsigned int controlPort, dataPort;
+    sscanf(buffer, "%u %u %u", &clientUniqueId, &controlPort, &dataPort);
+
+    freeaddrinfo(srv);
+    close(sock);
+
+    sprintf(port, "%u", controlPort);
+    sprintf(dp, "%u", dataPort);
+
+
+	bzero(&hints, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	// Filling 'srv' object with info from 'hints'
+	if ((errorCheck = getaddrinfo(host, port, &hints, &srv)) != 0) {
+		perror("Client: get address info function.");
+		exit(1);
+	}
+
+	// Creating socket
+	for (info = srv; info != NULL; info = info->ai_next) {
+		if ((sock = socket(info->ai_family, info->ai_socktype, info->ai_protocol)) == -1) {
+			perror("Client: socket function.");
+			continue;
+		}
+
+		break;
+	}
+
+	// Ensuring valid address info was found
+	if (info == NULL) {
+		perror("Client: no valid address info found.\n");
+		exit(1);
+	}
+
+
 
 	// Storing server socket data for later
 	serverSocket = sock;
@@ -171,7 +221,7 @@ void GaTACDroneControl::launchClient(char *serverIp, unsigned int serverPort, un
 	this->datsrv = datinfo;
 
 	// Sleep to ensure that the connection is complete before commands are sent
-	sleep(3);
+	sleep(1);
 }
 
 /**
