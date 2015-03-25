@@ -18,7 +18,7 @@ int main() {
 	unsigned int port = 4999; //command port
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac("TESTDRONE");
+	GaTACDroneControl gatac("TESTDRONE2");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, port);

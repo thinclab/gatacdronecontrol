@@ -6,6 +6,9 @@
 #include <fstream> // For editing files
 #include <boost/thread.hpp> // For concurrent flight
 #include <boost/date_time.hpp>
+#include <algorithm>
+#include <cctype>
+#include <locale>
 
 // For tokenizing command input
 #include <sstream>
@@ -55,7 +58,14 @@ using std::ios;
  * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
  * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
  */
-GaTACDroneControl::GaTACDroneControl(const string c) {
+GaTACDroneControl::GaTACDroneControl(string c) {
+//    c.erase(std::remove_if(c.begin(), c.end(),[](char c){ return (c =='\r' || c =='\t' || c == ' ' || c == '\n');} ), c.end());
+    c.erase(std::remove_if(c.begin(), c.end(), []( char ch ) { return std::isspace<char>( ch, std::locale::classic() ); } ), c.end());
+    if (c.size() == 0) {
+        cout << "Drone Role name cannot be whitespace or zero length." << endl;
+        exit(1);
+    }
+    cout << "Drone Role Name: " << c << endl;
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	datsrv = NULL;
 	srv = NULL;
@@ -233,56 +243,68 @@ void GaTACDroneControl::readyUp() {
  * This method is called by a client to send a senseNorth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseNorth() {
+vector<pair<string, int>> GaTACDroneControl::senseNorth(int maxdist) {
 	printf("Sending sense north command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('u', clientUniqueId);
+    char message[BUFLEN];
+	sprintf(message, "u %d %d", clientUniqueId, maxdist);
+	bool worked = sendMessage(message, serverSocket, srv);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
 	}
+	return percepts;
 }
 
 /**
  * This method is called by a client to send a senseSouth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseSouth() {
+vector<pair<string, int>> GaTACDroneControl::senseSouth(int maxdist) {
 	printf("Sending sense south command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('d', clientUniqueId);
+    char message[BUFLEN];
+	sprintf(message, "d %d %d", clientUniqueId, maxdist);
+	bool worked = sendMessage(message, serverSocket, srv);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
 	}
+	return percepts;
 }
 
 /**
  * This method is called by a client to send a senseEast message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseEast() {
+vector<pair<string, int>> GaTACDroneControl::senseEast(int maxdist) {
 	printf("Sending sense east command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('k', clientUniqueId);
+    char message[BUFLEN];
+	sprintf(message, "k %d %d", clientUniqueId, maxdist);
+	bool worked = sendMessage(message, serverSocket, srv);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
 	}
+	return percepts;
 }
 
 /**
  * This method is called by a client to send a senseWest message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseWest() {
+vector<pair<string, int>> GaTACDroneControl::senseWest(int maxdist) {
 	printf("Sending sense west command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('j', clientUniqueId);
+    char message[BUFLEN];
+	sprintf(message, "j %d %d", clientUniqueId, maxdist);
+	bool worked = sendMessage(message, serverSocket, srv);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
 	}
+	return percepts;
 }
 
 /**
@@ -390,7 +412,7 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
 	// Send command to server
 		printf("Sending command to spawn drone at (%d, %d).\n", droneCol, droneRow);
 		char msg[BUFLEN];
-		sprintf(msg, "s %d %d", droneCol, droneRow);
+		sprintf(msg, "s %s %d %d", myRole.c_str(), droneCol, droneRow);
 		worked = sendMessage(msg, serverSocket, srv);
 }
 
@@ -673,7 +695,24 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
 				cmdCheck == 'k' || cmdCheck == 'j')) {
 			success = true;
-			cout << idInt <<endl;
+			cout << receiveBuffer <<endl;
+			// process the returned value into percepts
+
+            percepts.clear();
+
+            string stringCommand(receiveBuffer);
+            stringstream ss(stringCommand);
+
+            std::istream_iterator<std::string> begin(ss);
+            std::istream_iterator<std::string> end;
+
+            // Storing tokens in vector
+            vector<string> tokens(begin, end);
+
+            for (int i = 0; i < tokens.size() / 2; i ++) {
+                percepts.push_back(make_pair(tokens.at((i * 2) + 1), atoi(tokens.at((i * 2) + 2).c_str())));
+            }
+
 		} else {
 			cout << "Error: Server didn't receive the command. Exiting." << endl;
 			success = false;

@@ -23,7 +23,7 @@ using std::ifstream;
 using std::istream;
 using std::ios;
 
-#define BUFLEN 256
+#define BUFLEN 512
 #define DEFAULTRONDPORT 4999
 
 /**
@@ -168,6 +168,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
         dronesReady.push_back(false);
 	}
 	dronePositions.resize(expectedDrones);
+	droneRoles.resize(expectedDrones);
 
     // open rondevous port
 
@@ -363,7 +364,9 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
 		char * senseOption;
-		int senseResult, senseInt;
+		int senseInt, maxdist;
+		string droneRole;
+		vector<pair<string, int>> senseResult;
 		const char *navDataToSend = ""; // Holds string of navdata server will send to client on request
 		std::stringstream strX;
 		std::stringstream strY;
@@ -395,8 +398,9 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		case 's':
 
 			cout << "Spawn drone." << endl;
-			initialColumn = atoi((tokens.at(1)).c_str());
-			initialRow = atoi((tokens.at(2)).c_str());
+			droneRole = tokens.at(1);
+			initialColumn = atoi((tokens.at(2)).c_str());
+			initialRow = atoi((tokens.at(3)).c_str());
 			// If grid size hasn't been set
 			if (gridSizeCheck() == false) {
                 errorMessage = "No grid size set. You must specify a grid size before spawning a drone.";
@@ -416,6 +420,8 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			else{
 			/* If server passes all checks, client message processed */
                 lock.lock();
+                cout << droneRoles.size() << " " << myDroneId << endl;
+                droneRoles.at(myDroneId) = droneRole;
                 dronePositions.at(myDroneId) = make_pair(initialColumn, initialRow);
                 lock.unlock();
                 printf("Ready to spawn drone at [%d, %d].\n", initialColumn, initialRow);
@@ -624,33 +630,37 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		case 'u':
 			cout << "Sense North" << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			maxdist = atoi((tokens.at(2)).c_str());
 			droneInt = atoi(droneNumber);
 			senseInt = 0;
-			senseResult = sense(droneInt, senseInt);
+			senseResult = sense(droneInt, senseInt, maxdist);
   			break;
 
 		case 'd':
 			cout << "Sense South" << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			maxdist = atoi((tokens.at(2)).c_str());
 			droneInt = atoi(droneNumber);
 			senseInt = 1;
-			senseResult = sense(droneInt, senseInt);
+			senseResult = sense(droneInt, senseInt, maxdist);
   			break;
 
 		case 'k':
 			cout << "Sense East" << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			maxdist = atoi((tokens.at(2)).c_str());
 			droneInt = atoi(droneNumber);
 			senseInt = 2;
-			senseResult = sense(droneInt, senseInt);
+			senseResult = sense(droneInt, senseInt, maxdist);
   			break;
 
 		case 'j':
 			cout << "Sense West" << endl;
 			droneNumber = (tokens.at(1)).c_str();
+			maxdist = atoi((tokens.at(2)).c_str());
 			droneInt = atoi(droneNumber);
 			senseInt = 3;
-			senseResult = sense(droneInt, senseInt);
+			senseResult = sense(droneInt, senseInt, maxdist);
   			break;
 
 			//Default case, for command characters that are undefined
@@ -699,20 +709,29 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		}
 		//If command received was a sense command, first char of ACK set to sense return integer
 		else if(rawCommand == 'u' || rawCommand == 'j' || rawCommand == 'k' || rawCommand == 'd'){
-		char senseChar = (char)(((int)'0')+senseResult);
-		sendBuffer[0] = senseChar;
-		int numSent = 0;
+            string tempBuffer = "";
+            tempBuffer.append(std::to_string(senseResult.size()));
+            tempBuffer.append(" ");
+            for(int i = 0; i < senseResult.size(); i++)
+            {
+                tempBuffer.append(senseResult.at(i).first);
+                tempBuffer.append(" ");
+                tempBuffer.append(std::to_string(senseResult.at(i).second));
+                tempBuffer.append(" ");
+            }
+            strcpy(sendBuffer, tempBuffer.c_str());
+            int numSent = 0;
 			if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
+                perror("Server: error sending acknowledgment.");
+                exit(1);
 			}
 		}
 		else{
-		int numSent = 0;
-		if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
+            int numSent = 0;
+            if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+                perror("Server: error sending acknowledgment.");
+                exit(1);
+            }
 		}
 	}
 	// Cleaning up socket information
@@ -1267,96 +1286,56 @@ const char* GaTACDroneControl::getData(int droneId)
 /**
  * This method allows a client to query the server whether another drone is north, south, east, or west of the client's drone on the grid.
  * @param droneId The drone ID of the client sending sense request.
- * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
- * @return 0 if no drone is on that side of subject drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
  */
-int GaTACDroneControl::sense(int droneId, int option)
+vector<pair<string, int>> GaTACDroneControl::sense(int droneId, int option, int maxDist)
 {
 	Locker lock(&dronePositionMtx);
+    int deltaY = 0;
+    int deltaX = 0;
 
 	if(option == 0)
 	{
+        deltaY = 1;
+    } else if (option == 1)
+    {
+        deltaY = -1;
+    } else if (option == 2)
+    {
+        deltaX = 1;
+    } else
+    {
+        deltaX = -1;
+    }
+
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
 
-	//cycles through current drone positions and tests them against querying client position
-	for(int k = 0; k <dronePositions.size(); k++)
-		{
-		if(droneId != k){
-			//case: another drone is not North of subject drone
-			if((dronePositions.at(k).second <= yCurrent))
-				return 0;
-			//case: another drone is 1 square North of subject drone
-			else if((dronePositions.at(k).second == yCurrent + 1))
-				return 1;
-			//case: another drone is 2 or more squares North of subject drone
-			else if((dronePositions.at(k).second >= yCurrent + 2))
-				return 2;
-			}
-		}
-	}
-	else if(option == 1)
-	{
-	int xCurrent = dronePositions.at(droneId).first;
-	int yCurrent = dronePositions.at(droneId).second;
+	int dist = 0;
 
-	//cycles through current drone positions and tests them against querying client position
-	for(int k = 0; k <dronePositions.size(); k++)
-		{
-		if(droneId != k){
-			//case: another drone is not South of subject drone
-			if((dronePositions.at(k).second >= yCurrent))
-				return 0;
-			//case: another drone is 1 square South of subject drone
-			else if((dronePositions.at(k).second == yCurrent - 1))
-				return 1;
-			//case: another drone is 2 or more squares South of subject drone
-			else if((dronePositions.at(k).second <= yCurrent - 2))
-				return 2;
-			}
-		}
-	}
-	else if(option == 2)
-	{
-	int xCurrent = dronePositions.at(droneId).first;
-	int yCurrent = dronePositions.at(droneId).second;
+	vector<pair<string, int>> returnval;
 
-		//cycles through current drone positions and tests them against querying client position
-		for(int k = 0; k <dronePositions.size(); k++)
-		{
-		if(droneId != k){
-			//case: another drone is not East of subject drone
-			if((dronePositions.at(k).first <= xCurrent))
-				return 0;
-			//case: another drone is 1 square East of subject drone
-			else if((dronePositions.at(k).first == xCurrent + 1))
-				return 1;
-			//case: another drone is 2 or more squares East of subject drone
-			else if((dronePositions.at(k).first >= xCurrent + 2))
-				return 2;
-			}
-		}
-	}
-	else if(option == 3)
-	{
-	int xCurrent = dronePositions.at(droneId).first;
-	int yCurrent = dronePositions.at(droneId).second;
+	while ((dist <= numberOfColumns || dist <= numberOfRows) && dist <= maxDist) {
 
-		//cycles through current drone positions and tests them against querying client position
-		for(int k = 0; k <dronePositions.size(); k++)
-		{
-		if(droneId != k){
-			//case: another drone is not West of subject drone
-			if((dronePositions.at(k).first >= xCurrent))
-				return 0;
-			//case: another drone is 1 square West of subject drone
-			else if((dronePositions.at(k).first == xCurrent - 1))
-				return 1;
-			//case: another drone is 2 or more squares West of subject drone
-			else if((dronePositions.at(k).first <= xCurrent - 2))
-				return 2;
-			}
-		}
-	}
+
+        //cycles through current drone positions and tests them against querying client position
+        for(int k = 0; k <dronePositions.size(); k++)
+        {
+            if(droneId != k){
+                //case: another drone is not North of subject drone
+                if(dronePositions.at(k).first == xCurrent && dronePositions.at(k).second == yCurrent)
+                {
+                    returnval.push_back(make_pair(droneRoles.at(k), dist));
+                }
+
+            }
+        }
+
+        dist += 1;
+        xCurrent += deltaX;
+        yCurrent += deltaY;
+
+    }
+
+    return returnval;
 }
 

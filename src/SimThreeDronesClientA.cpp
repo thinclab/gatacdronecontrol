@@ -6,13 +6,16 @@
  * Sample client code to demonstrate usage of the GaTACDroneControl API.
  */
 
+using std::cout;
+using std::endl;
+
 int main() {
 	// Specifying the IP and port of server machine
 	string ip = "127.0.0.1";
 	unsigned int port = 4999;
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac("TESTDRONE");
+	GaTACDroneControl gatac("");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, port);
@@ -31,22 +34,22 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-        gatac.senseNorth(); //should return 0
+        gatac.senseNorth(8); //should return 0
         sleep(3);
-        gatac.senseSouth(); //should return 2
+        percept p = gatac.senseSouth(8); //should return 2
+        cout << p.size() << " drones detected." << endl;
 //        boost::thread *moveThread;
 //        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,0, 1));
         gatac.move(0, 1);
         sleep(5);
-        gatac.senseNorth(); //should return 0
+        gatac.senseNorth(8); //should return 0
         sleep(3);
-        gatac.senseSouth(); //should return 1
+        gatac.senseSouth(8); //should return 1
         sleep(3);
-        gatac.senseEast(); //should return 1 or 2
+        gatac.senseEast(8); //should return 1 or 2
         sleep(3);
-        gatac.senseWest(); //should return 0
+        gatac.senseWest(8); //should return 0
 
-gatac.receiveData();
         //Drones land
         gatac.land();
 

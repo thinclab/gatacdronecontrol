@@ -104,7 +104,7 @@ public:
 	 * @param option Integer denoting the direction to sense; 0 -> North, 1 -> South, 2 -> East, 3 -> West
 	 * @return 0 if no drone is on that side of subject drone, 1 if another drone is within one square above, 2 if another drone is greater than one square above
 	 */
-	int sense(int, int);
+	vector<pair<string, int> > sense(int, int, int);
 
 private:
 	/**
@@ -137,6 +137,8 @@ private:
 	 * @brief Indicates which drones are flying and ready to move
 	 */
 	vector<bool> dronesReady;
+
+	vector<string> droneRoles;
 
 	/**
 	 * @brief Indicates whether the client-server session is operating on real or simulated drones.

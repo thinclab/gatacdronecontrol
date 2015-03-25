@@ -10,9 +10,14 @@
 #include <utility>
 #include <boost/date_time.hpp>
 #include <mutex>
+#include <vector>
 
 using std::pair;
 using std::string;
+using std::vector;
+
+
+typedef typename std::vector<std::pair<std::string, int>> percept;
 
 /**
  * @file	GaTACDroneControl.cpp
@@ -43,7 +48,7 @@ class GaTACDroneControl {
 public:
 
 	/**
-	 * @param c The role name of the drone
+	 * @param c The role name of the drone, NOTE WHITESPACE IS AUTOMATICALLY REMOVED
 	 */
 	GaTACDroneControl(const string);
 
@@ -226,25 +231,25 @@ public:
  	 * This method is called by a client to send a senseNorth message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseNorth();
+	vector<pair<string, int>> senseNorth(int);
 
 	/**
 	 * This method is called by a client to send a senseSouth message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseSouth();
+	vector<pair<string, int>> senseSouth(int);
 
 	/**
 	 * This method is called by a client to send a senseEast message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseEast();
+	vector<pair<string, int>> senseEast(int);
 
 	/**
 	 * This method is called by a client to send a senseWest message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseWest();
+	vector<pair<string, int>> senseWest(int);
 
 	/**
 	 * This method allows a client to "opt in" to a continuous stream of navdata to update its data members. Using boost threads, navdata can be accessed concurrently while 	  * drone commands are sent.
@@ -354,5 +359,7 @@ private:
 	 */
 	bool sendMessage(char *, int, struct addrinfo *);
 
+
+    vector<pair<string, int>> percepts;
 };
 #endif
