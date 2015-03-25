@@ -8,11 +8,11 @@
 
 int main() {
 	// Specifying the IP and port of server machine
-	char *ip = "127.0.0.1";
+	string ip = "127.0.0.1";
 	unsigned int port = 4999;
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac;
+	GaTACDroneControl gatac("TESTDRONE");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, port);
@@ -27,27 +27,28 @@ int main() {
 	gatac.readyUp();
 
 	//Setting id of drone to client's unique id
-	int id = gatac.getClientUniqueId();
+//	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
-        gatac.senseNorth(id); //should return 0
+        gatac.senseNorth(); //should return 0
         sleep(3);
-        gatac.senseSouth(id); //should return 2
-        boost::thread *moveThread;
-        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,id, 0, 1));
+        gatac.senseSouth(); //should return 2
+//        boost::thread *moveThread;
+//        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,0, 1));
+        gatac.move(0, 1);
         sleep(5);
-        gatac.senseNorth(id); //should return 0
+        gatac.senseNorth(); //should return 0
         sleep(3);
-        gatac.senseSouth(id); //should return 1
+        gatac.senseSouth(); //should return 1
         sleep(3);
-        gatac.senseEast(id); //should return 1 or 2
+        gatac.senseEast(); //should return 1 or 2
         sleep(3);
-        gatac.senseWest(id); //should return 0
+        gatac.senseWest(); //should return 0
 
-gatac.receiveData(id);
+gatac.receiveData();
         //Drones land
-        gatac.land(id);
+        gatac.land();
 
         // Close client socket connection.
         gatac.closeClient();

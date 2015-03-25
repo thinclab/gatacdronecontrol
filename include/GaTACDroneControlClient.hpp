@@ -41,17 +41,11 @@ using std::string;
 
 class GaTACDroneControl {
 public:
-	/**
-	 * Default constructor. Initializes all member variables.
-         * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
-	 */
-	GaTACDroneControl();
 
 	/**
-	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
-	 * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
+	 * @param c The role name of the drone
 	 */
-	GaTACDroneControl(const char*);
+	GaTACDroneControl(const string);
 
 	/**
 	 * This method sets up the main UDP socket client. Once created, all relevant socket information
@@ -60,7 +54,7 @@ public:
 	 * @param serverPort The port number supplied for the server's socket
 	 * @param dataPort The port number supplied for the client's navdata socket
 	 */
-	void launchClient(char *, unsigned int);
+	void launchClient(string, unsigned int);
 
 	/**
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
@@ -96,35 +90,34 @@ public:
 
 	/**
 	 * This method is called by the client and will move the specified drone to the desired (x, y) position.
-	 * @param droneId ID of drone to move
 	 * @param x Drone's desired position, X-axis
 	 * @param y Drone's desired position, Y-axis
 	 */
-	void move(int, int, int);
+	void move(int, int);
 
 	/**
 	 * This method is called by the client and will land the specified drone.
 	 * @param droneId ID of drone to land
 	 */
-	void land(int);
+	void land();
 
 	/**
 	 * This method is called by the client and allows a drone to hover.
 	 * @param droneId ID of drone to hover
 	 */
-	void hover(int);
+	void hover();
 
 	/**
 	 * This method is called by the client and will make the specified drone take off.
 	 * @param droneId ID of drone to takeoff
 	 */
-	void takeoff(int);
+	void takeoff();
 
 	/**
 	 * This method is called by the client and will trigger the reset mode for the specified drone.
 	 * @param droneId ID of drone to reset
 	 */
-	void reset(int);
+	void reset();
 
 	/**
 	 * Used to set a client's unique drone ID
@@ -230,44 +223,43 @@ public:
 	string getGridPosition(int);
 
 	/**
-	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
-	 * @param droneId ID of drone to return navdata from
-	 * @return Character array of all navdata values, to be sent over a socket to the client, broken up into strings of thirty characters, and used to set navdata members
-         */
-	const char* getData(int);
-
-	/**
  	 * This method is called by a client to send a senseNorth message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseNorth(int);
+	void senseNorth();
 
 	/**
 	 * This method is called by a client to send a senseSouth message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseSouth(int);
+	void senseSouth();
 
 	/**
 	 * This method is called by a client to send a senseEast message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseEast(int);
+	void senseEast();
 
 	/**
 	 * This method is called by a client to send a senseWest message to the server.
 	 * @param droneId Integer denoting which drone is calling the method
 	 */
-	void senseWest(int);
+	void senseWest();
 
 	/**
 	 * This method allows a client to "opt in" to a continuous stream of navdata to update its data members. Using boost threads, navdata can be accessed concurrently while 	  * drone commands are sent.
 	 * @param id The ID of the drone requesting navdata.
 	 * @return Boolean confirming the success of request being sent and received.
 	 */
-	bool receiveData(int);
+	bool receiveData();
 
 private:
+
+    /**
+     *  @brief Used to identify myself to the other drones
+     */
+    string myRole;
+
 	/**
 	 * @brief Used to keep track of command socket info.
 	 */
@@ -306,32 +298,32 @@ private:
 	/**
 	 * @brief Current string representation of client's battery navdata
 	 */
-	static string clientCurrentBattery;
+	string clientCurrentBattery;
 
 	/**
 	 * @brief Current string representation of client's sonar navdata
 	 */
-	static string clientCurrentSonar;
+	string clientCurrentSonar;
 
 	/**
 	 * @brief Current string representation of client's forward velocity navdata
 	 */
-	static string clientCurrentForwardVelocity;
+	string clientCurrentForwardVelocity;
 
 	/**
 	 * @brief Current string representation of client's sideways velocity navdata
 	 */
-	static string clientCurrentSidewaysVelocity;
+	string clientCurrentSidewaysVelocity;
 
 	/**
 	 * @brief Current string representation of client's vertical velocity navdata
 	 */
-	static string clientCurrentVerticalVelocity;
+	string clientCurrentVerticalVelocity;
 
 	/**
 	 * @brief Current string representation of client's tags spotted navdata
 	 */
-	static string clientCurrentTagsSpotted;
+	string clientCurrentTagsSpotted;
 
 	/**
 	 * @brief ID unique to this client's drone.

@@ -10,11 +10,11 @@
 
 int main(int argc, char * argv[]) {
 	// Specifying the IP and port of server machine
-	char *ip = "127.0.0.1";
+	string ip = "127.0.0.1";
 	int startport = 4999;
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac;
+	GaTACDroneControl gatac("RANDOM");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, startport);
@@ -37,12 +37,12 @@ int main(int argc, char * argv[]) {
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
 
-	     gatac.move(id, rand() % 5, rand() % 8);
+	     gatac.move(rand() % 5, rand() % 8);
 
 	}
 
         //Drones land
-        gatac.land(id);
+        gatac.land();
 
         // Close client socket connection.
         gatac.closeClient();

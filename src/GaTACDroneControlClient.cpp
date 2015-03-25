@@ -49,34 +49,17 @@ using std::ios;
  * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
  */
 
-//defining static data members for navdata, unique per client
-string GaTACDroneControl::clientCurrentBattery;
-string GaTACDroneControl::clientCurrentSonar;
-string GaTACDroneControl::clientCurrentForwardVelocity;
-string GaTACDroneControl::clientCurrentSidewaysVelocity;
-string GaTACDroneControl::clientCurrentVerticalVelocity;
-string GaTACDroneControl::clientCurrentTagsSpotted;
 
-
-
-/**
- * Default constructor. Initializes all member variables.
- * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
- */
-GaTACDroneControl::GaTACDroneControl() {
-	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
-	datsrv = NULL;
-	srv = NULL;
-}
 
 /**
  * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
  * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
  */
-GaTACDroneControl::GaTACDroneControl(const char* c) {
+GaTACDroneControl::GaTACDroneControl(const string c) {
 	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	datsrv = NULL;
 	srv = NULL;
+	myRole = c;
 }
 
 
@@ -88,8 +71,8 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
  * @param serverPort The port number supplied for the server's socket
  * @param dataPort The port number supplied for the client's navdata socket
  */
-void GaTACDroneControl::launchClient(char *serverIp, unsigned int rondPort) {
-	char *host = serverIp;
+void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
+	const char *host = serverIp.c_str();
 	char port[256];
 	char dp[256];
 
@@ -250,10 +233,10 @@ void GaTACDroneControl::readyUp() {
  * This method is called by a client to send a senseNorth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseNorth(int droneId) {
-	printf("Sending sense north command, drone #%d.\n", droneId);
+void GaTACDroneControl::senseNorth() {
+	printf("Sending sense north command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('u', droneId);
+	bool worked = commandDrone('u', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
@@ -264,10 +247,10 @@ void GaTACDroneControl::senseNorth(int droneId) {
  * This method is called by a client to send a senseSouth message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseSouth(int droneId) {
-	printf("Sending sense south command, drone #%d.\n", droneId);
+void GaTACDroneControl::senseSouth() {
+	printf("Sending sense south command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('d', droneId);
+	bool worked = commandDrone('d', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
@@ -278,10 +261,10 @@ void GaTACDroneControl::senseSouth(int droneId) {
  * This method is called by a client to send a senseEast message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseEast(int droneId) {
-	printf("Sending sense east command, drone #%d.\n", droneId);
+void GaTACDroneControl::senseEast() {
+	printf("Sending sense east command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('k', droneId);
+	bool worked = commandDrone('k', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
@@ -292,10 +275,10 @@ void GaTACDroneControl::senseEast(int droneId) {
  * This method is called by a client to send a senseWest message to the server.
  * @param droneId Integer denoting which drone is calling the method
  */
-void GaTACDroneControl::senseWest(int droneId) {
-	printf("Sending sense west command, drone #%d.\n", droneId);
+void GaTACDroneControl::senseWest() {
+	printf("Sending sense west command, drone #%d.\n", clientUniqueId);
 	// Send command to server
-	bool worked = commandDrone('j', droneId);
+	bool worked = commandDrone('j', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't push sense request. Please try again." << endl;
 		exit(1);
@@ -328,12 +311,12 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
  * @param x Drone's desired position, X-axis
  * @param y Drone's desired position, Y-axis
  */
-void GaTACDroneControl::move(int droneId, int x, int y) {
+void GaTACDroneControl::move(int x, int y) {
 	bool worked = false;
 	// Send command to server, checks for valid ID and location done server-side
-		printf("Sending command to move drone #%d to (%d, %d).\n", droneId, x, y);
+		printf("Sending command to move drone #%d to (%d, %d).\n", clientUniqueId, x, y);
 		char message[BUFLEN];
-		sprintf(message, "m %d %d %d", droneId, x, y);
+		sprintf(message, "m %d %d %d", clientUniqueId, x, y);
 		worked = sendMessage(message, serverSocket, srv);
 }
 
@@ -341,13 +324,13 @@ void GaTACDroneControl::move(int droneId, int x, int y) {
  * This method is called by the client and allows a drone to hover.
  * @param droneId ID of drone to hover
  */
-void GaTACDroneControl::hover(int droneId) {
+void GaTACDroneControl::hover() {
 
 	// Send command to server
-	bool worked = commandDrone('h', droneId);
-	printf("Sending command to make drone hover.\n", droneId);
+	bool worked = commandDrone('h', clientUniqueId);
+	printf("Sending command to make drone hover.\n");
 		char message[BUFLEN];
-		sprintf(message, "h %d", droneId);
+		sprintf(message, "h %d", clientUniqueId);
 		worked = sendMessage(message, serverSocket, srv);
 }
 
@@ -355,11 +338,11 @@ void GaTACDroneControl::hover(int droneId) {
  * This method is called by the client and will land the specified drone.
  * @param droneId ID of drone to land
  */
-void GaTACDroneControl::land(int droneId) {
-	printf("Sending command to land drone #%d.\n", droneId);
+void GaTACDroneControl::land() {
+	printf("Sending command to land drone #%d.\n", clientUniqueId);
 
 	// Send command to server
-	bool worked = commandDrone('l', droneId);
+	bool worked = commandDrone('l', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't land drone. Please try again." << endl;
 		exit(1);
@@ -370,11 +353,11 @@ void GaTACDroneControl::land(int droneId) {
  * This method is called by the client and will make the specified drone take off.
  * @param droneId ID of drone to takeoff
  */
-void GaTACDroneControl::takeoff(int droneId) {
-	printf("Sending command to takeoff drone #%d.\n", droneId);
+void GaTACDroneControl::takeoff() {
+	printf("Sending command to takeoff drone #%d.\n", clientUniqueId);
 
 	// Send command to server
-	bool worked = commandDrone('t', droneId);
+	bool worked = commandDrone('t', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't take off. Please try again." << endl;
 		exit(1);
@@ -385,11 +368,11 @@ void GaTACDroneControl::takeoff(int droneId) {
  * This method is called by the client and will trigger the reset mode for the specified drone.
  * @param droneId ID of drone to reset
  */
-void GaTACDroneControl::reset(int droneId) {
-	printf("Sending command to reset drone #%d.\n", droneId);
+void GaTACDroneControl::reset() {
+	printf("Sending command to reset drone #%d.\n", clientUniqueId);
 
 	// Send command to server
-	bool worked = commandDrone('r', droneId);
+	bool worked = commandDrone('r', clientUniqueId);
 	if (!worked) {
 		cout << "Couldn't reset drone. Please try again." << endl;
 		exit(1);
@@ -568,10 +551,10 @@ bool GaTACDroneControl::getClientReadyToCommand()
 /*
  * Private Methods
  */
-bool GaTACDroneControl::receiveData(int id)
+bool GaTACDroneControl::receiveData()
 {
 	char message[BUFLEN];
-	sprintf(message, "n %d", id);
+	sprintf(message, "n %d", clientUniqueId);
 	bool success = false;
 	char sendBuffer[BUFLEN];
 	char receiveBuffer[BUFLEN] = { };

@@ -14,11 +14,11 @@ using namespace std;
 
 int main() {
 	// Specifying the IP and port of server machine
-	char *ip = "127.0.0.1";
+	string ip = "127.0.0.1";
 	unsigned int port = 4999; //command port
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac;
+	GaTACDroneControl gatac("TESTDRONE");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, port);
@@ -32,23 +32,21 @@ int main() {
 	// Sending ready message
 	gatac.readyUp();
 
-	//Setting id of drone to client's unique id
-	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true){
         boost::thread *dataThread;
-        dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, &gatac, id));
-        gatac.move(id, 0, 7);
+        dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, &gatac));
+        gatac.move(0, 7);
         boost::thread *moveThread;
-        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,id, 0, 0));
+        moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac,0, 0));
         for(int i = 1; i < 6; i++){
             cout << gatac.getForwardVelocity() << endl;
             sleep(i);
         }
 
         //Drones land
-        gatac.land(id);
+        gatac.land();
 
         gatac.closeClient();
 	}
