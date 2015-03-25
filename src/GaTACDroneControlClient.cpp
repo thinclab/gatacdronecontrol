@@ -135,13 +135,13 @@ void GaTACDroneControl::launchClient(char *serverIp, unsigned int rondPort) {
 	sprintf(buffer, "CONNECT");
 
     int bytesSent = 0;
-	if ((bytesSent = sendto(sock, buffer, BUFLEN, 0, info->ai_addr, info->ai_addrlen)) == -1) {
+	if ((bytesSent = sendto(sock, buffer, strlen(buffer), 0, info->ai_addr, info->ai_addrlen)) == -1) {
 		cout << "Error sending message to server with errno: " << errno << endl;
 		exit(1);
 	}
 
 	int bytesReceived = 0;
-	if ((bytesReceived = recvfrom(sock, buffer, BUFLEN, 0, NULL, NULL)) == -1) {
+	if ((bytesReceived = recvfrom(sock, buffer, BUFLEN - 1, 0, NULL, NULL)) == -1) {
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	}
@@ -586,14 +586,14 @@ bool GaTACDroneControl::receiveData(int id)
 	while(1){
 	// Sending message
 	int bytesSent = 0;
-	if ((bytesSent = sendto(dataSocket, sendBuffer, BUFLEN, 0, datsrv->ai_addr, datsrv->ai_addrlen)) == -1) {
+	if ((bytesSent = sendto(dataSocket, sendBuffer, strlen(sendBuffer), 0, datsrv->ai_addr, datsrv->ai_addrlen)) == -1) {
 		cout << "Error sending message to server with errno: " << errno << endl;
 		success = false;
 	}
 
 	// Waiting for feedback (ensuring that the server received our message)
 	int bytesReceived = 0;
-	if ((bytesReceived = recvfrom(dataSocket, receiveBuffer, BUFLEN, 0, NULL, NULL)) == -1) {
+	if ((bytesReceived = recvfrom(dataSocket, receiveBuffer, BUFLEN - 1, 0, NULL, NULL)) == -1) {
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {
@@ -650,14 +650,14 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 
 	// Sending message
 	int bytesSent = 0;
-	if ((bytesSent = sendto(socket, sendBuffer, BUFLEN, 0, addrInfo->ai_addr, addrInfo->ai_addrlen)) == -1) {
+	if ((bytesSent = sendto(socket, sendBuffer, strlen(sendBuffer), 0, addrInfo->ai_addr, addrInfo->ai_addrlen)) == -1) {
 		cout << "Error sending message to server with errno: " << errno << endl;
 		success = false;
 	}
 
 	// Waiting for feedback (ensuring that the server received our message)
 	int bytesReceived = 0;
-	if ((bytesReceived = recvfrom(socket, receiveBuffer, BUFLEN, 0, NULL, NULL)) == -1) {
+	if ((bytesReceived = recvfrom(socket, receiveBuffer, BUFLEN - 1, 0, NULL, NULL)) == -1) {
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {

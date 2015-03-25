@@ -7,6 +7,7 @@
 #include <boost/thread.hpp> // For concurrent flight
 #include <boost/date_time.hpp>
 
+
 // For tokenizing command input
 #include <sstream>
 
@@ -19,6 +20,7 @@ using std::stringstream;
 using std::make_pair;
 using std::ofstream;
 using std::ifstream;
+using std::istream;
 using std::ios;
 
 #define BUFLEN 256
@@ -187,7 +189,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
         do {
             char receiveBuffer[BUFLEN];
 
-            if ((bytesReceived = recvfrom(rondsock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
+            if ((bytesReceived = recvfrom(rondsock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
                 perror("Rondevous: Error receiving command.");
                 exit(1);
             }
@@ -277,7 +279,7 @@ void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 
-		if ((bytesReceived = recvfrom(datsock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
+		if ((bytesReceived = recvfrom(datsock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
 			perror("Error receiving command.");
 			exit(1);
 		}
@@ -369,7 +371,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 
 
 		cout << "Waiting for a command..." << endl;
-		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
+		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
 			perror("Error receiving command.");
 			exit(1);
 		}
@@ -460,15 +462,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			system(publishMessage);
 
 			dronesReady.at(myDroneId) = false;
-
-			// Delete drone's navdata file
-			if(droneInt == 0)
-				remove("currentNavdata0.txt");
-			else if(droneInt == 1)
-				remove("currentNavdata1.txt");
-			else if(droneInt == 2)
-				remove("currentNavdata2.txt");
-			}
+            }
 			break;
 
 		case 'h':
@@ -572,15 +566,20 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			//When running multi clients, have each use readyUp() to start the grid
 		case 'y':
 
+			allReady = true;
+
+            lock.lock();
             clientsReady.at(myDroneId) = true;
 
-			allReady = true;
 			for(int i=0; i < clientsReady.size(); i++)
 			{
                 if(clientsReady.at(i) == false){
                     allReady = false;
+                    break;
                 }
 			}
+			lock.unlock();
+
 			if(allReady == true){
                 readyForData = true;
                 // If grid size has been set
@@ -1174,195 +1173,93 @@ string GaTACDroneControl::getGridPosition(int droneId)
  */
 const char* GaTACDroneControl::getData(int droneId)
 {
-	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata&"; //id...option id
+	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata"; //id...option id
 	char printNavMessage[strlen(printNavdataCommand) + BUFLEN];
-	int id = droneId;
-	sprintf(printNavMessage, printNavdataCommand, id);
-	system(printNavMessage);
+	sprintf(printNavMessage, printNavdataCommand, droneId);
+    FILE *lsofFile_p = popen(printNavMessage, "r");
+
+    if (!lsofFile_p)
+    {
+    return "";
+    }
+
 	string line1 = "";
 	string line2 = "";
 	string line3 = "";
 	string line4 = "";
 	string line5 = "";
 	string line6 = "";
-	ifstream stream0("currentNavdata0.txt");
-	ifstream stream1("currentNavdata1.txt");
-	ifstream stream2("currentNavdata2.txt");
+
+    string fullbuffer = "";
+
+    char buffer[1024];
+    while (fgets(buffer, sizeof(buffer), lsofFile_p) != NULL)
+    {
+        fullbuffer.append(buffer);
+    }
+
+
+    stringstream stream (fullbuffer);
 	string allDataString = "";
 
-	if(id == 0){
-		//battery
-		getline(stream0, line1);
-		if(line1.size() < 30){
- 			int whiteSpace = 30 - line1.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line1 += " ";
-			 }
-		}
-		//forward velocity
-		getline(stream0, line2);
-		if(line2.size() < 30){
- 			int whiteSpace = 30 - line2.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line2 += " ";
-			 }
-		}
-		//sideways velocity
-		getline(stream0, line3);
-		if(line3.size() < 30){
- 			int whiteSpace = 30 - line3.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line3 += " ";
-			 }
-		}
-		//vert velocity
-		getline(stream0, line4);
-		if(line4.size() < 30){
- 			int whiteSpace = 30 - line4.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line4 += " ";
-			 }
-		}
-		//sonar
-		getline(stream0, line5);
-		if(line5.size() < 30){
- 			int whiteSpace = 30 - line5.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line5 += " ";
-			 }
-		}
-		//tags spotted
-		getline(stream0, line6);
-		if(line6.size() < 30){
- 			int whiteSpace = 30 - line6.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line6 += " ";
-			 }
-		}
-		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
-	}
+	//battery
+    getline(stream, line1);
+    if(line1.size() < 30){
+        int whiteSpace = 30 - line1.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line1 += " ";
+         }
+    }
+    line1 = line1.substr (5);
+    //forward velocity
+    getline(stream, line2);
+    if(line2.size() < 30){
+        int whiteSpace = 30 - line2.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line2 += " ";
+         }
+    }
+    //sideways velocity
+    getline(stream, line3);
+    if(line3.size() < 30){
+        int whiteSpace = 30 - line3.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line3 += " ";
+         }
+    }
+    //vert velocity
+    getline(stream, line4);
+    if(line4.size() < 30){
+        int whiteSpace = 30 - line4.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line4 += " ";
+         }
+    }
+    //sonar
+    getline(stream, line5);
+    if(line5.size() < 30){
+        int whiteSpace = 30 - line5.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line5 += " ";
+         }
+    }
+    //tags spotted
+    getline(stream, line6);
+    if(line6.size() < 30){
+        int whiteSpace = 30 - line6.size();
+        for(int w = 0 ; w < whiteSpace; w++)
+         {
+            line6 += " ";
+         }
+    }
+    allDataString = line1 + line2 + line3 + line4 + line5 + line6;
 
-	else if(id == 1){
-		//battery
-		getline(stream1, line1);
-		if(line1.size() < 30){
- 			int whiteSpace = 30 - line1.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line1 += " ";
-			 }
-		}
-		//forward velocity
-		getline(stream1, line2);
-		if(line2.size() < 30){
- 			int whiteSpace = 30 - line2.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line2 += " ";
-			 }
-		}
-		//sideways velocity
-		getline(stream1, line3);
-		if(line3.size() < 30){
- 			int whiteSpace = 30 - line3.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line3 += " ";
-			 }
-		}
-		//vert velocity
-		getline(stream1, line4);
-		if(line4.size() < 30){
- 			int whiteSpace = 30 - line4.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line4 += " ";
-			 }
-		}
-		//sonar
-		getline(stream1, line5);
-		if(line5.size() < 30){
- 			int whiteSpace = 30 - line5.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line5 += " ";
-			 }
-		}
-		//tags spotted
-		getline(stream1, line6);
-		if(line6.size() < 30){
- 			int whiteSpace = 30 - line6.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line6 += " ";
-			 }
-		}
-		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
-	}
-
-	else if(id == 2){
-		//battery
-		getline(stream2, line1);
-		if(line1.size() < 30){
- 			int whiteSpace = 30 - line1.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line1 += " ";
-			 }
-		}
-		//forward velocity
-		getline(stream2, line2);
-		if(line2.size() < 30){
- 			int whiteSpace = 30 - line2.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line2 += " ";
-			 }
-		}
-		//sideways velocity
-		getline(stream2, line3);
-		if(line3.size() < 30){
- 			int whiteSpace = 30 - line3.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line3 += " ";
-			 }
-		}
-		//vert velocity
-		getline(stream2, line4);
-		if(line4.size() < 30){
- 			int whiteSpace = 30 - line4.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line4 += " ";
-			 }
-		}
-		//sonar
-		getline(stream2, line5);
-		if(line5.size() < 30){
- 			int whiteSpace = 30 - line5.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line5 += " ";
-			 }
-		}
-		//tags spotted
-		getline(stream2, line6);
-		if(line6.size() < 30){
- 			int whiteSpace = 30 - line6.size();
- 			for(int w = 0 ; w < whiteSpace; w++)
-			 {
-				line6 += " ";
-			 }
-		}
-		allDataString = line1 + line2 + line3 + line4 + line5 + line6;
-	}
+    pclose(lsofFile_p);
 
 	return allDataString.c_str();
 }

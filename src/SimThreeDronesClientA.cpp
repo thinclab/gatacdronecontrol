@@ -45,6 +45,7 @@ int main() {
         sleep(3);
         gatac.senseWest(id); //should return 0
 
+gatac.receiveData(id);
         //Drones land
         gatac.land(id);
 
