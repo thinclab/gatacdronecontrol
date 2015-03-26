@@ -43,3 +43,7 @@ bin/simThreeB: src/SimThreeDronesClientB.cpp lib/GaTACDroneControlClient.a
 bin/simThreeC: src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a
 	g++ -o bin/simThreeC -O3 -std=c++11 -Iinclude/ src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
 
+clean:
+	rm lib/*
+	rm bin/*
+	rm obj/*

@@ -364,7 +364,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
 		char * senseOption;
-		int senseInt, maxdist;
+		int senseInt, maxdist, ignored;
 		string droneRole;
 		vector<pair<string, int>> senseResult;
 		const char *navDataToSend = ""; // Holds string of navdata server will send to client on request
@@ -444,7 +444,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			else{
 			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, serviceCall, droneInt, "takeoff_thinc_smart");
-			system(publishMessage);
+			ignored = system(publishMessage);
 
 			dronesReady.at(myDroneId) = true;
 
@@ -465,7 +465,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			else{
 			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, serviceCall, droneInt, "land_at_home");
-			system(publishMessage);
+			ignored = system(publishMessage);
 
 			dronesReady.at(myDroneId) = false;
             }
@@ -507,7 +507,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			else{
 			/* If server passes all checks, client message processed */
 			sprintf(publishMessage, publishCommand, droneInt, "reset");
-			system(publishMessage);
+			ignored = system(publishMessage);
 			sleep(3); // Wait for drone to reset
 			}
 			break;
@@ -692,7 +692,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
             }
 
 			sprintf(publishMessage, serviceCall, myDroneId, "takeoff_thinc_smart");
-			system(publishMessage);
+			ignored = system(publishMessage);
 			dronesReady.at(myDroneId) = true;
 
             while (! this->droneStartCheck() ) {
@@ -767,7 +767,7 @@ void GaTACDroneControl::launchGrid() {
 
 		// Configure launch file and start gazebo
 		configureLaunchFile();
-		system(gazeboMessage);
+		int ignored = system(gazeboMessage);
 
 		// Wait for gazebo to finish loading. This takes a while.
 		sleep(20);
@@ -779,7 +779,7 @@ void GaTACDroneControl::launchGrid() {
 			droneID = i;
 			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2.0, 2.0, (droneID + 1.0) * 0.4);
 			cout << "publishing message: " << thincSmartMessage << endl;
-			system(thincSmartMessage);
+			ignored = system(thincSmartMessage);
 		}
 		lock.unlock();
 		sleep(5);
@@ -801,7 +801,7 @@ void GaTACDroneControl::launchGrid() {
 		// Configure launch file and start core
 		configureLaunchFile();
 //		system(coreMessage);
-		system(launchMessage);
+		int ignored = system(launchMessage);
 
 		sleep(10);
 		Locker lock(&dronePositionMtx);
@@ -812,7 +812,7 @@ void GaTACDroneControl::launchGrid() {
 			droneID = i;
 			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
 			cout << "publishing message: " << thincSmartMessage << endl;
-			system(thincSmartMessage);
+			ignored = system(thincSmartMessage);
 		}
 		lock.unlock();
 		sleep(2);
@@ -860,19 +860,8 @@ void GaTACDroneControl::configureLaunchFile() {
 			"</group>\n\n";
 		const char *endingText = "</launch>";
 
-		// Open launch file. Check what ROS distribution is currently being used
-		char *distro = getenv("ROS_DISTRO");
-		if(distro == NULL){
-			cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-			exit(1);
-		}
-
-		// Assume launch file is located in default stacks directory for current ROS distribution
-		char launchFilePath[100];
-		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-		sprintf(launchFilePath, "/tmp/grid_flight.launch", distro);
 		// Open file stream
-		ofstream fileStream(launchFilePath, ios::trunc);
+		ofstream fileStream("/tmp/grid_flight.launch", ios::trunc);
 
 		// Write gen_texture and gen_dae text to file
 		char textureBuffer[strlen(genTextureText) + 256];
@@ -929,20 +918,9 @@ void GaTACDroneControl::configureLaunchFile() {
 
 		const char *endingText = "</launch>";
 
-		// Open launch file. Check what ROS distribution is currently being used
-		char *distro = getenv("ROS_DISTRO");
-			if(distro == NULL){
-				cout << "No ros distribution currently active. Please make sure your server machine has ros installed." << endl;
-				exit(1);
-			}
-
-		// Assume launch file is located in default stacks directory for current ROS distribution
-		char launchFilePath[100];
-		// sprintf(launchFilePath, "/home/fuerte_workspace/gatacdronecontrol/launch/two_real_flight.launch", distro); /* File path on gray laptop */
-		sprintf(launchFilePath, "/tmp/tagLaunch.launch", distro);
 		// Open file stream
 		ofstream fileStream;
-		fileStream.open(launchFilePath, ios::out);
+		fileStream.open("/tmp/tagLaunch.launch", ios::out);
 
 		// Write gen_texture and gen_dae text to file
 		char startingBuffer[strlen(startingText) + 1];
@@ -1032,7 +1010,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
             int ySend = dronePositions.at(droneId).second;
             lock.unlock();
             sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
-            system(publishMessage);
+            int ignored = system(publishMessage);
             vector<bool> dronesSharingSpace;
 
             if(sharedSpace(&dronesSharingSpace) == true){
@@ -1051,7 +1029,7 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
 	else if(dx == 0 && dy == 0)
 	{
         sprintf(publishMessage, moveCommand, droneId, x, y);
-        system(publishMessage);
+        int ignored = system(publishMessage);
         cout << "Drone " << droneId << "hovering." << endl;
 	}
 }

@@ -6,7 +6,7 @@
  */
 int main() {
 	// IP and port of client machine
-	char *ip = "127.0.0.1";
+	const char *ip = "127.0.0.1";
 	int port = 4999;
 
         //cout message
