@@ -33,7 +33,7 @@ int main() {
 	gatac.readyUp();
 
 	//Drones will move, intersecting at various points, reported on console
-	while(gatac.getClientReadyToCommand() == true){
+	while(gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver()){
         boost::thread *dataThread;
         dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, &gatac));
         gatac.move( 4, 7);
@@ -43,14 +43,25 @@ int main() {
             cout << gatac.getBattery() << endl;
             sleep(i);
         }
+        moveThread->join();
+
         boost::thread *moveThread2;
         moveThread2 = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac, 3, 6));
         cout << gatac.getBattery() << endl;
 
+        moveThread2->join();
+
+        delete moveThread;
+        delete moveThread2;
+
         //Drones land
         gatac.land();
 
-        gatac.closeClient();
 	}
+
+    if (gatac.isScenarioOver()) {
+        cout << "Scenario Ended with Message: " << gatac.getScenarioOverMessage() << endl;
+    }
+    gatac.closeClient();
 	return 0;
 }

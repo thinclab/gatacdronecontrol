@@ -258,6 +258,12 @@ public:
 	 */
 	bool receiveData();
 
+
+    void sendScenarioIsOver(string msg);
+
+    bool isScenarioOver();
+    string getScenarioOverMessage();
+
 private:
 
     /**
@@ -339,6 +345,9 @@ private:
 	 * @brief Indicates to server whether everything is ready before sending out commands.
 	 */
 	bool readyToCommand;
+
+    bool scenarioOver;
+    string scenarioOverMessage;
 
 	/**
 	 * Sends a simple command (takeoff, land, or reset) to the specified drone. Returns a bool value based on whether the message is sent succesfully.

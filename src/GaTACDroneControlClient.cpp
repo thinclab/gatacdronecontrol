@@ -70,6 +70,8 @@ GaTACDroneControl::GaTACDroneControl(string c) {
 	datsrv = NULL;
 	srv = NULL;
 	myRole = c;
+	scenarioOver = false;
+	scenarioOverMessage = "";
 }
 
 
@@ -138,6 +140,7 @@ void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	}
+	buffer[bytesReceived] = '\0';
 
     unsigned int controlPort, dataPort;
     sscanf(buffer, "%u %u %u", &clientUniqueId, &controlPort, &dataPort);
@@ -222,6 +225,9 @@ void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
  * as specified by previous method calls.
  */
 void GaTACDroneControl::startGrid() {
+    if (scenarioOver)
+        return;
+
 	bool worked = false;
 		cout << "Sending command to start grid." << endl;
 		char message[2] = "i";
@@ -233,6 +239,9 @@ void GaTACDroneControl::startGrid() {
  * When a server has received one from each client, it makes the decision to start the grid.
  */
 void GaTACDroneControl::readyUp() {
+    if (scenarioOver)
+        return;
+
 	bool worked = false;
 		cout << "Sending ready message to server." << endl;
 		char message[2] = "y";
@@ -244,6 +253,10 @@ void GaTACDroneControl::readyUp() {
  * @param droneId Integer denoting which drone is calling the method
  */
 vector<pair<string, int>> GaTACDroneControl::senseNorth(int maxdist) {
+    percepts.clear();
+    if (scenarioOver)
+        return percepts;
+
 	printf("Sending sense north command, drone #%d.\n", clientUniqueId);
 	// Send command to server
     char message[BUFLEN];
@@ -261,6 +274,11 @@ vector<pair<string, int>> GaTACDroneControl::senseNorth(int maxdist) {
  * @param droneId Integer denoting which drone is calling the method
  */
 vector<pair<string, int>> GaTACDroneControl::senseSouth(int maxdist) {
+    percepts.clear();
+    if (scenarioOver)
+        return percepts;
+
+
 	printf("Sending sense south command, drone #%d.\n", clientUniqueId);
 	// Send command to server
     char message[BUFLEN];
@@ -278,6 +296,11 @@ vector<pair<string, int>> GaTACDroneControl::senseSouth(int maxdist) {
  * @param droneId Integer denoting which drone is calling the method
  */
 vector<pair<string, int>> GaTACDroneControl::senseEast(int maxdist) {
+    percepts.clear();
+    if (scenarioOver)
+        return percepts;
+
+
 	printf("Sending sense east command, drone #%d.\n", clientUniqueId);
 	// Send command to server
     char message[BUFLEN];
@@ -295,6 +318,11 @@ vector<pair<string, int>> GaTACDroneControl::senseEast(int maxdist) {
  * @param droneId Integer denoting which drone is calling the method
  */
 vector<pair<string, int>> GaTACDroneControl::senseWest(int maxdist) {
+    percepts.clear();
+    if (scenarioOver)
+        return percepts;
+
+
 	printf("Sending sense west command, drone #%d.\n", clientUniqueId);
 	// Send command to server
     char message[BUFLEN];
@@ -313,6 +341,9 @@ vector<pair<string, int>> GaTACDroneControl::senseWest(int maxdist) {
  * @param numberOfRows Y-axis dimension
  */
 void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
+    if (scenarioOver)
+        return;
+
 	bool worked = false;
 	// Send command to server
 		printf("Sending command to set grid size to %dx%d.\n", numberOfColumns, numberOfRows);
@@ -334,6 +365,9 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
  * @param y Drone's desired position, Y-axis
  */
 void GaTACDroneControl::move(int x, int y) {
+    if (scenarioOver)
+        return;
+
 	bool worked = false;
 	// Send command to server, checks for valid ID and location done server-side
 		printf("Sending command to move drone #%d to (%d, %d).\n", clientUniqueId, x, y);
@@ -347,6 +381,9 @@ void GaTACDroneControl::move(int x, int y) {
  * @param droneId ID of drone to hover
  */
 void GaTACDroneControl::hover() {
+    if (scenarioOver)
+        return;
+
 
 	// Send command to server
 	bool worked = commandDrone('h', clientUniqueId);
@@ -361,6 +398,9 @@ void GaTACDroneControl::hover() {
  * @param droneId ID of drone to land
  */
 void GaTACDroneControl::land() {
+    if (scenarioOver)
+        return;
+
 	printf("Sending command to land drone #%d.\n", clientUniqueId);
 
 	// Send command to server
@@ -376,6 +416,9 @@ void GaTACDroneControl::land() {
  * @param droneId ID of drone to takeoff
  */
 void GaTACDroneControl::takeoff() {
+    if (scenarioOver)
+        return;
+
 	printf("Sending command to takeoff drone #%d.\n", clientUniqueId);
 
 	// Send command to server
@@ -391,6 +434,9 @@ void GaTACDroneControl::takeoff() {
  * @param droneId ID of drone to reset
  */
 void GaTACDroneControl::reset() {
+    if (scenarioOver)
+        return;
+
 	printf("Sending command to reset drone #%d.\n", clientUniqueId);
 
 	// Send command to server
@@ -408,6 +454,9 @@ void GaTACDroneControl::reset() {
  * @param droneRow Drone's intiial position, Y-axis
  */
 void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
+    if (scenarioOver)
+        return;
+
 	bool worked = false;
 	// Send command to server
 		printf("Sending command to spawn drone at (%d, %d).\n", droneCol, droneRow);
@@ -588,7 +637,7 @@ bool GaTACDroneControl::receiveData()
 	string verts = "";
 	string sons = "";
 	string tags = "";
-	while(1){
+	while(!scenarioOver){
 	// Sending message
 	int bytesSent = 0;
 	if ((bytesSent = sendto(dataSocket, sendBuffer, strlen(sendBuffer), 0, datsrv->ai_addr, datsrv->ai_addrlen)) == -1) {
@@ -602,6 +651,8 @@ bool GaTACDroneControl::receiveData()
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {
+		receiveBuffer[bytesReceived] = '\0';
+
 		success = true;
 		for(int i = 0; i < 30; i++)
 		bats += receiveBuffer[i];
@@ -666,59 +717,70 @@ bool GaTACDroneControl::sendMessage(char *message, int socket, struct addrinfo *
 		cout << "Error receiving feedback from server." << endl;
 		exit(1);
 	} else {
+        // Check if the scenario has ended
+        receiveBuffer[bytesReceived] = '\0'
+        ;
+        if (receiveBuffer[0] == 'X')
+        {
+            scenarioOver = true;
+            readyToCommand = false;
+            scenarioOverMessage = string(&(receiveBuffer[2]));
+            success = true;
+        } else
+        {
 			int idInt;
 			sscanf(receiveBuffer, "%d, %*s",&idInt);
-		// If message we sent and message returned from server are the same, success
-		if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck != 'y') {
-			success = true;
-			cout << "Server received the command!" << endl;
-		//Special case: if message was a spawn command, server sends back the ID to the client
-		} else if (strcmp(sendBuffer, receiveBuffer) != 0 && cmdCheck == 's') {
-			success = true;
-			this->setClientUniqueId(idInt);
- 			cout << "Server received the spawn command!" << endl;
-			cout << "This client is controlling drone #" << this->getClientUniqueId()<< "" <<endl;
-		//Special case: if message was a ready up command, client sets readyToCommand boolean to true
-		} else if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck =='y'){
-			success = true;
-			this->setClientReadyToCommand(true);
-			cout << "Server received the command!" << endl;
-		//Special case: if message was a navdata print command, client receives a string of data and prints it to display
-		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'b' || cmdCheck == 'f' ||
-				cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
-			success = true;
-			for(int i = 0; i < strlen(receiveBuffer); i++){
-			cout << receiveBuffer[i];
-			}
-			cout << endl;
-		//Special case: if message was a sense command, client receives an int to interpret
-		} else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
-				cmdCheck == 'k' || cmdCheck == 'j')) {
-			success = true;
-			cout << receiveBuffer <<endl;
-			// process the returned value into percepts
+            // If message we sent and message returned from server are the same, success
+            if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck != 'y') {
+                success = true;
+                cout << "Server received the command!" << endl;
+            //Special case: if message was a spawn command, server sends back the ID to the client
+            } else if (strcmp(sendBuffer, receiveBuffer) != 0 && cmdCheck == 's') {
+                success = true;
+                this->setClientUniqueId(idInt);
+                cout << "Server received the spawn command!" << endl;
+                cout << "This client is controlling drone #" << this->getClientUniqueId()<< "" <<endl;
+            //Special case: if message was a ready up command, client sets readyToCommand boolean to true
+            } else if (strcmp(sendBuffer, receiveBuffer) == 0 && cmdCheck =='y'){
+                success = true;
+                this->setClientReadyToCommand(true);
+                cout << "Server received the command!" << endl;
+            //Special case: if message was a navdata print command, client receives a string of data and prints it to display
+            } else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'b' || cmdCheck == 'f' ||
+                    cmdCheck == 'w' || cmdCheck == 'v' || cmdCheck == 'n' || cmdCheck == 'p')) {
+                success = true;
+                for(int i = 0; i < strlen(receiveBuffer); i++){
+                cout << receiveBuffer[i];
+                }
+                cout << endl;
+            //Special case: if message was a sense command, client receives an int to interpret
+            } else if(strcmp(sendBuffer, receiveBuffer) != 0 && (cmdCheck == 'u' || cmdCheck == 'd' ||
+                    cmdCheck == 'k' || cmdCheck == 'j')) {
+                success = true;
+                cout << receiveBuffer <<endl;
+                // process the returned value into percepts
 
-            percepts.clear();
+                percepts.clear();
 
-            string stringCommand(receiveBuffer);
-            stringstream ss(stringCommand);
+                string stringCommand(receiveBuffer);
+                stringstream ss(stringCommand);
 
-            std::istream_iterator<std::string> begin(ss);
-            std::istream_iterator<std::string> end;
+                std::istream_iterator<std::string> begin(ss);
+                std::istream_iterator<std::string> end;
 
-            // Storing tokens in vector
-            vector<string> tokens(begin, end);
+                // Storing tokens in vector
+                vector<string> tokens(begin, end);
 
-            for (int i = 0; i < tokens.size() / 2; i ++) {
-                percepts.push_back(make_pair(tokens.at((i * 2) + 1), atoi(tokens.at((i * 2) + 2).c_str())));
+                for (int i = 0; i < tokens.size() / 2; i ++) {
+                    percepts.push_back(make_pair(tokens.at((i * 2) + 1), atoi(tokens.at((i * 2) + 2).c_str())));
+                }
+
+            } else {
+                cout << "Error: Server didn't receive the command. Exiting." << endl;
+                success = false;
             }
-
-		} else {
-			cout << "Error: Server didn't receive the command. Exiting." << endl;
-			success = false;
-		}
+        }
 	}
-
 	return success;
 }
 
@@ -738,3 +800,27 @@ bool GaTACDroneControl::commandDrone(char command, int droneId) {
 	return success;
 }
 
+
+void GaTACDroneControl::sendScenarioIsOver(string msg) {
+	bool worked = false;
+	// Send command to server
+    printf("Sending command to end the scenario.\n");
+
+    char message[BUFLEN];
+    sprintf(message, "X %s", msg.c_str());
+    worked = sendMessage(message, serverSocket, srv);
+
+    if (!worked) {
+        cout << "Couldn't send the end scenario command. Please try again." << endl;
+        exit(1);
+    }
+}
+
+bool GaTACDroneControl::isScenarioOver() {
+    return scenarioOver;
+}
+
+
+string GaTACDroneControl::getScenarioOverMessage() {
+    return scenarioOverMessage;
+}

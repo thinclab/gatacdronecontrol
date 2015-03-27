@@ -15,7 +15,7 @@ int main() {
 	unsigned int port = 4999;
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac("");
+	GaTACDroneControl gatac("TESTDRONE");
 
 	// Launch Drone Client
 	gatac.launchClient(ip, port);
@@ -33,7 +33,7 @@ int main() {
 //	int id = gatac.getClientUniqueId();
 
 	//Drones will move, intersecting at various points, reported on console
-	while(gatac.getClientReadyToCommand() == true){
+	while(gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver()){
         gatac.senseNorth(8); //should return 0
         sleep(3);
         percept p = gatac.senseSouth(8); //should return 2
@@ -52,9 +52,11 @@ int main() {
 
         //Drones land
         gatac.land();
-
-        // Close client socket connection.
-        gatac.closeClient();
+        gatac.sendScenarioIsOver("Test Message");
 	}
+
+    // Close client socket connection.
+    gatac.closeClient();
+
 	return 0;
 }

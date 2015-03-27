@@ -18,6 +18,8 @@ using std::vector;
 using std::pair;
 using std::string;
 
+
+
 /**
  * @file	GaTACDroneControl.cpp
  * @author  	Vince Capparell, Casey Hetzler
@@ -106,6 +108,11 @@ public:
 	 */
 	vector<pair<string, int> > sense(int, int, int);
 
+
+    void setScenarioIsOver(string msg);
+
+    bool isScenarioOver();
+
 private:
 	/**
 	 * @brief Used to store grid dimensions.
@@ -174,6 +181,11 @@ private:
 	 * @brief Indicates to server whether everything is ready before sending out commands.
 	 */
 	bool readyToCommand;
+
+    bool scenarioOver;
+    string scenarioOverMsg;
+	std::mutex scenarioOverMtx;
+
 
 	/**
 	 * @brief Used to keep track of currently operating threads.

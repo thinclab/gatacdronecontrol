@@ -6,6 +6,7 @@
 #include <fstream> // For editing files
 #include <boost/thread.hpp> // For concurrent flight
 #include <boost/date_time.hpp>
+#include <sys/time.h>
 
 
 // For tokenizing command input
@@ -52,6 +53,7 @@ using std::ios;
  */
 
 
+
 class Locker {
 public:
 	Locker(std::mutex * l) {
@@ -79,6 +81,7 @@ private:
 	bool isLocked;
 	std::mutex * theLock;
 };
+
 
 int open_udp_port(unsigned int portnum, int * sockout) {
     char localPort[256];
@@ -137,7 +140,7 @@ GaTACDroneControl::GaTACDroneControl() {
 	simulatorMode = true;
 	serverThreads = 0;
 	readyForData = false;
-
+    scenarioOver = false;
 
 }
 
@@ -151,6 +154,7 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	simulatorMode = false;
 	serverThreads = 0;
 	readyForData = false;
+	scenarioOver = false;
 }
 
 /**
@@ -261,9 +265,12 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 
 	close(rondsock);
 
-	for (int i = 0; i < 2 * expectedDrones + 1; i ++) {
+	for (int i = 0; i < 2 * expectedDrones; i ++) {
 		threads[i]->join();
+		delete threads[i];
 	}
+
+	// kill all started child processes here
 
 }
 /**
@@ -274,15 +281,27 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  */
 void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
 
+    struct timeval tv;
+
+    tv.tv_sec = 0;  /* 30 Secs Timeout */
+    tv.tv_usec = 500000l;  // Not init'ing this can cause strange errors
+
+    setsockopt(datsock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
+
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
-	while (1) {
+	while (!isScenarioOver()) {
 		char receiveBuffer[BUFLEN];
 		char publishMessage[BUFLEN];
 
 		if ((bytesReceived = recvfrom(datsock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
-			perror("Error receiving command.");
-			exit(1);
+            if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+            {
+                continue;
+            } else {
+                perror("Error receiving command.");
+                exit(1);
+			}
 		}
 		receiveBuffer[bytesReceived] = '\0';
 
@@ -331,6 +350,7 @@ void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client
 	}
 	// Cleaning up socket information
 	close(datsock);
+	cout << "Data thread " << threadNo << " Exiting" << endl;
 }
 
 /**
@@ -350,7 +370,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
-	while (1) {
+	do {
 		const char *droneNumber, *x, *y;
 		string temp;
 		string errorMessage = "none";
@@ -375,8 +395,13 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 
 		cout << "Waiting for a command..." << endl;
 		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
-			perror("Error receiving command.");
-			exit(1);
+            if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
+            {
+                continue;
+            } else {
+                perror("Error receiving command.");
+                exit(1);
+            }
 		}
 		receiveBuffer[bytesReceived] = '\0';
 
@@ -428,7 +453,18 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
                 numberOfDrones++;
 			}
 			break;
-
+        case 'X':
+            //scenario is over
+            if (isScenarioOver())
+            {
+                errorMessage = "Scenario has already ended";
+            } else
+            {
+                cout << "Ending Scenario" << endl;
+                string end_msg = stringCommand.substr(2);
+                setScenarioIsOver(end_msg);
+            }
+            break;
 		case 't':
 			cout << "Take off." << endl;
 			droneNumber = (tokens.at(1)).c_str();
@@ -674,8 +710,16 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		char sendBuffer[len];
 		char navBuffer[BUFLEN];
 		strcpy(sendBuffer, receiveBuffer);
+		if (isScenarioOver()){
+			sprintf(sendBuffer, "X %s", scenarioOverMsg.c_str());
+            int numSent = 0;
+            if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+                perror("Server: error sending acknowledgment.");
+                exit(1);
+            }
+		}
 		//If command received was to spawn a drone, first char of ACK set to id
-		if(rawCommand == 's'){
+		else if(rawCommand == 's'){
 			sprintf(sendBuffer, "%d %s", myDroneId, receiveBuffer);
             int numSent = 0;
             if ((numSent = sendto(sock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
@@ -733,9 +777,11 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
                 exit(1);
             }
 		}
-	}
+	} while (! isScenarioOver());
 	// Cleaning up socket information
 	close(sock);
+
+    cout << "Control thread " << threadNo << " Exiting" << endl;
 }
 
 
@@ -1313,6 +1359,30 @@ vector<pair<string, int>> GaTACDroneControl::sense(int droneId, int option, int 
         yCurrent += deltaY;
 
     }
+
+    return returnval;
+}
+
+
+void GaTACDroneControl::setScenarioIsOver(string msg)
+{
+    Locker scenarioOverLock(&scenarioOverMtx);
+
+    scenarioOver = true;
+    scenarioOverMsg = msg;
+
+    scenarioOverLock.unlock();
+}
+
+bool GaTACDroneControl::isScenarioOver()
+{
+    bool returnval;
+
+    Locker scenarioOverLock(&scenarioOverMtx);
+
+    returnval = scenarioOver;
+
+    scenarioOverLock.unlock();
 
     return returnval;
 }
