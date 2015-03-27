@@ -7,6 +7,7 @@
 #include <boost/thread.hpp> // For concurrent flight
 #include <boost/date_time.hpp>
 #include <sys/time.h>
+#include <signal.h>
 
 
 // For tokenizing command input
@@ -130,6 +131,32 @@ int open_udp_port(unsigned int portnum, int * sockout) {
 }
 
 
+pid_t system2(const char * command) {
+    pid_t returnval;
+
+    returnval = fork();
+
+    if (returnval != 0) {
+        return returnval;
+
+    } else {
+        setsid();
+        execlp("xterm", "xterm", "-e", command, (char*)NULL);
+        exit(1);
+    }
+}
+
+static GaTACDroneControl * gatacref;
+
+void handlesigint(int sig) {
+
+    for (int i = 0; i < gatacref->subProcesses.size(); i ++) {
+        kill (gatacref->subProcesses.at(i), SIGINT);
+    }
+    exit(1);
+
+}
+
 /**
  * Default constructor. Initializes all member variables.
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
@@ -141,7 +168,11 @@ GaTACDroneControl::GaTACDroneControl() {
 	serverThreads = 0;
 	readyForData = false;
     scenarioOver = false;
+    scenarioOverMsg = "";
 
+    gatacref = this;
+
+    signal(SIGINT, handlesigint);
 }
 
 /**
@@ -155,7 +186,13 @@ GaTACDroneControl::GaTACDroneControl(const char* c) {
 	serverThreads = 0;
 	readyForData = false;
 	scenarioOver = false;
+	scenarioOverMsg = "";
+
+    gatacref = this;
+
+	signal(SIGINT, handlesigint);
 }
+
 
 /**
  * This method is called by the GaTAC server. It begins a new server thread for each drone started.
@@ -272,6 +309,9 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 
 	// kill all started child processes here
 
+    for (int i = 0; i < subProcesses.size(); i ++) {
+        kill (subProcesses.at(i), SIGINT);
+    }
 }
 /**
  * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
@@ -280,6 +320,9 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  * @param threadNo The ID of the thread this method is starting
  */
 void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
+
+
+	signal(SIGINT, handlesigint);
 
     struct timeval tv;
 
@@ -367,6 +410,8 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 	Locker lock(&dronePositionMtx);
 	lock.unlock();
 
+
+	signal(SIGINT, handlesigint);
 
 	// Loop forever. Read commands from socket and perform the action specified.
 	int bytesReceived = 0;
@@ -807,13 +852,13 @@ void GaTACDroneControl::launchGrid() {
 	cout << "Launching Grid "<<endl;
 	/* simulatorMode == true */
 	if(simulatorMode == true){
-		const char *gazeboMessage = "xterm -e roslaunch /tmp/grid_flight.launch&";
-		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %f %f %f s&";
+		const char *gazeboMessage = "roslaunch /tmp/grid_flight.launch";
+		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_thinc thinc_smart %d %d %d %d %f %f %f s";
 		char thincSmartMessage[strlen(thincSmartCommand) + BUFLEN];
 
 		// Configure launch file and start gazebo
 		configureLaunchFile();
-		int ignored = system(gazeboMessage);
+		runSubProcess(gazeboMessage);
 
 		// Wait for gazebo to finish loading. This takes a while.
 		sleep(20);
@@ -825,7 +870,7 @@ void GaTACDroneControl::launchGrid() {
 			droneID = i;
 			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2.0, 2.0, (droneID + 1.0) * 0.4);
 			cout << "publishing message: " << thincSmartMessage << endl;
-			ignored = system(thincSmartMessage);
+			runSubProcess(thincSmartMessage);
 		}
 		lock.unlock();
 		sleep(5);
@@ -834,8 +879,8 @@ void GaTACDroneControl::launchGrid() {
 	if(simulatorMode == false){
 
 		const char *coreMessage = "xterm -e roscore&";
-		const char *launchMessage = "xterm -e roslaunch /tmp/tagLaunch.launch&";
-		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d xterm -e rosrun ardrone_thinc thinc_smart %d %d %d %d %f %f %f r &";
+		const char *launchMessage = "roslaunch /tmp/tagLaunch.launch";
+		const char *thincSmartCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_thinc thinc_smart %d %d %d %d %f %f %f r";
 		const char *ardroneDriverCommand = "ROS_NAMESPACE=drone%d rosrun ardrone_autonomy ardrone_driver %s&";
 		const char *flattenTrim = "ROS_NAMESPACE=drone%d xterm -e rosservice call --wait /drone%d/ardrone/flattrim&";
 		const char *toggleCam = "ROS_NAMESPACE=drone%d xterm -e rosservice call /drone%d/ardrone/togglecam&";
@@ -847,7 +892,7 @@ void GaTACDroneControl::launchGrid() {
 		// Configure launch file and start core
 		configureLaunchFile();
 //		system(coreMessage);
-		int ignored = system(launchMessage);
+		runSubProcess(launchMessage);
 
 		sleep(10);
 		Locker lock(&dronePositionMtx);
@@ -858,7 +903,7 @@ void GaTACDroneControl::launchGrid() {
 			droneID = i;
 			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
 			cout << "publishing message: " << thincSmartMessage << endl;
-			ignored = system(thincSmartMessage);
+			runSubProcess(thincSmartMessage);
 		}
 		lock.unlock();
 		sleep(2);
@@ -1387,3 +1432,14 @@ bool GaTACDroneControl::isScenarioOver()
     return returnval;
 }
 
+void GaTACDroneControl::runSubProcess(const char * command) {
+
+    pid_t pid = system2(command);
+
+    if (pid > 0) {
+        subProcesses.push_back(pid);
+    } else {
+        perror("Error creating child process. ");
+        exit(1);
+    }
+}

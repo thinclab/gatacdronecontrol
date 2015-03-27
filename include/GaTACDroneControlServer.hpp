@@ -113,6 +113,22 @@ public:
 
     bool isScenarioOver();
 
+
+	/**
+	 * This method returns whether all requested drones are flying or not
+	 * @return Boolean indicating whether all drones have successfully launched
+         */
+	bool droneStartCheck();
+
+	vector<pid_t> subProcesses;
+
+
+	/**
+	 * This method returns the value of boolean gridStarted, which lets the server know if the grid has been started and the drones' ROS nodes have been initialized
+	 * @return Boolean indicating whether the grid has started and ROS nodes have been initialized, true if the size has already been set
+         */
+	bool gridStartCheck();
+
 private:
 	/**
 	 * @brief Used to store grid dimensions.
@@ -249,17 +265,6 @@ private:
          */
 	bool gridSizeCheck();
 
-	/**
-	 * This method returns the value of boolean gridStarted, which lets the server know if the grid has been started and the drones' ROS nodes have been initialized
-	 * @return Boolean indicating whether the grid has started and ROS nodes have been initialized, true if the size has already been set
-         */
-	bool gridStartCheck();
-
-	/**
-	 * This method returns whether all requested drones are flying or not
-	 * @return Boolean indicating whether all drones have successfully launched
-         */
-	bool droneStartCheck();
 
 	/**
 	 * This method returns true if a drone id sent by the client is a valid drone id that has previously been spawned.
@@ -292,5 +297,7 @@ private:
 
 	int expectedDrones;
 
+
+    void runSubProcess(const char *);
 };
 #endif
