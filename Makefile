@@ -1,4 +1,4 @@
-all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC
+all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard
 
 
 lib/GaTACDroneControlServer.a: include/GaTACDroneControlServer.hpp src/GaTACDroneControlServer.cpp
@@ -42,6 +42,9 @@ bin/simThreeB: src/SimThreeDronesClientB.cpp lib/GaTACDroneControlClient.a
 
 bin/simThreeC: src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a
 	g++ -o bin/simThreeC -O3 -std=c++11 -Iinclude/ src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
+
+bin/keyboard: src/keyboardClient.cpp lib/GaTACDroneControlClient.a
+	g++ -o bin/keyboard -O3 -std=c++11 -Iinclude/ src/keyboardClient.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
 
 clean:
 	rm lib/*

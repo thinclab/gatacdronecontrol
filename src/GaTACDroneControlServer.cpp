@@ -162,8 +162,8 @@ void handlesigint(int sig) {
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
 GaTACDroneControl::GaTACDroneControl() {
-	numberOfColumns, numberOfRows, numberOfDrones = 0;
-	gridSizeSet, gridStarted = false;
+	numberOfColumns = numberOfRows = numberOfDrones = 0;
+	gridSizeSet = gridStarted = false;
 	simulatorMode = true;
 	serverThreads = 0;
 	readyForData = false;
@@ -180,8 +180,8 @@ GaTACDroneControl::GaTACDroneControl() {
  * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
  */
 GaTACDroneControl::GaTACDroneControl(const char* c) {
-	numberOfColumns, numberOfRows, numberOfDrones = 0;
-	gridSizeSet, gridStarted = false;
+	numberOfColumns = numberOfRows = numberOfDrones = 0;
+	gridSizeSet = gridStarted = false;
 	simulatorMode = false;
 	serverThreads = 0;
 	readyForData = false;
@@ -410,7 +410,6 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 	Locker lock(&dronePositionMtx);
 	lock.unlock();
 
-
 	signal(SIGINT, handlesigint);
 
 	// Loop forever. Read commands from socket and perform the action specified.
@@ -429,7 +428,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		bool allReady = false;
 		int xInt, yInt, droneNumberInt = 0;
 		char * senseOption;
-		int senseInt, maxdist, ignored;
+		int senseInt, maxdist, ignored, nor, noc;
 		string droneRole;
 		vector<pair<string, int>> senseResult;
 		const char *navDataToSend = ""; // Holds string of navdata server will send to client on request
@@ -479,7 +478,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
                 errorMessage = "The requested number of drones has already been spawned";
 			}
 			// If start position isn't valid
-			else if (validLocation(initialRow, initialColumn) == false) {
+			else if (validLocation(initialColumn, initialRow) == false) {
                 errorMessage = "The starting location you specified does not lie within the grid. Please choose a valid starting location.";
 			}
 
@@ -631,22 +630,23 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 
 		case 'g':
 			cout << "Set grid size." << endl;
-			numberOfColumns = atoi(tokens.at(1).c_str());
-			numberOfRows = atoi(tokens.at(2).c_str());
+			noc = atoi(tokens.at(1).c_str());
+			nor = atoi(tokens.at(2).c_str());
 			// If size has already been set
-			if (gridSizeCheck() == true) {
-			cout << "Error: The grid size has already been set to ["<<numberOfColumns<<" x "<<numberOfRows<<"]. Specify grid size only once." << endl;
-			}
-			// If size isn't valid
-			 if (validGridSize(numberOfRows, numberOfColumns) == false) {
-			cout << "Error: The grid size specified was too large. The maximum grid size is 10x10." << endl;
-			exit(1);
-			}
-			/* If server passes all checks, client message processed */
-			else{
-			gridSizeSet = true;
-			this->numberOfColumns = numberOfColumns;
-			this->numberOfRows = numberOfRows;
+			if (gridSizeCheck()) {
+                cout << "Error: The grid size has already been set to ["<<numberOfColumns<<" x "<<numberOfRows<<"]. Specify grid size only once." << endl;
+			} else {
+                // If size isn't valid
+                if (validGridSize(noc, noc) == false) {
+                    cout << "Error: The grid size specified was too large. The maximum grid size is 10x10." << endl;
+                    exit(1);
+                }
+                /* If server passes all checks, client message processed */
+                else{
+                    gridSizeSet = true;
+                    this->numberOfColumns = noc;
+                    this->numberOfRows = nor;
+                }
 			}
 			break;
 
