@@ -8,6 +8,7 @@
 #include <boost/date_time.hpp>
 #include <sys/time.h>
 #include <signal.h>
+#include <unistd.h>
 
 
 // For tokenizing command input
@@ -777,7 +778,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
             cout<<"Waiting for other drones..." <<endl;
 
             while (! this->gridStartCheck() ) {
-                sleep(1);
+                usleep(10000);
             }
 
 			sprintf(publishMessage, serviceCall, myDroneId, "takeoff_thinc_smart");
@@ -785,7 +786,7 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			dronesReady.at(myDroneId) = true;
 
             while (! this->droneStartCheck() ) {
-                sleep(1);
+                usleep(10000);
             }
 
             int numSent = 0;
