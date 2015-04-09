@@ -275,14 +275,19 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 
         // start threads
 
+        // save a copy of the client's address so that we don't overwrite it before the threads have a chance to make their own copies
+        struct sockaddr_storage * client_addr_2;
+        client_addr_2 = (sockaddr_storage*)malloc(addr_len);
+        memcpy(client_addr_2, &client_addr, addr_len);
+
 		serverThreads++;
 		boost::thread* thread;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,controlsock, &client_addr, addr_len, serverThreads, i));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,controlsock, client_addr_2, addr_len, serverThreads, i));
 		threads[2*i] = thread;
 		cout<<"starting thread "<<serverThreads <<endl;
 
 		serverThreads++;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, &client_addr, addr_len, serverThreads, i));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, client_addr_2, addr_len, serverThreads, i));
 		threads[2*i + 1] = thread;
 		cout<<"starting data thread "<<serverThreads<<endl;
 
