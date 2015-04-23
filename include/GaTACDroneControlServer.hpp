@@ -45,6 +45,8 @@ using std::string;
  * Made for cooperative use with UGA THINC Lab's "ardrone_thinc" package and Autonomy Lab's "ardrone_autonomy" package.
  */
 
+static bool debug_terms = false;
+
 class GaTACDroneControl {
 public:
 	/**

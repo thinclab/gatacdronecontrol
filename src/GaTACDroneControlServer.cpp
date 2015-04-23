@@ -142,11 +142,16 @@ pid_t system2(const char * command) {
 
     } else {
         setsid();
-        char bashcommand[4096];
-        strcpy(bashcommand, "/bin/bash -l -c \"");
-        strcat(bashcommand, command);
-        strcat(bashcommand, "\"");
-        execlp("xterm", "xterm", "-e", bashcommand, (char*)NULL);
+        if (debug_terms) {
+            char bashcommand[4096];
+            strcpy(bashcommand, "/bin/bash -l -c \"");
+            strcat(bashcommand, command);
+            strcat(bashcommand, "\"");
+            execlp("xterm", "xterm", "-e", bashcommand, (char*)NULL);
+        } else {
+            execlp("/bin/bash", "/bin/bash", "-l", "-c", command, (char*)NULL);
+        }
+
         exit(1);
     }
 }
