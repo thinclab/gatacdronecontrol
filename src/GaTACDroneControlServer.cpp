@@ -142,7 +142,11 @@ pid_t system2(const char * command) {
 
     } else {
         setsid();
-        execlp("xterm", "xterm", "-e", command, (char*)NULL);
+        char bashcommand[4096];
+        strcpy(bashcommand, "/bin/bash -l -c \"");
+        strcat(bashcommand, command);
+        strcat(bashcommand, "\"");
+        execlp("xterm", "xterm", "-e", bashcommand, (char*)NULL);
         exit(1);
     }
 }
@@ -891,18 +895,18 @@ void GaTACDroneControl::launchGrid() {
 		char toggleCamMessage[256];
 
 		// Configure launch file and start core
-		configureLaunchFile();
+//		configureLaunchFile();
 //		system(coreMessage);
-		runSubProcess(launchMessage);
+//		runSubProcess(launchMessage);
 
-		sleep(10);
+//		sleep(10);
 		Locker lock(&dronePositionMtx);
 
 		// Starting a thinc_smart ROS node for each drone && an ardrone_autonomy ROS node for each drone
 		int droneID;
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
-			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.5, 0.5, (droneID + 1.0) * .75);
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 1.0, 1.0, droneID + 0.5);
 			cout << "publishing message: " << thincSmartMessage << endl;
 			runSubProcess(thincSmartMessage);
 		}
@@ -1005,7 +1009,9 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>\n\t\t"
 			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
-			"<include file=\"$(find tum_ardrone)/launch/tum_ardrone.launch\" />\n"
+			"<include file=\"$(find tum_ardrone)/launch/tum_ardrone.launch\">\n"
+			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>"
+			"</include>"
 			"</group>\n\n";
 
 		const char *endingText = "</launch>";
@@ -1035,7 +1041,7 @@ void GaTACDroneControl::configureLaunchFile() {
 				droneID = i;
 				droneX = originX + (2 * dronePositions.at(droneID).second);
 				droneY = originY - (2 * dronePositions.at(droneID).first);
-            			sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID);
+            			sprintf(droneBuffer1, droneText, droneID, droneID, droneID, droneID, droneID);
             			fileStream << droneBuffer1;
 			}
 			lock.unlock();

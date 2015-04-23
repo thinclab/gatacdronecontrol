@@ -1,4 +1,4 @@
-all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard bin/random
+all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard bin/random bin/twoServer
 
 
 lib/GaTACDroneControlServer.a: include/GaTACDroneControlServer.hpp src/GaTACDroneControlServer.cpp
@@ -23,6 +23,9 @@ bin/simServer: src/serverTest.cpp lib/GaTACDroneControlServer.a
 
 bin/tagServer: src/realServerTest.cpp lib/GaTACDroneControlServer.a
 	g++ -o bin/tagServer -O3 -std=c++11 -Iinclude/ src/realServerTest.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
+
+bin/twoServer: src/twoDronesRealServer.cpp lib/GaTACDroneControlServer.a
+	g++ -o bin/twoServer -O3 -std=c++11 -Iinclude/ src/twoDronesRealServer.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
 
 
 

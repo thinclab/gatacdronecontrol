@@ -19,6 +19,7 @@ do {                                                                \
         y = newY;                                                   \
                                                                     \
         gatac.move(x, y);                                           \
+	move_counter ++;                                            \
     }                                                               \
 } while(0)
 
@@ -28,15 +29,19 @@ do {                                                                \
 
 int main(int argc, char ** argv) {
     if (argc < 5) {
-        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " size_X size_Y start_x start_Y" << endl;
+        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " size_X size_Y start_x start_Y (# of moves)" << endl;
         exit(1);
     }
 
-    int x, y, startX, startY, sizeX, sizeY;
+    int x, y, startX, startY, sizeX, sizeY, move_limit;
     sscanf(argv[1], "%d", &sizeX);
     sscanf(argv[2], "%d", &sizeY);
     sscanf(argv[3], "%d", &startX);
     sscanf(argv[4], "%d", &startY);
+    if (argc > 5)
+	sscanf(argv[5], "%d", &move_limit);
+    else
+	move_limit = INT_MAX;
 
 	x = startX;
 	y = startY;
@@ -65,8 +70,9 @@ int main(int argc, char ** argv) {
 	int id = gatac.getClientUniqueId();
 	srand (time(NULL) * (id + 1));
 
+	int move_counter = 0;
 	//Drones will move, intersecting at various points, reported on console
-	while(gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver()){
+	while(gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver() && move_counter < move_limit){
 
         int c = rand() % 4;
 
@@ -87,11 +93,12 @@ int main(int argc, char ** argv) {
             cout << "Should never be here: " << c << endl;
         }
 
-
 	}
 
     //Drones land
     gatac.land();
+
+    gatac.sendScenarioIsOver("END");
 
     // Close client socket connection.
     gatac.closeClient();
