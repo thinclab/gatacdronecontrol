@@ -284,14 +284,19 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 
         // start threads
 
+        // save a copy of the client's address so that we don't overwrite it before the threads have a chance to make their own copies
+        struct sockaddr_storage * client_addr_2;
+        client_addr_2 = (sockaddr_storage*)malloc(addr_len);
+        memcpy(client_addr_2, &client_addr, addr_len);
+
 		serverThreads++;
 		boost::thread* thread;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,controlsock, &client_addr, addr_len, serverThreads, i));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::runServer,this,controlsock, client_addr_2, addr_len, serverThreads, i));
 		threads[2*i] = thread;
 		cout<<"starting thread "<<serverThreads <<endl;
 
 		serverThreads++;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, &client_addr, addr_len, serverThreads, i));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, client_addr_2, addr_len, serverThreads, i));
 		threads[2*i + 1] = thread;
 		cout<<"starting data thread "<<serverThreads<<endl;
 
@@ -329,8 +334,14 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
+void GaTACDroneControl::dataServer(int datsock_in, struct sockaddr_storage * client_addr_in, socklen_t addr_len_in, int threadNo_in, const int myDroneId_in) {
 
+    int datsock = datsock_in;
+    struct sockaddr_storage client_addr;
+    memcpy(&client_addr, client_addr_in, addr_len_in);
+    socklen_t addr_len = addr_len_in;
+    int threadNo = threadNo_in;
+    const int myDroneId = myDroneId_in;
 
 	signal(SIGINT, handlesigint);
 
@@ -414,11 +425,18 @@ void GaTACDroneControl::dataServer(int datsock, struct sockaddr_storage * client
  * @param remotePort The port number supplied for a client socket
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_addr, socklen_t addr_len, int threadNo, const int myDroneId) {
+void GaTACDroneControl::runServer(int sock_in, struct sockaddr_storage * client_addr_in, socklen_t addr_len_in, int threadNo_in, const int myDroneId_in) {
 	const char *publishCommand = "rostopic pub -1 /drone%s/ardrone/%s std_msgs/Empty&";
 	const char *serviceCall = "rosservice call /drone%d/%s";
 	Locker lock(&dronePositionMtx);
 	lock.unlock();
+
+    int sock = sock_in;
+    struct sockaddr_storage client_addr;
+    memcpy(&client_addr, client_addr_in, addr_len_in);
+    socklen_t addr_len = addr_len_in;
+    int threadNo = threadNo_in;
+    const int myDroneId = myDroneId_in;
 
 	signal(SIGINT, handlesigint);
 
@@ -445,7 +463,6 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 		std::stringstream strX;
 		std::stringstream strY;
 		std::stringstream strID;
-
 
 		cout << "Waiting for a command..." << endl;
 		if ((bytesReceived = recvfrom(sock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
@@ -759,7 +776,6 @@ void GaTACDroneControl::runServer(int sock, struct sockaddr_storage * client_add
 			cout << "Error parsing raw command - invalid command character received." << endl;
 			break;
 		}
-
 		// Sending acknowledgment message to client
 		int len = BUFLEN;
 		char sendBuffer[len];
