@@ -132,77 +132,77 @@ cout << policy_file << endl;
 
         // gather and interpret percepts
 
-        std::pair<std::string, int> * uav1 = NULL;
+        std::pair<std::string, int> uav1;
         int uav1dir = -1;
-        std::pair<std::string, int> * uav2 = NULL;
+        std::pair<std::string, int> uav2;
         int uav2dir = -1;
-        std::pair<std::string, int> * fug = NULL;
+        std::pair<std::string, int> fug;
         int fugdir = -1;
 
-        percept n = gatac.senseNorth(sizeX + 1);
-        for (int i = 0; i < n.size(); i ++) {
-            if (strncmp(n.at(i).first.c_str(), "UAV", 3) == 0) {
-                if (uav1 == NULL) {
-                    uav1 = &(n.at(i));
+        percept p = gatac.senseNorth(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
                     uav1dir = 0;
                 } else {
-                    uav2 = &(n.at(i));
+                    uav2 = p.at(i);
                     uav2dir = 0;
                 }
             } else {
-                fug = &(n.at(i));
+                fug = p.at(i);
                 fugdir = 0;
             }
 
         }
 
-        percept s = gatac.senseSouth(sizeX + 1);
-        for (int i = 0; i < n.size(); i ++) {
-            if (strncmp(n.at(i).first.c_str(), "UAV", 3) == 0) {
-                if (uav1 == NULL) {
-                    uav1 = &(n.at(i));
-                    uav1dir = 1;
+        p = gatac.senseSouth(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 0;
                 } else {
-                    uav2 = &(n.at(i));
-                    uav2dir = 1;
+                    uav2 = p.at(i);
+                    uav2dir = 0;
                 }
             } else {
-                fug = &(n.at(i));
-                fugdir = 1;
+                fug = p.at(i);
+                fugdir = 0;
             }
 
         }
 
-        percept e = gatac.senseEast(sizeY + 1);
-        for (int i = 0; i < n.size(); i ++) {
-            if (strncmp(n.at(i).first.c_str(), "UAV", 3) == 0) {
-                if (uav1 == NULL) {
-                    uav1 = &(n.at(i));
-                    uav1dir = 2;
+        p = gatac.senseEast(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 0;
                 } else {
-                    uav2 = &(n.at(i));
-                    uav2dir = 2;
+                    uav2 = p.at(i);
+                    uav2dir = 0;
                 }
             } else {
-                fug = &(n.at(i));
-                fugdir = 2;
+                fug = p.at(i);
+                fugdir = 0;
             }
 
         }
 
-        percept w = gatac.senseWest(sizeY + 1);
-        for (int i = 0; i < n.size(); i ++) {
-            if (strncmp(n.at(i).first.c_str(), "UAV", 3) == 0) {
-                if (uav1 == NULL) {
-                    uav1 = &(n.at(i));
-                    uav1dir = 3;
+        p = gatac.senseWest(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 0;
                 } else {
-                    uav2 = &(n.at(i));
-                    uav2dir = 3;
+                    uav2 = p.at(i);
+                    uav2dir = 0;
                 }
             } else {
-                fug = &(n.at(i));
-                fugdir = 3;
+                fug = p.at(i);
+                fugdir = 0;
             }
 
         }
@@ -216,13 +216,13 @@ cout << policy_file << endl;
 
             percept = (uav1dir << 2) + uav2dir;
 
-            if (uav1->second == 0 || uav2->second == 0)
+            if (uav1.second == 0 || uav2.second == 0)
                 sameSquare = true;
 
 
         } else {
             percept = fugdir;
-            if (fug->second == 0)
+            if (fug.second == 0)
                 sameSquare = true;
         }
 

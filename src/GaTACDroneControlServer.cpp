@@ -1387,50 +1387,43 @@ const char* GaTACDroneControl::getData(int droneId)
 vector<pair<string, int>> GaTACDroneControl::sense(int droneId, int option, int maxDist)
 {
 	Locker lock(&dronePositionMtx);
-    int deltaY = 0;
-    int deltaX = 0;
 
-	if(option == 0)
-	{
-        deltaY = 1;
-    } else if (option == 1)
-    {
-        deltaY = -1;
-    } else if (option == 2)
-    {
-        deltaX = 1;
-    } else
-    {
-        deltaX = -1;
-    }
+	// instead of looking through squares, go through each drone's position and classify it
+
 
 	int xCurrent = dronePositions.at(droneId).first;
 	int yCurrent = dronePositions.at(droneId).second;
 
-	int dist = 0;
+    int maxdist = (int)sqrt(maxDist * maxDist);
 
 	vector<pair<string, int>> returnval;
 
-	while ((dist <= numberOfColumns || dist <= numberOfRows) && dist <= maxDist) {
+    //cycles through current drone positions and tests them against querying client position
+    for(int k = 0; k <dronePositions.size(); k++)
+    {
+        int dist = ceil(sqrt((dronePositions.at(k).first-xCurrent)*(dronePositions.at(k).first-xCurrent)
+                              + (dronePositions.at(k).second-yCurrent)*(dronePositions.at(k).second-yCurrent)));
 
+        if(droneId != k && dist <= maxdist){
 
-        //cycles through current drone positions and tests them against querying client position
-        for(int k = 0; k <dronePositions.size(); k++)
-        {
-            if(droneId != k){
-                //case: another drone is not North of subject drone
-                if(dronePositions.at(k).first == xCurrent && dronePositions.at(k).second == yCurrent)
-                {
-                    returnval.push_back(make_pair(droneRoles.at(k), dist));
-                }
+            int whichclass = -1;
 
+            //case: another drone is not North of subject drone
+            if(dronePositions.at(k).first > xCurrent) {
+                whichclass = 0;
+            } else if(dronePositions.at(k).first < xCurrent) {
+                whichclass = 1;
+            } else if (dronePositions.at(k).second >= yCurrent) {
+                whichclass = 2;
+            } else if (dronePositions.at(k).second <= yCurrent) {
+                whichclass = 3;
             }
+
+            if (whichclass == option) {
+                returnval.push_back(make_pair(droneRoles.at(k), dist));
+            }
+
         }
-
-        dist += 1;
-        xCurrent += deltaX;
-        yCurrent += deltaY;
-
     }
 
     return returnval;
