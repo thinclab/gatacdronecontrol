@@ -161,14 +161,14 @@ cout << policy_file << endl;
             if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
                 if (uav1dir < 0) {
                     uav1 = p.at(i);
-                    uav1dir = 0;
+                    uav1dir = 1;
                 } else {
                     uav2 = p.at(i);
-                    uav2dir = 0;
+                    uav2dir = 1;
                 }
             } else {
                 fug = p.at(i);
-                fugdir = 0;
+                fugdir = 1;
             }
 
         }
@@ -178,14 +178,14 @@ cout << policy_file << endl;
             if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
                 if (uav1dir < 0) {
                     uav1 = p.at(i);
-                    uav1dir = 0;
+                    uav1dir = 2;
                 } else {
                     uav2 = p.at(i);
-                    uav2dir = 0;
+                    uav2dir = 2;
                 }
             } else {
                 fug = p.at(i);
-                fugdir = 0;
+                fugdir = 2;
             }
 
         }
@@ -195,14 +195,14 @@ cout << policy_file << endl;
             if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
                 if (uav1dir < 0) {
                     uav1 = p.at(i);
-                    uav1dir = 0;
+                    uav1dir = 3;
                 } else {
                     uav2 = p.at(i);
-                    uav2dir = 0;
+                    uav2dir = 3;
                 }
             } else {
                 fug = p.at(i);
-                fugdir = 0;
+                fugdir = 3;
             }
 
         }

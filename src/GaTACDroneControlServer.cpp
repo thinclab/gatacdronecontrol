@@ -1409,13 +1409,13 @@ vector<pair<string, int>> GaTACDroneControl::sense(int droneId, int option, int 
             int whichclass = -1;
 
             //case: another drone is not North of subject drone
-            if(dronePositions.at(k).first > xCurrent) {
+            if (dronePositions.at(k).second > yCurrent) {
                 whichclass = 0;
-            } else if(dronePositions.at(k).first < xCurrent) {
+            } else if (dronePositions.at(k).second < yCurrent) {
                 whichclass = 1;
-            } else if (dronePositions.at(k).second >= yCurrent) {
+            } else if(dronePositions.at(k).first >= xCurrent) {
                 whichclass = 2;
-            } else if (dronePositions.at(k).second <= yCurrent) {
+            } else if(dronePositions.at(k).first <= xCurrent) {
                 whichclass = 3;
             }
 

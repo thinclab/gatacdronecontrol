@@ -12,6 +12,35 @@ using std::flush;
 #include <unistd.h>
 #include <termios.h>
 
+void print_status(int gridsize_x, int gridsize_y, int posX, int posY, string percept) {
+    cout << endl << "Current Percept: " << percept << endl;
+
+    for (int i = gridsize_y-1; i >=0 ; i --) {
+
+        for (int j = 0; j < gridsize_x*2 + 1; j ++) {
+            cout << "-";
+        }
+        cout << endl;
+
+        for (int j = 0; j < gridsize_x*2 + 1; j ++) {
+            if (j % 2 == 0)
+                cout << "|";
+
+            else if (posX == j/2 && posY == i)
+                cout << "X";
+            else
+                cout << " ";
+        }
+        cout << endl;
+
+    }
+    for (int j = 0; j < gridsize_x*2 + 1; j ++) {
+        cout << "-";
+    }
+    cout << endl << endl;
+
+}
+
 char getch() {
         char buf = 0;
         struct termios old = {0};
@@ -84,8 +113,11 @@ int main(int argc, char ** argv) {
 	// Sending ready message
 	gatac.readyUp();
 
+    string lastPercept = "None";
 
     while (gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver()) {
+
+        print_status(sizeX, sizeY, x, y, lastPercept);
         char c;
         cout << "Next command? " << flush;
         c = getch();
@@ -118,6 +150,122 @@ int main(int argc, char ** argv) {
             break;
         default:
             cout << "Unrecognized command: " << c << endl;
+        }
+
+
+        // gather and interpret percepts
+
+        std::pair<std::string, int> uav1;
+        int uav1dir = -1;
+        std::pair<std::string, int> uav2;
+        int uav2dir = -1;
+        std::pair<std::string, int> fug;
+        int fugdir = -1;
+
+        percept p = gatac.senseNorth(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 0;
+                } else {
+                    uav2 = p.at(i);
+                    uav2dir = 0;
+                }
+            } else {
+                fug = p.at(i);
+                fugdir = 0;
+            }
+
+        }
+
+        p = gatac.senseSouth(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 1;
+                } else {
+                    uav2 = p.at(i);
+                    uav2dir = 1;
+                }
+            } else {
+                fug = p.at(i);
+                fugdir = 1;
+            }
+
+        }
+
+        p = gatac.senseEast(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 2;
+                } else {
+                    uav2 = p.at(i);
+                    uav2dir = 2;
+                }
+            } else {
+                fug = p.at(i);
+                fugdir = 2;
+            }
+
+        }
+
+        p = gatac.senseWest(sizeX * sizeY);
+        for (int i = 0; i < p.size(); i ++) {
+            if (strncmp(p.at(i).first.c_str(), "UAV", 3) == 0) {
+                if (uav1dir < 0) {
+                    uav1 = p.at(i);
+                    uav1dir = 3;
+                } else {
+                    uav2 = p.at(i);
+                    uav2dir = 3;
+                }
+            } else {
+                fug = p.at(i);
+                fugdir = 3;
+            }
+
+        }
+
+
+
+        int percept = 0;
+        bool sameSquare = false;
+
+        percept = fugdir;
+        if (fug.second == 0)
+            sameSquare = true;
+
+
+
+        if (sameSquare) {
+            // we've caught the fugitive!
+
+            gatac.sendScenarioIsOver("CAUGHT THE FUGITIVE");
+
+            break;
+
+        }
+
+        switch (percept) {
+        case 0:
+            lastPercept = "Enemy North";
+            break;
+        case 1:
+            lastPercept = "Enemy South";
+            break;
+        case 2:
+            lastPercept = "Enemy East";
+            break;
+        case 3:
+            lastPercept = "Enemy West";
+            break;
+        default:
+            lastPercept = "Unknown";
+            break;
         }
 
     }
