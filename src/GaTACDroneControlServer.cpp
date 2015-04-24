@@ -1109,27 +1109,33 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
         do
         {
             lock.lock();
-            if(dx > 0){
-                dronePositions.at(droneId).first -= 1;
-                dx--;
-            }
-            else if(dx < 0){
-                dronePositions.at(droneId).first += 1;
-                dx++;
-            }
-            else if(dy < 0){
-                dronePositions.at(droneId).second += 1;
-                dy++;
-            }
-            else if(dy > 0){
-                dronePositions.at(droneId).second -= 1;
-                dy--;
-            }
             int xSend = dronePositions.at(droneId).first;
             int ySend = dronePositions.at(droneId).second;
             lock.unlock();
+            if(dx > 0){
+                xSend -= 1;
+                dx--;
+            }
+            else if(dx < 0){
+                xSend += 1;
+                dx++;
+            }
+            else if(dy < 0){
+                ySend += 1;
+                dy++;
+            }
+            else if(dy > 0){
+                ySend -= 1;
+                dy--;
+            }
+
             sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
             int ignored = system(publishMessage);
+
+            lock.lock();
+            dronePositions.at(droneId).first = xSend;
+            dronePositions.at(droneId).second = ySend;
+            lock.unlock();
             vector<bool> dronesSharingSpace;
 
             if(sharedSpace(&dronesSharingSpace) == true){

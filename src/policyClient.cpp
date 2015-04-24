@@ -235,6 +235,13 @@ cout << policy_file << endl;
 
             break;
 
+        } else if (isFugitive && sameSquare) {
+            // I've been caught!
+
+            gatac.sendScenarioIsOver("I AM CAUGHT");
+
+            break;
+
         }
 
         // move forward in tree
