@@ -143,7 +143,7 @@ pid_t system2(const char * command) {
     } else {
         setsid();
         if (debug_terms) {
-            char bashcommand[4096];
+            char * bashcommand = (char*)alloca(sizeof(char) * (20 + strlen(command)));
             strcpy(bashcommand, "/bin/bash -l -c \"");
             strcat(bashcommand, command);
             strcat(bashcommand, "\"");
