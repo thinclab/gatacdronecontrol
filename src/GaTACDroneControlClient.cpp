@@ -412,6 +412,24 @@ void GaTACDroneControl::land() {
 }
 
 /**
+ * This method is called by the client and will land the specified drone at its current location.
+ * @param droneId ID of drone to land
+ */
+void GaTACDroneControl::landHere() {
+    if (scenarioOver)
+        return;
+
+	printf("Sending command to land drone #%d where it is.\n", clientUniqueId);
+
+	// Send command to server
+	bool worked = commandDrone('L', clientUniqueId);
+	if (!worked) {
+		cout << "Couldn't land drone. Please try again." << endl;
+		exit(1);
+	}
+}
+
+/**
  * This method is called by the client and will make the specified drone take off.
  * @param droneId ID of drone to takeoff
  */

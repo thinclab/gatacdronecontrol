@@ -1,4 +1,4 @@
-all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard bin/random bin/twoServer bin/policyClient
+all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard bin/random bin/twoServer bin/fugitiveClient bin/anticoordClient
 
 
 lib/GaTACDroneControlServer.a: include/GaTACDroneControlServer.hpp src/GaTACDroneControlServer.cpp
@@ -56,8 +56,11 @@ bin/keyboard: src/keyboardClient.cpp lib/GaTACDroneControlClient.a
 bin/random: src/randomClient.cpp lib/GaTACDroneControlClient.a
 	g++ -o bin/random -O3 -std=c++11 -Iinclude/ src/randomClient.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
 
-bin/policyClient: src/policyClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a
-	g++ -o bin/policyClient -O3 -std=c++11 -Iinclude/ src/policyClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a -lboost_system -lboost_thread
+bin/fugitiveClient: src/policyClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a
+	g++ -o bin/fugitiveClient -O3 -std=c++11 -Iinclude/ src/policyClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a -lboost_system -lboost_thread
+
+bin/anticoordClient: src/anticoordClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a
+	g++ -o bin/anticoordClient -O3 -std=c++11 -Iinclude/ src/anticoordClient.cpp lib/GaTACDroneControlClient.a lib/policytree.a -lboost_system -lboost_thread
 
 clean:
 	rm lib/*

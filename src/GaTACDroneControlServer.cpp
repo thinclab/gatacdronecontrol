@@ -574,10 +574,28 @@ void GaTACDroneControl::runServer(int sock_in, struct sockaddr_storage * client_
 			sprintf(publishMessage, serviceCall, droneInt, "land_at_home");
 			ignored = system(publishMessage);
 
-			dronesReady.at(myDroneId) = false;
             }
 			break;
 
+		case 'L':
+			cout << "Land Here." << endl;
+			droneNumber = (tokens.at(1)).c_str();
+			droneInt = atoi(droneNumber);
+			if (validDroneId(droneInt) == false) {
+			printf("Error: No drone with ID %s has been spawned.  Please specify a valid drone ID.\n", droneNumber);
+			exit(1);
+			}
+			else if (!dronesReady.at(myDroneId)) {
+                printf("Error: Drone ID %s is not flying.\n", droneNumber);
+			}
+			else{
+			/* If server passes all checks, client message processed */
+			sprintf(publishMessage, serviceCall, droneInt, "land_here");
+			ignored = system(publishMessage);
+
+            }
+
+			break;
 		case 'h':
 			cout << "Hover." << endl;
 			droneNumber = (tokens.at(1)).c_str();
@@ -1129,13 +1147,14 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
                 dy--;
             }
 
-            sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
-            int ignored = system(publishMessage);
-
             lock.lock();
             dronePositions.at(droneId).first = xSend;
             dronePositions.at(droneId).second = ySend;
             lock.unlock();
+
+            sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
+            int ignored = system(publishMessage);
+
             vector<bool> dronesSharingSpace;
 
             if(sharedSpace(&dronesSharingSpace) == true){

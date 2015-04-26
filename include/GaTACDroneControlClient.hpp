@@ -107,6 +107,12 @@ public:
 	void land();
 
 	/**
+	 * This method is called by the client and will land the specified drone at the current location.
+	 * @param droneId ID of drone to land
+	 */
+	void landHere();
+
+	/**
 	 * This method is called by the client and allows a drone to hover.
 	 * @param droneId ID of drone to hover
 	 */

@@ -28,20 +28,22 @@ do {                                                                \
  */
 
 int main(int argc, char ** argv) {
-    if (argc < 6) {
-        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " role(f/u) size_X size_Y start_x start_Y \"policy file\"" << endl;
+    if (argc < 8) {
+        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " role(f/u) size_X size_Y start_x start_Y safe_house_X safe_house_Y \"policy file\"" << endl;
         exit(1);
     }
 
-    int x, y, startX, startY, sizeX, sizeY;
+    int x, y, startX, startY, sizeX, sizeY, safehouseX, safehouseY;
     char * mode = argv[1];
     sscanf(argv[2], "%d", &sizeX);
     sscanf(argv[3], "%d", &sizeY);
     sscanf(argv[4], "%d", &startX);
     sscanf(argv[5], "%d", &startY);
-    char * policy_file = argv[6];
+    sscanf(argv[6], "%d", &safehouseX);
+    sscanf(argv[7], "%d", &safehouseY);
+    char * policy_file = argv[8];
 
-    char * role;
+    const char * role;
     bool isFugitive = false;
 cout << policy_file << endl;
     if (strncasecmp(mode, "f", 1) == 0) {
@@ -95,22 +97,22 @@ cout << policy_file << endl;
         switch (curNode->action) {
         case 0:
             // move North
-            CHECK_AND_MOVE(1, 0);
+            CHECK_AND_MOVE(0, 1);
 
             break;
         case 1:
             // move South
-            CHECK_AND_MOVE(-1, 0);
+            CHECK_AND_MOVE(0, -1);
 
             break;
         case 2:
             // move East
-            CHECK_AND_MOVE(0, 1);
+            CHECK_AND_MOVE(1, 0);
 
             break;
         case 3:
             // move West
-            CHECK_AND_MOVE(0, -1);
+            CHECK_AND_MOVE(-1, 0);
 
             break;
         default:
@@ -118,15 +120,6 @@ cout << policy_file << endl;
 
             break;
 
-
-        }
-
-        if (curNode->children.size() == 0) {
-            // ran out of tree!
-
-            gatac.sendScenarioIsOver("POLICY ENDED");
-
-            break;
 
         }
 
@@ -214,9 +207,19 @@ cout << policy_file << endl;
 
         if (isFugitive) {
 
-            percept = (uav1dir << 2) + uav2dir;
+//            percept = (uav1dir << 2) + uav2dir;
 
-            if (uav1.second == 0 || uav2.second == 0)
+            if (safehouseY > y) {
+                percept = 0;
+            } else if (safehouseY < y) {
+                percept = 1;
+            } else if(safehouseX >= x) {
+                percept = 2;
+            } else if(safehouseX <= x) {
+                percept = 3;
+            }
+
+            if ((uav1.second == 0 && uav1dir >= 0) || (uav2.second == 0 && uav2dir >= 0))
                 sameSquare = true;
 
 
@@ -227,17 +230,23 @@ cout << policy_file << endl;
         }
 
 
+        if (isFugitive && (safehouseX == x && safehouseY == y)) {
+cout << "HERE3";
+            gatac.sendScenarioIsOver("FUGITIVE ESCAPED");
+            break;
+        }
+
 
         if (!isFugitive && sameSquare) {
             // we've caught the fugitive!
-
+cout << "HERE1";
             gatac.sendScenarioIsOver("CAUGHT THE FUGITIVE");
 
             break;
 
         } else if (isFugitive && sameSquare) {
             // I've been caught!
-
+cout << "HERE2";
             gatac.sendScenarioIsOver("I AM CAUGHT");
 
             break;
@@ -246,6 +255,14 @@ cout << policy_file << endl;
 
         // move forward in tree
 
+        if (curNode->children.size() == 0) {
+            // ran out of tree!
+cout << "HERE4";
+            gatac.sendScenarioIsOver("POLICY ENDED");
+
+            break;
+
+        }
         curNode = curNode->children.at(percept);
 
 
