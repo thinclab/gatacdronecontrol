@@ -14,8 +14,7 @@ int main() {
 
 
 	// Instantiate GaTACDroneControl object
-	const char* c = "r";
-	GaTACDroneControl gatac(c);
+	GaTACDroneControl gatac(true);
 
 	// Run drone server
 	gatac.startServer(ip, port, 1);

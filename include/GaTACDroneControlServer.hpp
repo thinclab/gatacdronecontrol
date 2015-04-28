@@ -51,15 +51,8 @@ class GaTACDroneControl {
 public:
 	/**
 	 * Default constructor. Initializes all member variables.
-         * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
 	 */
-	GaTACDroneControl();
-
-	/**
-	 * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
-	 * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
-	 */
-	GaTACDroneControl(const char*);
+	GaTACDroneControl(bool isReal);
 
 	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.

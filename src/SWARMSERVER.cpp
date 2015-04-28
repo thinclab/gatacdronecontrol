@@ -14,7 +14,7 @@ int main() {
 
 
 	// Instantiate GaTACDroneControl object
-	GaTACDroneControl gatac;
+	GaTACDroneControl gatac(false);
 
 	// Run drone server
 	gatac.startServer(ip, port, 12);

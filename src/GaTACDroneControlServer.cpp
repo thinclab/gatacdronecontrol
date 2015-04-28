@@ -171,10 +171,10 @@ void handlesigint(int sig) {
  * Default constructor. Initializes all member variables.
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
-GaTACDroneControl::GaTACDroneControl() {
+GaTACDroneControl::GaTACDroneControl(bool isReal) {
 	numberOfColumns = numberOfRows = numberOfDrones = 0;
 	gridSizeSet = gridStarted = false;
-	simulatorMode = true;
+	simulatorMode = !isReal;
 	serverThreads = 0;
 	readyForData = false;
     scenarioOver = false;
@@ -183,24 +183,6 @@ GaTACDroneControl::GaTACDroneControl() {
     gatacref = this;
 
     signal(SIGINT, handlesigint);
-}
-
-/**
- * Overloaded constructor. Used when flying real drones as opposed to the simulator. All members initialized, with bool simulatorMode init'd to false.
- * @param c If char provided to constructor, this gatac object will be used as a server or client object involving REAL drones.
- */
-GaTACDroneControl::GaTACDroneControl(const char* c) {
-	numberOfColumns = numberOfRows = numberOfDrones = 0;
-	gridSizeSet = gridStarted = false;
-	simulatorMode = false;
-	serverThreads = 0;
-	readyForData = false;
-	scenarioOver = false;
-	scenarioOverMsg = "";
-
-    gatacref = this;
-
-	signal(SIGINT, handlesigint);
 }
 
 
