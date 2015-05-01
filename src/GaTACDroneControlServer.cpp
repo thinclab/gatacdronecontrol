@@ -927,7 +927,7 @@ void GaTACDroneControl::launchGrid() {
 		int droneID;
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
-			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 1.0, 1.0, droneID + 0.5);
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.9, 0.9, (droneID *0.75) + 0.5);
 			cout << "publishing message: " << thincSmartMessage << endl;
 			runSubProcess(thincSmartMessage);
 		}
