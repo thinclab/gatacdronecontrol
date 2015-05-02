@@ -52,7 +52,8 @@ public:
 	/**
 	 * Default constructor. Initializes all member variables.
 	 */
-	GaTACDroneControl(bool isReal);
+	GaTACDroneControl(bool isReal) : GaTACDroneControl(isReal, true) {};
+	GaTACDroneControl(bool isReal, bool updatePositionBeforeMove);
 
 	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
@@ -125,6 +126,8 @@ public:
 	bool gridStartCheck();
 
 private:
+	bool updatePositionBeforeMove;
+
 	/**
 	 * @brief Used to store grid dimensions.
 	 */

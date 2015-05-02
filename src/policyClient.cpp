@@ -117,7 +117,7 @@ cout << policy_file << endl;
             break;
         default:
             // NoOp
-
+            sleep(5);
             break;
 
 
@@ -231,22 +231,22 @@ cout << policy_file << endl;
 
 
         if (isFugitive && (safehouseX == x && safehouseY == y)) {
-cout << "HERE3";
+            gatac.landHere();
             gatac.sendScenarioIsOver("FUGITIVE ESCAPED");
-            break;
+            gatac.closeClient();
+            return 0;
+
         }
 
 
         if (!isFugitive && sameSquare) {
             // we've caught the fugitive!
-cout << "HERE1";
             gatac.sendScenarioIsOver("CAUGHT THE FUGITIVE");
 
             break;
 
         } else if (isFugitive && sameSquare) {
             // I've been caught!
-cout << "HERE2";
             gatac.sendScenarioIsOver("I AM CAUGHT");
 
             break;
@@ -257,7 +257,6 @@ cout << "HERE2";
 
         if (curNode->children.size() == 0) {
             // ran out of tree!
-cout << "HERE4";
             gatac.sendScenarioIsOver("POLICY ENDED");
 
             break;

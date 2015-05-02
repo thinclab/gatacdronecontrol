@@ -171,7 +171,7 @@ void handlesigint(int sig) {
  * Default constructor. Initializes all member variables.
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
-GaTACDroneControl::GaTACDroneControl(bool isReal) {
+GaTACDroneControl::GaTACDroneControl(bool isReal, bool positionBeforeMove = true) {
 	numberOfColumns = numberOfRows = numberOfDrones = 0;
 	gridSizeSet = gridStarted = false;
 	simulatorMode = !isReal;
@@ -181,6 +181,7 @@ GaTACDroneControl::GaTACDroneControl(bool isReal) {
     scenarioOverMsg = "";
 
     gatacref = this;
+    updatePositionBeforeMove = positionBeforeMove;
 
     signal(SIGINT, handlesigint);
 }
@@ -1129,13 +1130,22 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
                 dy--;
             }
 
-            lock.lock();
-            dronePositions.at(droneId).first = xSend;
-            dronePositions.at(droneId).second = ySend;
-            lock.unlock();
+	    if (updatePositionBeforeMove) {
+		lock.lock();
+		dronePositions.at(droneId).first = xSend;
+	        dronePositions.at(droneId).second = ySend;
+		lock.unlock();
+	    }
 
             sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
             int ignored = system(publishMessage);
+
+	    if (!updatePositionBeforeMove) {
+		lock.lock();
+		dronePositions.at(droneId).first = xSend;
+	        dronePositions.at(droneId).second = ySend;
+		lock.unlock();
+	    }
 
             vector<bool> dronesSharingSpace;
 
