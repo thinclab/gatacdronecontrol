@@ -1,4 +1,4 @@
-all: bin/SWARMCLIENT bin/SWARMSERVER bin/simServerThree bin/simServer bin/tagServer bin/tagClientA bin/simThreeA bin/simThreeB bin/simThreeC bin/keyboard bin/random bin/server bin/fugitiveClient bin/anticoordClient
+all: bin/SWARMCLIENT bin/SWARMSERVER bin/keyboard bin/random bin/server bin/fugitiveClient bin/anticoordClient
 
 
 lib/GaTACDroneControlServer.a: include/GaTACDroneControlServer.hpp src/GaTACDroneControlServer.cpp
@@ -19,15 +19,6 @@ lib/policytree.a: include/policytree.h src/PolicyTree.cpp
 bin/SWARMSERVER: src/SWARMSERVER.cpp lib/GaTACDroneControlServer.a
 	g++ -o bin/SWARMSERVER -O3 -std=c++0x -Iinclude/  src/SWARMSERVER.cpp lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
 
-bin/simServerThree: src/serverTestThreeDrones.cpp lib/GaTACDroneControlServer.a
-	g++ -o bin/simServerThree -O3 -std=c++0x -Iinclude/ src/serverTestThreeDrones.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
-
-bin/simServer: src/serverTest.cpp lib/GaTACDroneControlServer.a
-	g++ -o bin/simServer -O3 -std=c++0x -Iinclude/ src/serverTest.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
-
-bin/tagServer: src/realServerTest.cpp lib/GaTACDroneControlServer.a
-	g++ -o bin/tagServer -O3 -std=c++0x -Iinclude/ src/realServerTest.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
-
 bin/server: src/server.cpp lib/GaTACDroneControlServer.a
 	g++ -o bin/server -O3 -std=c++0x -Iinclude/ src/server.cpp  lib/GaTACDroneControlServer.a -lboost_system -lboost_thread
 
@@ -37,18 +28,6 @@ bin/server: src/server.cpp lib/GaTACDroneControlServer.a
 
 bin/SWARMCLIENT: src/SWARMCLIENT.cpp lib/GaTACDroneControlClient.a
 	g++ -o bin/SWARMCLIENT -O3 -std=c++0x -Iinclude/  src/SWARMCLIENT.cpp lib/GaTACDroneControlClient.a -lboost_system
-
-bin/tagClientA: src/tagTestClient.cpp lib/GaTACDroneControlClient.a
-	g++ -o bin/tagClientA -O3 -std=c++0x -Iinclude/ src/tagTestClient.cpp lib/GaTACDroneControlClient.a -lboost_system
-
-bin/simThreeA: src/SimThreeDronesClientA.cpp lib/GaTACDroneControlClient.a
-	g++ -o bin/simThreeA -O3 -std=c++0x -Iinclude/ src/SimThreeDronesClientA.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
-
-bin/simThreeB: src/SimThreeDronesClientB.cpp lib/GaTACDroneControlClient.a
-	g++ -o bin/simThreeB -O3 -std=c++0x -Iinclude/ src/SimThreeDronesClientB.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
-
-bin/simThreeC: src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a
-	g++ -o bin/simThreeC -O3 -std=c++0x -Iinclude/ src/SimThreeDronesClientC.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
 
 bin/keyboard: src/keyboardClient.cpp lib/GaTACDroneControlClient.a
 	g++ -o bin/keyboard -O3 -std=c++0x -Iinclude/ src/keyboardClient.cpp lib/GaTACDroneControlClient.a -lboost_system -lboost_thread
