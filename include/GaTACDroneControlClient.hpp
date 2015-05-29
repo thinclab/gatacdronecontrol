@@ -57,7 +57,6 @@ public:
 	 * is then stored in the current instance of GaTACDroneControl for later communication with the server.
  	 * @param serverIp The IP supplied for the server's socket
 	 * @param serverPort The port number supplied for the server's socket
-	 * @param dataPort The port number supplied for the client's navdata socket
 	 */
 	void launchClient(string, unsigned int);
 
@@ -101,40 +100,29 @@ public:
 	void move(int, int);
 
 	/**
-	 * This method is called by the client and will land the specified drone.
-	 * @param droneId ID of drone to land
+	 * This method will land the specified drone at it's home location.
 	 */
 	void land();
 
 	/**
-	 * This method is called by the client and will land the specified drone at the current location.
-	 * @param droneId ID of drone to land
+	 * This method will land the specified drone at the current location.
 	 */
 	void landHere();
 
 	/**
 	 * This method is called by the client and allows a drone to hover.
-	 * @param droneId ID of drone to hover
 	 */
 	void hover();
 
 	/**
-	 * This method is called by the client and will make the specified drone take off.
-	 * @param droneId ID of drone to takeoff
+	 * This method will make the drone take off.
 	 */
 	void takeoff();
 
 	/**
-	 * This method is called by the client and will trigger the reset mode for the specified drone.
-	 * @param droneId ID of drone to reset
+	 * This method will trigger the reset mode for the specified drone.
 	 */
 	void reset();
-
-	/**
-	 * Used to set a client's unique drone ID
-	 * @param toSet Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
-	 */
-	void setClientUniqueId(int);
 
 	/**
 	 * Used to get a client's unique drone ID
@@ -147,48 +135,6 @@ public:
 	 * @return Boolean value that tells whether a client is ready to receive commands
 	 */
 	bool getClientReadyToCommand();
-
-	/**
-	 * Used to set a client's "readyForCommands" boolean value
-	 * @param toSet Boolean specifies whether or not client is ready to receive server commands
-	 */
-	void setClientReadyToCommand(bool);
-
-	/**
-	 * This method will set the GaTAC clientCurrentBattery data member to the correct navdata value.
-	 * @param toSet string to set battery to
-         */
-	void setBattery(string);
-
-	/**
-	 * This method will set the GaTAC clientCurrentForwardVelocity data member to the correct navdata value.
-	 * @param toSet string to set forward velocity to
-         */
-	void setForwardVelocity(string);
-
-	/**
-	 * This method will set the GaTAC clientCurrentSidewaysVelocity data member to the correct navdata value.
-	 * @param toSet string to set sideways velocity to
-         */
-	void setSidewaysVelocity(string);
-
-	/**
-	 * This method will set the GaTAC clientCurrentVerticalVelocity data member to the correct navdata value.
-	 * @param toSet string to set vertical velocity to
-         */
-	void setVerticalVelocity(string);
-
-	/**
-	 * This method will set the GaTAC clientCurrentSonar data member to the correct navdata value..
-	 * @param toSet string to set sonar to
-         */
-	void setSonar(string);
-
-	/**
-	 * This method will set the GaTAC clientCurrentTagsSpotted data member to the correct navdata value.
-	 * @param toSet string to set tags spotted data to
-         */
-	void setTagsSpotted(string);
 
 	/**
 	 * This method will return and print the current battery percentage to the client's display.
@@ -235,34 +181,95 @@ public:
 
 	/**
  	 * This method is called by a client to send a senseNorth message to the server.
-	 * @param droneId Integer denoting which drone is calling the method
+	 * @param droneId Integer denoting the maximum distance (in squares) to look
 	 */
 	vector<pair<string, int>> senseNorth(int);
 
 	/**
 	 * This method is called by a client to send a senseSouth message to the server.
-	 * @param droneId Integer denoting which drone is calling the method
+	 * @param droneId Integer denoting the maximum distance (in squares) to look
 	 */
 	vector<pair<string, int>> senseSouth(int);
 
 	/**
 	 * This method is called by a client to send a senseEast message to the server.
-	 * @param droneId Integer denoting which drone is calling the method
+	 * @param droneId Integer denoting the maximum distance (in squares) to look
 	 */
 	vector<pair<string, int>> senseEast(int);
 
 	/**
 	 * This method is called by a client to send a senseWest message to the server.
-	 * @param droneId Integer denoting which drone is calling the method
+	 * @param droneId Integer denoting the maximum distance (in squares) to look
 	 */
 	vector<pair<string, int>> senseWest(int);
 
+    /**
+     * This method is called to notify all clients that the scenario has ended
+     * and terminate the server
+     * @param msg Message to transmit to all clients to indicate reason for termination
+     */
     void sendScenarioIsOver(string msg);
 
+    /**
+     * @return True if a scenario over message has been received
+     */
     bool isScenarioOver();
+
+    /**
+     * @return The string sent with the received scenario over message
+     */
     string getScenarioOverMessage();
 
 private:
+
+	/**
+	 * Used to set a client's unique drone ID
+	 * @param toSet Integer to set this GaTAC instance's drone ID to (0, 1, or 2)
+	 */
+	void setClientUniqueId(int);
+
+
+	/**
+	 * Used to set a client's "readyForCommands" boolean value
+	 * @param toSet Boolean specifies whether or not client is ready to receive server commands
+	 */
+	void setClientReadyToCommand(bool);
+
+	/**
+	 * This method will set the GaTAC clientCurrentBattery data member to the correct navdata value.
+	 * @param toSet string to set battery to
+         */
+	void setBattery(string);
+
+	/**
+	 * This method will set the GaTAC clientCurrentForwardVelocity data member to the correct navdata value.
+	 * @param toSet string to set forward velocity to
+         */
+	void setForwardVelocity(string);
+
+	/**
+	 * This method will set the GaTAC clientCurrentSidewaysVelocity data member to the correct navdata value.
+	 * @param toSet string to set sideways velocity to
+         */
+	void setSidewaysVelocity(string);
+
+	/**
+	 * This method will set the GaTAC clientCurrentVerticalVelocity data member to the correct navdata value.
+	 * @param toSet string to set vertical velocity to
+         */
+	void setVerticalVelocity(string);
+
+	/**
+	 * This method will set the GaTAC clientCurrentSonar data member to the correct navdata value..
+	 * @param toSet string to set sonar to
+         */
+	void setSonar(string);
+
+	/**
+	 * This method will set the GaTAC clientCurrentTagsSpotted data member to the correct navdata value.
+	 * @param toSet string to set tags spotted data to
+         */
+	void setTagsSpotted(string);
 
     /**
      *  @brief Used to identify myself to the other drones
