@@ -9,7 +9,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <unistd.h>
-
+#include <random>
 
 // For tokenizing command input
 #include <sstream>
@@ -156,6 +156,47 @@ pid_t system2(const char * command) {
     }
 }
 
+#define READ 0
+#define WRITE 1
+
+pid_t
+popen2(const char *command, int *infp, int *outfp)
+{
+    int p_stdin[2], p_stdout[2];
+    pid_t pid;
+
+    if (pipe(p_stdin) != 0 || pipe(p_stdout) != 0)
+        return -1;
+
+    pid = fork();
+
+    if (pid < 0)
+        return pid;
+    else if (pid == 0)
+    {
+        close(p_stdin[WRITE]);
+        dup2(p_stdin[READ], READ);
+        close(p_stdout[READ]);
+        dup2(p_stdout[WRITE], WRITE);
+
+        execl("/bin/sh", "sh", "-c", command, NULL);
+        perror("execl");
+        exit(1);
+    }
+
+    if (infp == NULL)
+        close(p_stdin[WRITE]);
+    else
+        *infp = p_stdin[WRITE];
+
+    if (outfp == NULL)
+        close(p_stdout[READ]);
+    else
+        *outfp = p_stdout[READ];
+
+    return pid;
+}
+
 static GaTACDroneControl * gatacref;
 
 void handlesigint(int sig) {
@@ -171,7 +212,7 @@ void handlesigint(int sig) {
  * Default constructor. Initializes all member variables.
  * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
-GaTACDroneControl::GaTACDroneControl(bool isReal, bool positionBeforeMove = true) {
+GaTACDroneControl::GaTACDroneControl(bool isReal) {
 	numberOfColumns = numberOfRows = numberOfDrones = 0;
 	gridSizeSet = gridStarted = false;
 	simulatorMode = !isReal;
@@ -181,7 +222,6 @@ GaTACDroneControl::GaTACDroneControl(bool isReal, bool positionBeforeMove = true
     scenarioOverMsg = "";
 
     gatacref = this;
-    updatePositionBeforeMove = positionBeforeMove;
 
     signal(SIGINT, handlesigint);
 }
@@ -240,8 +280,8 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
         // open control and data ports
 
 
-        int controlsock, datsock;
-        unsigned int controlport, datport;
+        int controlsock;
+        unsigned int controlport;
         struct sockaddr_in adr_inet;
         socklen_t len_inet = sizeof adr_inet;
 
@@ -254,16 +294,6 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
             exit(1);
         }
         controlport = ntohs(adr_inet.sin_port);
-
-        if (open_udp_port(0, &datsock) != 0) {
-            exit(1);
-        }
-
-        if (getsockname(datsock, (struct sockaddr *)&adr_inet, &len_inet) != 0) {
-            perror("Rondevous: getsockname");
-            exit(1);
-        }
-        datport = ntohs(adr_inet.sin_port);
 
         // start threads
 
@@ -279,7 +309,7 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
 		cout<<"starting thread "<<serverThreads <<endl;
 
 		serverThreads++;
-		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this,datsock, client_addr_2, addr_len, serverThreads, i));
+		thread = new boost::thread(boost::bind(&GaTACDroneControl::dataServer,this, serverThreads, i));
 		threads[2*i + 1] = thread;
 		cout<<"starting data thread "<<serverThreads<<endl;
 
@@ -287,9 +317,9 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
         // inform client of ready state
         char sendBuffer[BUFLEN];
 
-        sprintf(sendBuffer, "%u %u %u", i, controlport, datport);
+        sprintf(sendBuffer, "%u %u", i, controlport);
         int numSent;
-		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
+		if ((numSent = sendto(rondsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
 			perror("Server: error sending client initialization.");
 			exit(1);
 		}
@@ -317,86 +347,27 @@ void GaTACDroneControl::startServer(const char *remoteIP, unsigned int remotePor
  * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
  * @param threadNo The ID of the thread this method is starting
  */
-void GaTACDroneControl::dataServer(int datsock_in, struct sockaddr_storage * client_addr_in, socklen_t addr_len_in, int threadNo_in, const int myDroneId_in) {
+void GaTACDroneControl::dataServer(const int threadNo_in, const int myDroneId_in) {
 
-    int datsock = datsock_in;
-    struct sockaddr_storage client_addr;
-    memcpy(&client_addr, client_addr_in, addr_len_in);
-    socklen_t addr_len = addr_len_in;
-    int threadNo = threadNo_in;
+    const int threadNo = threadNo_in;
     const int myDroneId = myDroneId_in;
 
 	signal(SIGINT, handlesigint);
 
-    struct timeval tv;
-
-    tv.tv_sec = 0;  /* 30 Secs Timeout */
-    tv.tv_usec = 500000l;  // Not init'ing this can cause strange errors
-
-    setsockopt(datsock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,sizeof(struct timeval));
-
-	// Loop forever. Read commands from socket and perform the action specified.
-	int bytesReceived = 0;
 	while (!isScenarioOver()) {
-		char receiveBuffer[BUFLEN];
-		char publishMessage[BUFLEN];
 
-		if ((bytesReceived = recvfrom(datsock, receiveBuffer, BUFLEN - 1, 0, (struct sockaddr *) &client_addr, &addr_len)) == -1) {
-            if(errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR)
-            {
-                continue;
-            } else {
-                perror("Error receiving command.");
-                exit(1);
-			}
-		}
-		receiveBuffer[bytesReceived] = '\0';
+        // sleep for 1/10 sec (slightly randomized)
 
-		// Splitting command input into tokens by whitespace
-		string buffer;
-		vector<string> tokens;
-		string stringCommand(receiveBuffer);
-		stringstream ss(stringCommand);
+        usleep(100000l);
 
-		// Storing tokens in vector
-		while (ss >> buffer) {
-			tokens.push_back(buffer);
-		}
+        // update data from thinc_smart, if all drones are ready
 
-		char rawCommand = receiveBuffer[0];
-		switch (rawCommand) {
-		case 'n':
-			break;
+        if (gridStartCheck()) {
+            updateData(myDroneId);
+            break;
+        }
 
-		default:
-			cout << "Error parsing nav command - invalid command character received." << endl;
-			break;
-		}
-
-		// Sending acknowledgment message to client
-		int len = BUFLEN;
-		char sendBuffer[len];
-		char navBuffer[BUFLEN];
-		strcpy(sendBuffer, getData(myDroneId));
-		//If command received was to spawn a drone, first char of ACK set to id
-		if(rawCommand == 'n'){
-		int numSent = 0;
-		sleep(5);
-		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
-		}
-		else{
-		int numSent = 0;
-		if ((numSent = sendto(datsock, sendBuffer, strlen(sendBuffer), 0, (struct sockaddr *) &client_addr, addr_len)) == -1) {
-			perror("Server: error sending acknowledgment.");
-			exit(1);
-		}
-		}
 	}
-	// Cleaning up socket information
-	close(datsock);
 	cout << "Data thread " << threadNo << " Exiting" << endl;
 }
 
@@ -681,9 +652,9 @@ void GaTACDroneControl::runServer(int sock_in, struct sockaddr_storage * client_
 			//When running multi clients, have each use readyUp() to start the grid
 		case 'y':
 
+            lock.lock();
 			allReady = true;
 
-            lock.lock();
             clientsReady.at(myDroneId) = true;
 
 			for(int i=0; i < clientsReady.size(); i++)
@@ -888,7 +859,7 @@ void GaTACDroneControl::launchGrid() {
 		runSubProcess(gazeboMessage);
 
 		// Wait for gazebo to finish loading. This takes a while.
-		sleep(20);
+		sleep(15 + numberOfDrones);
 
         // Starting a thinc_smart ROS node for each drone
 		int droneID;
@@ -900,7 +871,7 @@ void GaTACDroneControl::launchGrid() {
 			runSubProcess(thincSmartMessage);
 		}
 		lock.unlock();
-		sleep(5);
+		sleep(5 + numberOfDrones);
 	}
 	/* simulatorMode == false */
 	if(simulatorMode == false){
@@ -1130,22 +1101,8 @@ void GaTACDroneControl::moveAndCheck(int x, int y, int Id)
                 dy--;
             }
 
-	    if (updatePositionBeforeMove) {
-		lock.lock();
-		dronePositions.at(droneId).first = xSend;
-	        dronePositions.at(droneId).second = ySend;
-		lock.unlock();
-	    }
-
             sprintf(publishMessage, moveCommand, droneId, xSend, ySend);
             int ignored = system(publishMessage);
-
-	    if (!updatePositionBeforeMove) {
-		lock.lock();
-		dronePositions.at(droneId).first = xSend;
-	        dronePositions.at(droneId).second = ySend;
-		lock.unlock();
-	    }
 
             vector<bool> dronesSharingSpace;
 
@@ -1300,101 +1257,46 @@ string GaTACDroneControl::getGridPosition(int droneId)
 }
 
 /**
- * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
+ * This method will read a stream of positions from the thinc_smart and update the server's drone position data
  * @param droneId ID of drone to return navdata from
- * @return Character array of all navdata values, to be sent over a socket to the client, broken up into strings of thirty characters, and used to set navdata members
  */
-const char* GaTACDroneControl::getData(int droneId)
+void GaTACDroneControl::updateData(int droneId)
 {
-	const char *printNavdataCommand = "rosservice call /drone%d/printnavdata"; //id...option id
+	const char *printNavdataCommand = "rostopic echo -p /drone%d/gatac_pose"; //id...option id
 	char printNavMessage[strlen(printNavdataCommand) + BUFLEN];
 	sprintf(printNavMessage, printNavdataCommand, droneId);
-    FILE *lsofFile_p = popen(printNavMessage, "r");
 
-    if (!lsofFile_p)
+    int lsofFile_p;
+    pid_t child = popen2(printNavMessage, NULL, &lsofFile_p);
+
+    subProcesses.push_back(child);
+/*    if (!lsofFile_p)
     {
-    return "";
-    }
+        return;
+    }*/
 
-	string line1 = "";
-	string line2 = "";
-	string line3 = "";
-	string line4 = "";
-	string line5 = "";
-	string line6 = "";
-
-    string fullbuffer = "";
+    double time, Z, ignored;
+    int X, Y;
 
     char buffer[1024];
-    while (fgets(buffer, sizeof(buffer), lsofFile_p) != NULL)
+    int readlength;
+    while ((readlength = read(lsofFile_p, buffer, sizeof(buffer)-1)) > 0 && !isScenarioOver())
     {
-        fullbuffer.append(buffer);
-    }
+        buffer[readlength] = '\0';
+        sscanf(buffer, "%lf,%lf,%lf,,%d,%d,%lf", &time, &ignored, &ignored, &X, &Y, &Z);
 
+        // update the drone positions
+        Locker lock(&dronePositionMtx);
 
-    stringstream stream (fullbuffer);
-	string allDataString = "";
+        dronePositions.at(droneId).first = (int)round(X);
+        dronePositions.at(droneId).second = (int)round(Y);
+        lock.unlock();
 
-	//battery
-    getline(stream, line1);
-    if(line1.size() < 30){
-        int whiteSpace = 30 - line1.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line1 += " ";
-         }
+//        cout << "Drone " << droneId << " @ " << X << " " << Y << " " << Z << endl;
     }
-    line1 = line1.substr (5);
-    //forward velocity
-    getline(stream, line2);
-    if(line2.size() < 30){
-        int whiteSpace = 30 - line2.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line2 += " ";
-         }
-    }
-    //sideways velocity
-    getline(stream, line3);
-    if(line3.size() < 30){
-        int whiteSpace = 30 - line3.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line3 += " ";
-         }
-    }
-    //vert velocity
-    getline(stream, line4);
-    if(line4.size() < 30){
-        int whiteSpace = 30 - line4.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line4 += " ";
-         }
-    }
-    //sonar
-    getline(stream, line5);
-    if(line5.size() < 30){
-        int whiteSpace = 30 - line5.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line5 += " ";
-         }
-    }
-    //tags spotted
-    getline(stream, line6);
-    if(line6.size() < 30){
-        int whiteSpace = 30 - line6.size();
-        for(int w = 0 ; w < whiteSpace; w++)
-         {
-            line6 += " ";
-         }
-    }
-    allDataString = line1 + line2 + line3 + line4 + line5 + line6;
+    kill(child, SIGINT);
+    close(lsofFile_p);
 
-    pclose(lsofFile_p);
-
-	return allDataString.c_str();
 }
 
 /**

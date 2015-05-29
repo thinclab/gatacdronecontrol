@@ -34,8 +34,6 @@ int main() {
 
 	//Drones will move, intersecting at various points, reported on console
 	while(gatac.getClientReadyToCommand() == true && ! gatac.isScenarioOver()){
-        boost::thread *dataThread;
-        dataThread = new boost::thread(boost::bind(&GaTACDroneControl::receiveData, &gatac));
         gatac.move( 4, 7);
         boost::thread *moveThread;
         moveThread = new boost::thread(boost::bind(&GaTACDroneControl::move, &gatac, 4, 0));

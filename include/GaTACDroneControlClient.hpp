@@ -257,14 +257,6 @@ public:
 	 */
 	vector<pair<string, int>> senseWest(int);
 
-	/**
-	 * This method allows a client to "opt in" to a continuous stream of navdata to update its data members. Using boost threads, navdata can be accessed concurrently while 	  * drone commands are sent.
-	 * @param id The ID of the drone requesting navdata.
-	 * @return Boolean confirming the success of request being sent and received.
-	 */
-	bool receiveData();
-
-
     void sendScenarioIsOver(string msg);
 
     bool isScenarioOver();
@@ -281,11 +273,6 @@ private:
 	 * @brief Used to keep track of command socket info.
 	 */
 	int serverSocket;
-
-	/**
-	 * @brief Used to keep track of data socket info.
-	 */
-	int dataSocket;
 
 	/**
 	 * @brief Used to store grid dimensions.
@@ -306,11 +293,6 @@ private:
 	 * @brief Struct containing server socket data.
 	 */
 	struct addrinfo *srv;
-
-	/**
-	 * @brief Struct containing data socket data.
-	 */
-	struct addrinfo *datsrv;
 
 	/**
 	 * @brief Current string representation of client's battery navdata

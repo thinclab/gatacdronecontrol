@@ -105,7 +105,7 @@ int main(int argc, char ** argv) {
             break;
         default:
             // NoOp
-            sleep(5);
+            sleep(3);
 
             break;
 

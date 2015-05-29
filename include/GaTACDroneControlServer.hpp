@@ -52,8 +52,7 @@ public:
 	/**
 	 * Default constructor. Initializes all member variables.
 	 */
-	GaTACDroneControl(bool isReal) : GaTACDroneControl(isReal, true) {};
-	GaTACDroneControl(bool isReal, bool updatePositionBeforeMove);
+	GaTACDroneControl(bool isReal);
 
 	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
@@ -64,12 +63,10 @@ public:
 	void startServer(const char *, unsigned int, int);
 
 	/**
-	 * This method sets up the data socket for each client and listens for navdata requests. It loops continuously, updating the navdata for each client navdata data members.
-	 * @param remoteIP The IP supplied for a client data socket
-	 * @param remotePort The port number supplied for a client data socket, by default 4998, 5998, and 6998
+	 * This method sets up the a thread for reading the drone state from thinc_smart
 	 * @param threadNo The ID of the thread this method is starting
 	 */
-	void dataServer(int, struct sockaddr_storage *, socklen_t, int, const int);
+	void dataServer(const int, const int);
 
 	/**
 	 * This method sets up the main UDP socket server. It loops continuously, parsing the input
@@ -87,13 +84,6 @@ public:
 	 * @return Human-readable string denoting the drone's current location on the grid
          */
 	string getGridPosition(int);
-
-	/**
-	 * This method will call the PrintNavdata service to set the drone's data members to the correct values and return the requested data to the client.
-	 * @param droneId ID of drone to return navdata from
-	 * @return Character array of all navdata values, to be sent over a socket to the client, broken up into strings of thirty characters, and used to set navdata members
-         */
-	const char* getData(int);
 
 
 	/**
@@ -126,8 +116,6 @@ public:
 	bool gridStartCheck();
 
 private:
-	bool updatePositionBeforeMove;
-
 	/**
 	 * @brief Used to store grid dimensions.
 	 */
@@ -205,6 +193,14 @@ private:
 	 * @brief Used to keep track of currently operating threads.
 	 */
 	boost::thread* threads[256];
+
+	/**
+	 * This method will call the PrintNavdata service to set the drone's data members to the correct values.
+	 * @param droneId ID of drone to return navdata from
+	 * @return nothing
+         */
+	void updateData(int);
+
 
 	/**
 	 * This method launches the Gazebo simulator with a grid of whatever size was specified via the setGridSize method,

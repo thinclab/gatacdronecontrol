@@ -66,8 +66,7 @@ GaTACDroneControl::GaTACDroneControl(string c) {
         exit(1);
     }
     cout << "Drone Role Name: " << c << endl;
-	serverSocket, dataSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
-	datsrv = NULL;
+	serverSocket, numberOfColumns, numberOfRows, numberOfDrones = 0;
 	srv = NULL;
 	myRole = c;
 	scenarioOver = false;
@@ -86,14 +85,12 @@ GaTACDroneControl::GaTACDroneControl(string c) {
 void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
 	const char *host = serverIp.c_str();
 	char port[256];
-	char dp[256];
 
     sprintf(port, "%u", rondPort);
 
-	int errorCheck, sock, datsock;
+	int errorCheck, sock;
 
 	struct addrinfo hints, *srv, *info;
-	struct addrinfo dathints, *datsrv, *datinfo;
 
     // Connect to the server and get our connection info
 
@@ -142,14 +139,13 @@ void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
 	}
 	buffer[bytesReceived] = '\0';
 
-    unsigned int controlPort, dataPort;
-    sscanf(buffer, "%u %u %u", &clientUniqueId, &controlPort, &dataPort);
+    unsigned int controlPort;
+    sscanf(buffer, "%u %u", &clientUniqueId, &controlPort);
 
     freeaddrinfo(srv);
     close(sock);
 
     sprintf(port, "%u", controlPort);
-    sprintf(dp, "%u", dataPort);
 
 
 	bzero(&hints, sizeof hints);
@@ -183,38 +179,6 @@ void GaTACDroneControl::launchClient(string serverIp, unsigned int rondPort) {
 	// Storing server socket data for later
 	serverSocket = sock;
 	this->srv = info;
-
-
-	// Specifying socket parameters
-	bzero(&dathints, sizeof dathints);
-	dathints.ai_family = AF_UNSPEC;
-	dathints.ai_socktype = SOCK_DGRAM;
-
-	// Filling 'srv' object with info from 'hints'
-	if ((errorCheck = getaddrinfo(host, dp, &dathints, &datsrv)) != 0) {
-		perror("Client: get address info function.");
-		exit(1);
-	}
-
-	// Creating socket
-	for (datinfo = datsrv; datinfo != NULL; datinfo = datinfo->ai_next) {
-		if ((datsock = socket(datinfo->ai_family, datinfo->ai_socktype, datinfo->ai_protocol)) == -1) {
-			perror("Client: socket function.");
-			continue;
-		}
-
-		break;
-	}
-
-	// Ensuring valid address info was found
-	if (datinfo == NULL) {
-		perror("Client: no valid address info found.\n");
-		exit(1);
-	}
-
-	// Storing server socket data for later
-	dataSocket = datsock;
-	this->datsrv = datinfo;
 
 	// Sleep to ensure that the connection is complete before commands are sent
 	sleep(1);
@@ -488,7 +452,6 @@ void GaTACDroneControl::setupDrone(int droneCol, int droneRow) {
  */
 void GaTACDroneControl::closeClient() {
 	close(serverSocket);
-	close(dataSocket);
 	this->setClientReadyToCommand(false);
 	freeaddrinfo(srv);
 }
@@ -636,75 +599,6 @@ bool GaTACDroneControl::getClientReadyToCommand()
 {
  return this->readyToCommand;
 }
-
-/*
- * Private Methods
- */
-bool GaTACDroneControl::receiveData()
-{
-	char message[BUFLEN];
-	sprintf(message, "n %d", clientUniqueId);
-	bool success = false;
-	char sendBuffer[BUFLEN];
-	char receiveBuffer[BUFLEN] = { };
-	strcpy(sendBuffer, message);
-	char cmdCheck = sendBuffer[0];
-	string bats = "";
-	string fors = "";
-	string sides = "";
-	string verts = "";
-	string sons = "";
-	string tags = "";
-	while(!scenarioOver){
-	// Sending message
-	int bytesSent = 0;
-	if ((bytesSent = sendto(dataSocket, sendBuffer, strlen(sendBuffer), 0, datsrv->ai_addr, datsrv->ai_addrlen)) == -1) {
-		cout << "Error sending message to server with errno: " << errno << endl;
-		success = false;
-	}
-
-	// Waiting for feedback (ensuring that the server received our message)
-	int bytesReceived = 0;
-	if ((bytesReceived = recvfrom(dataSocket, receiveBuffer, BUFLEN - 1, 0, NULL, NULL)) == -1) {
-		cout << "Error receiving feedback from server." << endl;
-		exit(1);
-	} else {
-		receiveBuffer[bytesReceived] = '\0';
-
-		success = true;
-		for(int i = 0; i < 30; i++)
-		bats += receiveBuffer[i];
-		for(int i = 30; i < 60; i++)
-		fors += receiveBuffer[i];
-		for(int i = 60; i < 90; i++)
-		sides += receiveBuffer[i];
-		for(int i = 90; i < 120; i++)
-		verts += receiveBuffer[i];
-		for(int i = 120; i < 150; i++)
-		sons += receiveBuffer[i];
-		for(int i = 150; i < 180; i++)
-		tags += receiveBuffer[i];
-
-
-		this->setBattery(bats);
-		this->setForwardVelocity(fors);
-		this->setSidewaysVelocity(sides);
-		this->setVerticalVelocity(verts);
-		this->setSonar(sons);
-		this->setTagsSpotted(tags);
-
-		bats.clear();
-		fors.clear();
-		sides.clear();
-		verts.clear();
-		sons.clear();
-		tags.clear();
-		}
-	sleep(1);
-	}
-return success;
-}
-
 
 /**
  * This method sends the message specified through the main UDP socket
