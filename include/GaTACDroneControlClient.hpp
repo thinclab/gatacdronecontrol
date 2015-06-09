@@ -64,8 +64,9 @@ public:
 	 * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
 	 * @param numberOfColumns X-axis dimension
 	 * @param numberOfRows Y-axis dimension
+	 * @param verticalOffset Each drone's vertical distance from each other
 	 */
-	void setGridSize(int, int);
+	void setGridSize(int, int, float = -1);
 
 	/**
 	 * This method closes the UDP client socket, as well as the navdata socket, and sets the client's readyToCommand boolean to false.
@@ -79,6 +80,7 @@ public:
 	 * @param droneRow Drone's intiial position, Y-axis
 	 */
 	void setupDrone(int, int);
+
 
 	/**
 	 * This method will start the drone simulator with size and number/location of drones

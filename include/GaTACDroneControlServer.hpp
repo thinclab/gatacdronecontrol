@@ -49,10 +49,13 @@ static bool debug_terms = false;
 
 class GaTACDroneControl {
 public:
+
+    GaTACDroneControl(bool isReal) : GaTACDroneControl(isReal, 0.75f) {};
+
 	/**
 	 * Default constructor. Initializes all member variables.
 	 */
-	GaTACDroneControl(bool isReal);
+	GaTACDroneControl(bool isReal, float offset);
 
 	/**
 	 * This method is called by the GaTAC server. It begins a new server thread for each drone started.
@@ -291,6 +294,7 @@ private:
 
 	int expectedDrones;
 
+    float droneVerticalOffset;
 
     void runSubProcess(const char *);
 };

@@ -210,9 +210,8 @@ void handlesigint(int sig) {
 
 /**
  * Default constructor. Initializes all member variables.
- * If no char provided to constructor, this gatac object will be used as a server or client object involving SIMULATED drones.
  */
-GaTACDroneControl::GaTACDroneControl(bool isReal) {
+GaTACDroneControl::GaTACDroneControl(bool isReal, float offset) {
 	numberOfColumns = numberOfRows = numberOfDrones = 0;
 	gridSizeSet = gridStarted = false;
 	simulatorMode = !isReal;
@@ -220,6 +219,7 @@ GaTACDroneControl::GaTACDroneControl(bool isReal) {
 	readyForData = false;
     scenarioOver = false;
     scenarioOverMsg = "";
+    droneVerticalOffset = offset;
 
     gatacref = this;
 
@@ -645,6 +645,10 @@ void GaTACDroneControl::runServer(int sock_in, struct sockaddr_storage * client_
                     gridSizeSet = true;
                     this->numberOfColumns = noc;
                     this->numberOfRows = nor;
+                    if (tokens.size() >= 4) {
+                        this->droneVerticalOffset = (float)atof(tokens.at(3).c_str());
+
+                    }
                 }
 			}
 			break;
@@ -866,7 +870,7 @@ void GaTACDroneControl::launchGrid() {
 		Locker lock(&dronePositionMtx);
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
-			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2.0, 2.0, (droneID + 1.0) * 0.4);
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 2.0, 2.0, (droneID * droneVerticalOffset) + 0.4);
 			cout << "publishing message: " << thincSmartMessage << endl;
 			runSubProcess(thincSmartMessage);
 		}
@@ -899,7 +903,7 @@ void GaTACDroneControl::launchGrid() {
 		int droneID;
 		for (int i = 0; i < numberOfDrones; i++) {
 			droneID = i;
-			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.9, 0.9, (droneID *0.75) + 0.5);
+			sprintf(thincSmartMessage, thincSmartCommand, droneID, numberOfColumns, numberOfRows, dronePositions.at(droneID).first, dronePositions.at(droneID).second, 0.9, 0.9, (droneID * droneVerticalOffset) + 0.5);
 			cout << "publishing message: " << thincSmartMessage << endl;
 			runSubProcess(thincSmartMessage);
 		}

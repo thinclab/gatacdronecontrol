@@ -303,8 +303,9 @@ vector<pair<string, int>> GaTACDroneControl::senseWest(int maxdist) {
  * This method sets up the size of the grid that all subsequently spawned drones will be spawned on.
  * @param numberOfColumns X-axis dimension
  * @param numberOfRows Y-axis dimension
+ * @param verticalOffset Each drone's vertical distance from each other
  */
-void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
+void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows, float verticalOffset) {
     if (scenarioOver)
         return;
 
@@ -313,7 +314,11 @@ void GaTACDroneControl::setGridSize(int numberOfColumns, int numberOfRows) {
 		printf("Sending command to set grid size to %dx%d.\n", numberOfColumns, numberOfRows);
 
 		char message[BUFLEN];
-		sprintf(message, "g %d %d", numberOfColumns, numberOfRows);
+		if (verticalOffset >= 0) {
+            sprintf(message, "g %d %d %f", numberOfColumns, numberOfRows, verticalOffset);
+		} else {
+            sprintf(message, "g %d %d", numberOfColumns, numberOfRows);
+		}
 		worked = sendMessage(message, serverSocket, srv);
 
 		if (!worked) {

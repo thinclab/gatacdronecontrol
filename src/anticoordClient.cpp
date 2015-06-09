@@ -29,17 +29,22 @@ do {                                                                \
 
 int main(int argc, char ** argv) {
     if (argc < 5) {
-        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " size_X size_Y start_x start_Y \"policy file\"" << endl;
+        std::cerr << "Invalid arguments, correct format is: " << argv[0] << " size_X size_Y start_x start_Y \"policy file\" (vertical drone distance)" << endl;
         exit(1);
     }
 
     int x, y, startX, startY, sizeX, sizeY;
+    float verticalDroneDistance = -1;
     char * mode = argv[0];
     sscanf(argv[1], "%d", &sizeX);
     sscanf(argv[2], "%d", &sizeY);
     sscanf(argv[3], "%d", &startX);
     sscanf(argv[4], "%d", &startY);
     char * policy_file = argv[5];
+
+    if (argc >= 7) {
+        sscanf(argv[6], "%f", &verticalDroneDistance);
+    }
 
 	x = startX;
 	y = startY;
@@ -61,7 +66,7 @@ int main(int argc, char ** argv) {
 	gatac.launchClient(ip, startport);
 
 	// Set grid size to [5 x 8]
-	gatac.setGridSize(sizeX, sizeY);
+	gatac.setGridSize(sizeX, sizeY, verticalDroneDistance);
 
 	//set up drone
 	gatac.setupDrone(startX, startY); // Spawn drone at (0, 0)
