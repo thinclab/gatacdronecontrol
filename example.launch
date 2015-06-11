@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<launch>
+	<!-- Spawn simulated quadrotor uav -->
+	<group ns="drone0">
+		<param name="tf_prefix" value="drone0"/>
+                <include file="ardrone.launch" >
+                        <arg name="drone_ip" value="192.168.2.11"/>
+                	<arg name="drone_frame_id" value="drone0_base"/>
+                </include>
+		<include file="$(find tum_ardrone)/launch/tum_ardrone.launch">
+			<arg name="drone_ip" value="192.168.2.11"/>
+		</include>
+	</group>
+	<group ns="drone1">
+		<param name="tf_prefix" value="drone1"/>
+                <include file="ardrone.launch" >
+                        <arg name="drone_ip" value="192.168.1.12"/>
+                	<arg name="drone_frame_id" value="drone1_base"/>
+                </include>
+		<include file="$(find tum_ardrone)/launch/tum_ardrone.launch">
+			<arg name="drone_ip" value="192.168.1.12"/>
+		</include>
+	</group>
+
+</launch>
