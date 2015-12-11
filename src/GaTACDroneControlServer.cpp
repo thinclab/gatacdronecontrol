@@ -1006,7 +1006,7 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>\n\t\t"
 			"<arg name=\"drone_frame_id\" value=\"drone%d_base\"/>\n\t\t"
 			"</include>\n\t"
-			"<include file=\"$(find tum_ardrone)/launch/tum_ardrone.launch\">\n"
+			"<include file=\"$(find uga_tum_ardrone)/launch/uga_tum_ardrone.launch\">\n"
 			"<arg name=\"drone_ip\" value=\"192.168.1.1%d\"/>"
 			"</include>"
 			"</group>\n\n";

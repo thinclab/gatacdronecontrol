@@ -8,7 +8,7 @@
                         <arg name="drone_ip" value="192.168.2.11"/>
                 	<arg name="drone_frame_id" value="drone0_base"/>
                 </include>
-		<include file="$(find tum_ardrone)/launch/tum_ardrone.launch">
+		<include file="$(find uga_tum_ardrone)/launch/uga_tum_ardrone.launch">
 			<arg name="drone_ip" value="192.168.2.11"/>
 		</include>
 	</group>
@@ -18,7 +18,7 @@
                         <arg name="drone_ip" value="192.168.1.12"/>
                 	<arg name="drone_frame_id" value="drone1_base"/>
                 </include>
-		<include file="$(find tum_ardrone)/launch/tum_ardrone.launch">
+		<include file="$(find uga_tum_ardrone)/launch/uga_tum_ardrone.launch">
 			<arg name="drone_ip" value="192.168.1.12"/>
 		</include>
 	</group>
