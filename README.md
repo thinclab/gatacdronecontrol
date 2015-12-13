@@ -7,6 +7,13 @@ Overview
 This API is designed to provide high level control of (up to 3) Parrot AR.Drone 
 Quadcopters over a UDP socket.  The purpose of the API is to allow for programmatic control of drones from a client machine totally independent of ROS.  However, note that the machine running the server does indeed require ROS and all packages mentioned below.
 
+Building
+-----
+
+Required libraries: Boost (threading and system), doxygen
+
+A makefile is provided to compile the example programs.
+
 Notes
 -----
 
