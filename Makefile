@@ -1,4 +1,4 @@
-all: bin/SWARMCLIENT bin/SWARMSERVER bin/keyboard bin/random bin/server bin/fugitiveClient bin/anticoordClient
+all: bin/SWARMCLIENT bin/SWARMSERVER bin/keyboard bin/random bin/server bin/fugitiveClient bin/anticoordClient doc/html
 
 
 lib/GaTACDroneControlServer.a: include/GaTACDroneControlServer.hpp src/GaTACDroneControlServer.cpp
@@ -45,3 +45,6 @@ clean:
 	rm lib/*
 	rm bin/*
 	rm obj/*
+
+doc/html:
+	cd doc && doxygen doxyconfig.txt

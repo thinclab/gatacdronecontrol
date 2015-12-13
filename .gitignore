@@ -18,3 +18,5 @@
 bin/*
 obj/*
 lib/*
+doc/html
+doc/latex

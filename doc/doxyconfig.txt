@@ -1,4 +1,4 @@
 PROJECT_NAME     = GaTACDroneControl
-INPUT            = GaTACDroneControlClient.cpp ../include/GaTACDroneControlClient.hpp
+INPUT            = ../src/GaTACDroneControlClient.cpp ../include/GaTACDroneControlClient.hpp
 EXTRACT_ALL      = YES
 EXTRACT_PRIVATE  = YES
