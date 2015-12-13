@@ -930,21 +930,21 @@ void GaTACDroneControl::configureLaunchFile() {
 			"<?xml version=\"1.0\"?>\n\n"
 			"<launch>\n\t"
 			"<node\n\t\t"
-			"name=\"gen_texture\" pkg=\"cvg_sim_gazebo\" type=\"gen_texture\"\n\t\t"
-			"args=\"%d %d 1 1 $(find cvg_sim_gazebo)/meshes/grid.png $(find cvg_sim_gazebo)/worlds/grid.world\"\n\t"
+			"name=\"gen_texture\" pkg=\"thinc_sim_gazebo\" type=\"gen_texture\"\n\t\t"
+			"args=\"%d %d 1 1 $(find thinc_sim_gazebo)/meshes/grid.png $(find thinc_sim_gazebo)/worlds/grid.world\"\n\t"
 			"/>\n\t";
 		const char *genDaeText =
 			"<node\n\t\t"
-			"name=\"gen_dae\" pkg=\"cvg_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
-			"args=\"%d %d 2 2 $(find cvg_sim_gazebo)/meshes/grid.dae\"\n\t"
+			"name=\"gen_dae\" pkg=\"thinc_sim_gazebo\" type=\"gen_dae.py\"\n\t\t"
+			"args=\"%d %d 2 2 $(find thinc_sim_gazebo)/meshes/grid.dae\"\n\t"
 			"/>\n\n\t"
 			"<!-- Start Gazebo with wg world running in (max) realtime -->\n\t"
-			"<include file=\"$(find cvg_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
+			"<include file=\"$(find thinc_sim_gazebo)/launch/grid.launch\"/>\n\n\t"
 			"<!-- Spawn simulated quadrotor uav -->\n";
 		const char *droneText =
 			"\t<group ns=\"drone%d\">\n\t\t"
 			"<param name=\"tf_prefix\" value=\"drone%d\"/>\n\t\t"
-			"<include file=\"$(find cvg_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
+			"<include file=\"$(find thinc_sim_gazebo)/launch/spawn_quadrotor.launch\" >\n\t\t\t"
 			"<arg name=\"robot_namespace\" value=\"drone%d\"/>\n\t\t\t"
 			"<arg name=\"x\" value=\"%.2f\"/>\n\t\t\t"
 			"<arg name=\"y\" value=\"%.2f\"/>\n\t\t\t"
